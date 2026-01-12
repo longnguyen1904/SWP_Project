@@ -1,3 +1,5 @@
+import "../Style/Events_Traditions.css" ;  
+
 export default function Traditions() {
     return (
         <section>

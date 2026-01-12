@@ -1,3 +1,4 @@
+import "../Style/Hero.css" ;  
 import Countdown from "./Countdown";
 
 

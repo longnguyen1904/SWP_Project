@@ -1,0 +1,17 @@
+.hero {
+  text-align: center;
+  padding-top: 120px;
+}
+
+.hero h2 {
+  font-size: 56px;
+}
+
+.hero span {
+  color: rgb(249, 120, 6);
+}
+
+.hero p {
+  margin-top: 16px;
+  color: #aaa;
+}

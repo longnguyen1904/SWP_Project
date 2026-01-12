@@ -1,3 +1,6 @@
+import "../Style/Subscribe.css" ; 
+
+
 export default function Subscribe() {
     return (
         <section>
