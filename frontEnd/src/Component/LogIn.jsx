@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-
+import "../Style/LogIn.css" ; 
 const LogIn = forwardRef(function LogIn(props, ref) {
   return (
     <dialog ref={ref} className="result-modal">
