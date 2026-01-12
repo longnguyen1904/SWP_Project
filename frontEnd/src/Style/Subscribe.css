@@ -1,0 +1,26 @@
+
+/* ================= SUBSCRIBE ================= */
+.subscribe-box {
+  max-width: 520px;
+  margin: auto;
+  background: #111;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.subscribe-box input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 20px;
+  border-radius: 8px;
+  border: none;
+}
+
+.subscribe-box button {
+  margin-top: 16px;
+  background: #ff4d6d;
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: white;
+}
