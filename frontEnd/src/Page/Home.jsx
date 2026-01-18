@@ -12,7 +12,7 @@ export default function HomePage() {
   return (
     <div className="app snow">
       <Hero />
-      <FilterList/>
+      <FilterList />
       <Events />
       <Traditions />
       <Subscribe />
