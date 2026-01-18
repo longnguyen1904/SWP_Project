@@ -9,7 +9,7 @@ import "../Style/About.css";
 
 export default function About() {
   const team = [
-    {
+    {                          
       id: 1,
       name: "Nguyễn Sỹ Long",
       role: "Project Leader",  

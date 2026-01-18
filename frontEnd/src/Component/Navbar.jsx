@@ -1,8 +1,9 @@
-import "../Style/Navbar.css" ; 
+
 import { useRef } from "react";
 import {Link} from "react-router-dom"
 import logo from "../public/logo_no_bg.png" ;  
 import LogIn  from "./LogIn";
+import "../Style/Navbar.css" ; 
 
 
 export default function Navbar() {
