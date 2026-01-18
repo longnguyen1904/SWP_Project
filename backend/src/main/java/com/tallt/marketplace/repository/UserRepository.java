@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends JpaRepository<User, Integer> {
     User findByEmail(String email);
 
-    boolean existsByEmail(String email); // Để kiểm tra trùng email khi đăng ký
+    boolean existsByEmail(String email);
 }

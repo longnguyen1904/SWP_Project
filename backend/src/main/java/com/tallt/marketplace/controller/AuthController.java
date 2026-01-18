@@ -1,5 +1,6 @@
 package com.tallt.marketplace.controller;
 
+import com.tallt.marketplace.constant.MessageConstant;
 import com.tallt.marketplace.dto.LoginRequest;
 import com.tallt.marketplace.dto.RegisterRequest;
 import com.tallt.marketplace.entity.User;
@@ -10,32 +11,27 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-// @CrossOrigin đã cấu hình ở file Config, không cần viết lại ở đây nếu dùng
-// Global Config
 public class AuthController {
 
     @Autowired
     private AuthService authService;
 
-    // API Đăng nhập: POST http://localhost:8080/api/auth/login
+    // POST /api/auth/login
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         User user = authService.login(request);
         if (user != null) {
             return ResponseEntity.ok(user);
         } else {
-            return ResponseEntity.status(401).body("Sai email hoặc mật khẩu!");
+            // Trả về message từ Constant
+            return ResponseEntity.status(401).body(MessageConstant.LOGIN_FAILED);
         }
     }
 
-    // API Đăng ký: POST http://localhost:8080/api/auth/register
+    // POST /api/auth/register
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        try {
-            User newUser = authService.register(request);
-            return ResponseEntity.ok(newUser);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        // Nếu có lỗi (trùng email...), ExceptionHandler sẽ bắt và trả về lỗi 400
+        return ResponseEntity.ok(authService.register(request));
     }
 }
