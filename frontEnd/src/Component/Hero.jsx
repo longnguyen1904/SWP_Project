@@ -1,6 +1,6 @@
-import "../Style/Hero.css" ;  
-import Countdown from "./Countdown";
 
+import "../Style/Hero.css" ; 
+import Countdown from "./CountDown";
 
 export default function Hero() {
     return (
