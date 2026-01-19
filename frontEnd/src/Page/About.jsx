@@ -51,13 +51,12 @@ export default function About() {
           xây dựng và phát triển dự án.
         </p>
 
-        {/* English Introduction */}
         <p className="about-intro">
           We are a team of 5 enthusiastic and creative students, collaborating to develop this software project. Each member has a distinct role – from Project Leader, Frontend, Backend, Database to QA/Tester – ensuring the project is executed efficiently, with high quality and on schedule. We are committed to learning, supporting each other, and delivering the best possible product.
         </p>
       </div>
 
-      {/* Team */}
+   
       <div className="about-section gray">
         <div className="team-list">
           {team.map(member => (

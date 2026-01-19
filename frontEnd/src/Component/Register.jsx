@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { getToken } from "../services/localStorageService";
 import "../Style/LogIn.css" ; 
 
-const LogIn = forwardRef(function LogIn(props, ref) {
+const LogIn = forwardRef(function Register(props, ref) {
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -26,7 +26,6 @@ const LogIn = forwardRef(function LogIn(props, ref) {
     console.log("Username:", username);
     console.log("Password:", password);
 
-    
     ref.current.close();
     props?.onSuccess?.();
     navigate("/");
@@ -47,14 +46,14 @@ const LogIn = forwardRef(function LogIn(props, ref) {
 
   return (
     <dialog ref={ref} className="result-modal">
-      {/* NÚT ĐÓNG */}
+   
       <form method="dialog">
         <button className="close-btn">✕</button>
       </form>
 
-      {/* LOGIN FORM */}
+   
       <form className="login-form" onSubmit={handleSubmit}>
-        <h2>Welcome to Devtetia</h2>
+        <h2>Welcome to TALLT</h2>
         <p className="subtitle">Login to your account</p>
 
         <div className="form-group">
