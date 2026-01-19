@@ -22,7 +22,6 @@ public class User {
     @Column(name = "FullName")
     private String fullName;
 
-    // Quan hệ N-1: Một User có một Role
     @ManyToOne
     @JoinColumn(name = "RoleID", nullable = false)
     private Role role;

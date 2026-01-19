@@ -2,18 +2,17 @@ import { forwardRef, useState } from "react";
 import "../Style/LogIn.css";
 
 const LogIn = forwardRef(function LogIn(props, ref) {
-  // 1. Trạng thái: Đang ở màn Login hay Register? (Mặc định là Login)
+  
   const [isLogin, setIsLogin] = useState(true);
 
-  // 2. Trạng thái: Lưu dữ liệu nhập vào
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     fullName: "",
-    roleID: 3 // QUAN TRỌNG: Mặc định luôn là 3 (Customer)
+    roleID: 3 
   });
 
-  // 3. Hàm xử lý khi nhập liệu
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -28,37 +27,37 @@ const LogIn = forwardRef(function LogIn(props, ref) {
 
     // Chọn đường dẫn API
     const endpoint = isLogin
-      ? "http://localhost:8080/api/auth/login"
-      : "http://localhost:8080/api/auth/register";
+      ? "http://localhost:8081/api/auth/login"
+      : "http://localhost:8081/api/auth/register";
 
     try {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData), // Gửi roleID=3 ngầm bên dưới
+        body: JSON.stringify(formData), 
       });
 
       const data = await response.json();
 
       if (response.ok) {
         if (isLogin) {
-          // --- LOGIN THÀNH CÔNG ---
+   
           alert("Đăng nhập thành công! Chào " + data.fullName);
           localStorage.setItem("user", JSON.stringify(data));
           if (ref.current) ref.current.close();
-          // Tải lại trang hoặc cập nhật UI
+ 
           window.location.reload();
         } else {
-          // --- REGISTER THÀNH CÔNG ---
+     
           alert("Đăng ký thành công! Hãy đăng nhập ngay.");
-          setIsLogin(true); // Chuyển về màn hình login
+          setIsLogin(true); 
         }
       } else {
         alert("Lỗi: " + (data.message || "Kiểm tra lại email/mật khẩu"));
-      }
+      }                                
     } catch (error) {
       console.error("Lỗi kết nối:", error);
-      alert("Không thể kết nối đến Server (Port 8080)!");
+      alert("Không thể kết nối đến Server (Port 8081)!" );
     }
   };
 
@@ -67,7 +66,6 @@ const LogIn = forwardRef(function LogIn(props, ref) {
       <form method="dialog">
         <button className="close-btn">✕</button>
       </form>
-
       <div className="login-form">
         <h2>{isLogin ? "Welcome Back" : "Create Account"}</h2>
         <p className="subtitle">
@@ -76,7 +74,7 @@ const LogIn = forwardRef(function LogIn(props, ref) {
 
         <form onSubmit={handleSubmit}>
 
-          {/* 1. Full Name (Chỉ hiện khi Đăng ký) */}
+
           {!isLogin && (
             <div className="form-group">
               <label>Full Name</label>

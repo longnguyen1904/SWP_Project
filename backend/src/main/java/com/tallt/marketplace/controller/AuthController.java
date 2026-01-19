@@ -8,6 +8,7 @@ import com.tallt.marketplace.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,11 +25,14 @@ public class AuthController {
             return ResponseEntity.ok(user);
         } else {
             // Trả về message từ Constant
-            return ResponseEntity.status(401).body(MessageConstant.LOGIN_FAILED);
+            return ResponseEntity
+                    .status(401)
+                    .body(Map.of("message", MessageConstant.LOGIN_FAILED));
+
         }
     }
 
-    // POST /api/auth/register
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         // Nếu có lỗi (trùng email...), ExceptionHandler sẽ bắt và trả về lỗi 400
