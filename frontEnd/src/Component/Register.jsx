@@ -13,10 +13,10 @@ const LogIn = forwardRef(function LogIn(props, ref) {
     email: "",
     password: "",
     fullName: "",
-    roleID: 3, // Customer
+    roleID: 3, 
   });
 
-  /* ===== Nếu đã có token thì đóng dialog ===== */
+
   useEffect(() => {
     const accessToken = getToken();
     if (accessToken) {
@@ -25,13 +25,13 @@ const LogIn = forwardRef(function LogIn(props, ref) {
     }
   }, [navigate, ref]);
 
-  /* ===== Handle input ===== */
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  /* ===== Login / Register bằng Email ===== */
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -72,7 +72,6 @@ const LogIn = forwardRef(function LogIn(props, ref) {
     }
   };
 
-  /* ===== GOOGLE LOGIN (GIỮ NGUYÊN FILE T2) ===== */
   const handleGoogleLogin = () => {
     const callbackUrl = OAuthConfig.redirectUri;
     const authUrl = OAuthConfig.authUri;
@@ -138,7 +137,7 @@ const LogIn = forwardRef(function LogIn(props, ref) {
           </button>
         </form>
 
-        {/* ===== GOOGLE LOGIN – GIỮ NGUYÊN ===== */}
+       
         <button
           type="button"
           className="google-btn"
