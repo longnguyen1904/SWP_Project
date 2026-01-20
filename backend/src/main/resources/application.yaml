@@ -5,7 +5,7 @@ spring:
     # Thêm ?createDatabaseIfNotExist=true để tự tạo DB nếu chưa có
     url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: "root"
+    password: "123"
   jpa:
     hibernate:
       ddl-auto: update
@@ -19,4 +19,4 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
 server:
-  port: 8081
+  port: 8080
