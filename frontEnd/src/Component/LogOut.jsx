@@ -17,7 +17,7 @@ export default function LogOut() {
 
   const isMenuOpen = Boolean(anchorEl);
 
-  // Lấy thông tin user Google (ảnh đại diện)
+  // Lấy thông tin user Google (ảnh đại diện)??
   React.useEffect(() => {
     const accessToken = getToken();
     if (!accessToken) return;
