@@ -5,7 +5,7 @@ import { OAuthConfig } from "../configurations/configuration";
 import { getToken } from "../services/localStorageService";
 import "../Style/LogIn.css";
 
-const LogIn = forwardRef(function LogIn(props, ref) {
+const Register = forwardRef(function Register(props, ref) {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
 
