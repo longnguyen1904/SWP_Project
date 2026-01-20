@@ -1,22 +1,17 @@
 import { forwardRef, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import { OAuthConfig } from "../configurations/configuration";
+import { useNavigate } from "react-router-dom";
 import { getToken } from "../services/localStorageService";
-import "../Style/LogIn.css";
+import "../Style/LogIn.css" ; 
 
-const LogIn = forwardRef(function LogIn(props, ref) {
+const LogIn = forwardRef(function Register(props, ref) {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    fullName: "",
-    roleID: 3, // Customer
-  });
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-  /* ===== Nếu đã có token thì đóng dialog ===== */
+  
   useEffect(() => {
     const accessToken = getToken();
     if (accessToken) {
@@ -25,54 +20,18 @@ const LogIn = forwardRef(function LogIn(props, ref) {
     }
   }, [navigate, ref]);
 
-  /* ===== Handle input ===== */
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    console.log("Username:", username);
+    console.log("Password:", password);
+
+    ref.current.close();
+    props?.onSuccess?.();
+    navigate("/");
   };
 
-  /* ===== Login / Register bằng Email ===== */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const endpoint = isLogin
-      ? "http://localhost:8081/api/auth/login"
-      : "http://localhost:8081/api/auth/register";
-
-    const payload = isLogin
-      ? { email: formData.email, password: formData.password }
-      : formData;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Authentication failed");
-        return;
-      }
-
-      if (isLogin) {
-        localStorage.setItem("user", JSON.stringify(data));
-        props?.onSuccess?.();
-        ref?.current?.close();
-        navigate("/");
-      } else {
-        alert("Register success! Please login.");
-        setIsLogin(true);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Cannot connect to server (8081)");
-    }
-  };
-
-  /* ===== GOOGLE LOGIN (GIỮ NGUYÊN FILE T2) ===== */
+  
   const handleGoogleLogin = () => {
     const callbackUrl = OAuthConfig.redirectUri;
     const authUrl = OAuthConfig.authUri;
@@ -87,58 +46,42 @@ const LogIn = forwardRef(function LogIn(props, ref) {
 
   return (
     <dialog ref={ref} className="result-modal">
+   
       <form method="dialog">
         <button className="close-btn">✕</button>
       </form>
 
-      <div className="login-form">
-        <h2>{isLogin ? "Welcome Back" : "Create Account"}</h2>
-        <p className="subtitle">
-          {isLogin ? "Login to your account" : "Join us today"}
-        </p>
+   
+      <form className="login-form" onSubmit={handleSubmit}>
+        <h2>Welcome to TALLT</h2>
+        <p className="subtitle">Login to your account</p>
 
-        <form onSubmit={handleSubmit}>
-          {!isLogin && (
-            <div className="form-group">
-              <label>Full Name</label>
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          )}
+        <div className="form-group">
+          <label>Username</label>
+          <input
+            type="text"
+            placeholder="Enter username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
 
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        <div className="form-group">
+          <label>Password</label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
 
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        <button className="login-btn" type="submit">
+          Log In
+        </button>
 
-          <button className="login-btn" type="submit">
-            {isLogin ? "Log In" : "Sign Up"}
-          </button>
-        </form>
-
-        {/* ===== GOOGLE LOGIN – GIỮ NGUYÊN ===== */}
         <button
           type="button"
           className="google-btn"
@@ -149,18 +92,12 @@ const LogIn = forwardRef(function LogIn(props, ref) {
 
         <div className="divider"></div>
 
-        <p className="footer-text">
-          {isLogin ? "Don’t have an account? " : "Already have an account? "}
-          <span
-            onClick={() => setIsLogin(!isLogin)}
-            style={{ cursor: "pointer", color: "blue", fontWeight: "bold" }}
-          >
-            {isLogin ? "Create an account" : "Log in"}
-          </span>
-        </p>
-      </div>
+        <button type="button" className="signup-btn">
+          Create an account
+        </button>
+      </form>
     </dialog>
   );
 });
 
-export default Register;
+export default LogIn;

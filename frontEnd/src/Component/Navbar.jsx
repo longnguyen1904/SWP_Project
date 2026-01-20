@@ -17,7 +17,7 @@ export default function Navbar() {
             <Register ref={dialog}></Register>
             <h1 className="logo"><img src={logo}></img></h1>
             <ul>
-                <li><Link to="../" id="router-link">Home</Link></li>
+                <li><Link to="../Page/HomePage" id="router-link">Home</Link></li>
                 <li><Link to="../Page/About" id="router-link">About</Link></li>
                 <li><Link to="../Page/Event" id="router-link">Events</Link></li>
                 <li><Link to="../Page/Tradition" id="router-link">Traditons</Link></li>
