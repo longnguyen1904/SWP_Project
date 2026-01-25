@@ -6,7 +6,7 @@ import { getToken } from "../services/localStorageService";
 import { login, register } from "../services/authApiService";
 import "../Style/LogIn.css";
 
-const LogIn = forwardRef(function Register(props, ref) {
+const Register = forwardRef(function Register(props, ref) {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
 
