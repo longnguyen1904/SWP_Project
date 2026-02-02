@@ -6,12 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
+    User findByEmail(String email);
 
-    // Tìm kiếm bằng Email HOẶC Username
-    User findByEmailOrUsername(String email, String username);
-
-    // Kiểm tra trùng lặp khi đăng ký
     boolean existsByEmail(String email);
-
-    boolean existsByUsername(String username);
 }

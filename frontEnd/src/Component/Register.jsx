@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 
 import { OAuthConfig } from "../configurations/configuration";
 import { getToken } from "../services/localStorageService";
-import { login, register } from "../services/authApiService";
 import "../Style/LogIn.css";
 
-const LogIn = forwardRef(function Register(props, ref) {
+const LogIn = forwardRef(function LogIn(props, ref) {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
 
@@ -14,7 +13,6 @@ const LogIn = forwardRef(function Register(props, ref) {
     email: "",
     password: "",
     fullName: "",
-    username: "", // Thêm username cho register
     roleID: 3, // Customer
   });
 
@@ -37,51 +35,40 @@ const LogIn = forwardRef(function Register(props, ref) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const endpoint = isLogin
+      ? "http://localhost:8081/api/auth/login"
+      : "http://localhost:8081/api/auth/register";
+
+    const payload = isLogin
+      ? { email: formData.email, password: formData.password }
+      : formData;
+
     try {
-      let result;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Authentication failed");
+        return;
+      }
 
       if (isLogin) {
-        // Login: sử dụng identifier (email hoặc username)
-        result = await login({
-          identifier: formData.email, // Có thể là email hoặc username
-          password: formData.password,
-        });
+        localStorage.setItem("user", JSON.stringify(data));
+        props?.onSuccess?.();
+        ref?.current?.close();
+        navigate("/");
       } else {
-        // Register: gửi đầy đủ thông tin
-        result = await register({
-          email: formData.email,
-          username: formData.username,
-          password: formData.password,
-          fullName: formData.fullName,
-          roleID: formData.roleID,
-        });
-      }
-
-      // Log error code để debug (nếu có)
-      if (!result.success && result.code) {
-        console.log("Error Code:", result.code);
-      }
-
-      if (result.success) {
-        // ✅ Thành công: Lưu data.result (chứa User và Token)
-        if (isLogin) {
-          // Login: result.data chứa LoginResponse { token, user }
-          // Token và user đã được lưu tự động trong authApiService
-          props?.onSuccess?.();
-          ref?.current?.close();
-          navigate("/");
-        } else {
-          // Register: result.data chứa User object
-          alert(result.message || "Đăng ký thành công! Vui lòng đăng nhập.");
-          setIsLogin(true);
-        }
-      } else {
-        // ❌ Thất bại: Hiển thị message từ ApiResponse
-        alert(result.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
+        alert("Register success! Please login.");
+        setIsLogin(true);
       }
     } catch (err) {
-      console.error("API Error:", err);
-      alert("Không thể kết nối đến server. Vui lòng thử lại sau.");
+      console.error(err);
+      alert("Cannot connect to server (8081)");
     }
   };
 
@@ -112,28 +99,16 @@ const LogIn = forwardRef(function Register(props, ref) {
 
         <form onSubmit={handleSubmit}>
           {!isLogin && (
-            <>
-              <div className="form-group">
-                <label>Full Name</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Username</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </>
+            <div className="form-group">
+              <label>Full Name</label>
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+              />
+            </div>
           )}
 
           <div className="form-group">
