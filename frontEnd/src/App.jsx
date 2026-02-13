@@ -6,6 +6,9 @@ import About from "./Page/About";
 import Tradition from "./Page/Tradition";
 import Event from "./Page/Event";
 import Authenticate from "./Page/Authenticate";
+import RevenueDashboard from "./Page/RevenueDashboard";
+import ProfilePage from "./Page/ProfilePage";
+
 export default function App() {
   return (
     <div className="app snow">
@@ -16,6 +19,8 @@ export default function App() {
         <Route path="/Page/About" element={<About/>} />
         <Route path="/Page/Event" element={<Event/>} />
         <Route path="/Page/Tradition" element={<Tradition/>} />
+        <Route path="/Page/RevenueDashboard" element={<RevenueDashboard/>} />
+        <Route path="/Page/ProfilePage" element={<ProfilePage />} />
       </Routes>
       
     </div>

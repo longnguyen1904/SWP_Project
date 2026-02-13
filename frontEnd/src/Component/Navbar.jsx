@@ -21,6 +21,9 @@ export default function Navbar() {
                 <li><Link to="../Page/About" id="router-link">About</Link></li>
                 <li><Link to="../Page/Event" id="router-link">Events</Link></li>
                 <li><Link to="../Page/Tradition" id="router-link">Traditons</Link></li>
+                <li><Link to="../Page/RevenueDashboard" id="router-link">RevenueDashboard</Link></li>
+                <li><Link to="../Page/ProfilePage" id="router-link">ProfileChange</Link></li>
+
             </ul>
             <button className="Register" onClick={handleClick}>Login / SignUp</button>       
         </nav>
