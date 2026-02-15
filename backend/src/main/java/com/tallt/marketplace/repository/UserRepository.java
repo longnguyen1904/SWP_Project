@@ -6,7 +6,10 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
-    User findByEmail(String email);
+    // Spring JPA sẽ tự hiểu logic: WHERE Email = ? OR Username = ?
+    User findByEmailOrUsername(String email, String username);
 
     boolean existsByEmail(String email);
+
+    boolean existsByUsername(String username); // Nhớ thêm hàm này để dùng khi Register
 }
