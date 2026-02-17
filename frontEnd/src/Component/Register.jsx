@@ -2,21 +2,21 @@ import { forwardRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { OAuthConfig } from "../configurations/configuration";
-import { getToken, setToken } from "../services/localStorageService";
+import { getToken } from "../services/localStorageService";
 import "../Style/LogIn.css";
 
-const Register = forwardRef(function Register(props, ref) {
+const LogIn = forwardRef(function LogIn(props, ref) {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
 
   const [formData, setFormData] = useState({
-    email: "",      // Ở mode Login, trường này sẽ đóng vai trò là 'identifier'
-    username: "",   // Chỉ dùng khi Register
+    email: "",
     password: "",
     fullName: "",
-    roleID: 3,
+    roleID: 3, // Customer
   });
 
+  /* ===== Nếu đã có token thì đóng dialog ===== */
   useEffect(() => {
     const accessToken = getToken();
     if (accessToken) {
@@ -25,33 +25,23 @@ const Register = forwardRef(function Register(props, ref) {
     }
   }, [navigate, ref]);
 
+  /* ===== Handle input ===== */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  /**
-   * Flow: Gửi POST tới /login hoặc /register.
-   * - Login thành công: Backend trả { accessToken, ... } -> Lưu accessToken vào localStorage (key "accessToken").
-   * - Register: Không gửi roleID (Backend tự gán CUSTOMER). Đăng ký xong chuyển sang form Login.
-   */
+  /* ===== Login / Register bằng Email ===== */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Chọn endpoint tùy mode Login/Register
     const endpoint = isLogin
       ? "http://localhost:8081/api/auth/login"
       : "http://localhost:8081/api/auth/register";
 
-    // Payload: Login dùng identifier+password. Register dùng fullName, username, email, password (KHÔNG gửi roleID)
     const payload = isLogin
-      ? { identifier: formData.email, password: formData.password }
-      : {
-          fullName: formData.fullName,
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        };
+      ? { email: formData.email, password: formData.password }
+      : formData;
 
     try {
       const response = await fetch(endpoint, {
@@ -60,37 +50,29 @@ const Register = forwardRef(function Register(props, ref) {
         body: JSON.stringify(payload),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        if (errorData && errorData.message) {
-          alert(errorData.message);
-        } else {
-          const errorText = await response.text();
-          alert(errorText || "Lỗi xác thực");
-        }
+        alert(data.message || "Authentication failed");
         return;
       }
 
-      const data = await response.json();
-
       if (isLogin) {
-        // Lưu JWT Token với key "accessToken" (khớp localStorageService.getToken/setToken)
-        if (data.accessToken) {
-          setToken(data.accessToken);
-        }
+        localStorage.setItem("user", JSON.stringify(data));
         props?.onSuccess?.();
         ref?.current?.close();
         navigate("/");
       } else {
-        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        alert("Register success! Please login.");
         setIsLogin(true);
       }
     } catch (err) {
       console.error(err);
-      alert("Không thể kết nối đến server (8081)");
+      alert("Cannot connect to server (8081)");
     }
   };
 
+  /* ===== GOOGLE LOGIN (GIỮ NGUYÊN FILE T2) ===== */
   const handleGoogleLogin = () => {
     const callbackUrl = OAuthConfig.redirectUri;
     const authUrl = OAuthConfig.authUri;
@@ -116,38 +98,23 @@ const Register = forwardRef(function Register(props, ref) {
         </p>
 
         <form onSubmit={handleSubmit}>
-          {/* CÁC TRƯỜNG CHỈ HIỆN KHI ĐĂNG KÝ */}
           {!isLogin && (
-            <>
-              <div className="form-group">
-                <label>Full Name</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Username</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </>
+            <div className="form-group">
+              <label>Full Name</label>
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+              />
+            </div>
           )}
 
-          {/* TRƯỜNG NHẬP ĐỊNH DANH (DÙNG CHUNG) */}
           <div className="form-group">
-            <label>{isLogin ? "Username or Email" : "Email"}</label>
+            <label>Email</label>
             <input
-              // Chuyển sang text khi login để không bị check định dạng email
-              type={isLogin ? "text" : "email"}
+              type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
@@ -163,7 +130,6 @@ const Register = forwardRef(function Register(props, ref) {
               value={formData.password}
               onChange={handleChange}
               required
-              minLength={6}
             />
           </div>
 
@@ -172,7 +138,12 @@ const Register = forwardRef(function Register(props, ref) {
           </button>
         </form>
 
-        <button type="button" className="google-btn" onClick={handleGoogleLogin}>
+        {/* ===== GOOGLE LOGIN – GIỮ NGUYÊN ===== */}
+        <button
+          type="button"
+          className="google-btn"
+          onClick={handleGoogleLogin}
+        >
           Continue with Google
         </button>
 
@@ -181,11 +152,7 @@ const Register = forwardRef(function Register(props, ref) {
         <p className="footer-text">
           {isLogin ? "Don’t have an account? " : "Already have an account? "}
           <span
-            onClick={() => {
-              setIsLogin(!isLogin);
-              // Reset form khi chuyển chế độ để tránh rác dữ liệu
-              setFormData({ email: "", username: "", password: "", fullName: "", roleID: 3 });
-            }}
+            onClick={() => setIsLogin(!isLogin)}
             style={{ cursor: "pointer", color: "blue", fontWeight: "bold" }}
           >
             {isLogin ? "Create an account" : "Log in"}
