@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { OAuthConfig } from "../configurations/configuration";
-import { getToken } from "../services/localStorageService";
+import { getToken, setToken } from "../services/localStorageService";
 import "../Style/LogIn.css";
 
 const Register = forwardRef(function Register(props, ref) {
@@ -36,8 +36,8 @@ const Register = forwardRef(function Register(props, ref) {
     e.preventDefault();
 
     const endpoint = isLogin
-      ? "http://localhost:8081/api/auth/login"
-      : "http://localhost:8081/api/auth/register";
+      ? "http://localhost:8081/api/auth/token"
+      : "http://localhost:8081/api/users";
 
     const payload = isLogin
       ? { email: formData.email, password: formData.password }
@@ -52,23 +52,28 @@ const Register = forwardRef(function Register(props, ref) {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        alert(data.message || "Authentication failed");
+      // MỚI: Dựa vào ApiResponse chuẩn của Backend (code 1000 là thành công)
+      if (data.code !== 1000) {
+        // Backend sẽ trả về câu thông báo trong data.message (ví dụ: "Sai mật khẩu")
+        alert(data.message || "Đã có lỗi xảy ra");
         return;
       }
 
       if (isLogin) {
-        localStorage.setItem("user", JSON.stringify(data));
+        // DÙNG SERVICE ĐỂ LƯU TOKEN
+        setToken(data.result.token);
+
+        alert("Đăng nhập thành công!");
         props?.onSuccess?.();
         ref?.current?.close();
         navigate("/");
       } else {
-        alert("Register success! Please login.");
-        setIsLogin(true);
+        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        setIsLogin(true); // Tự động chuyển về form Đăng nhập
       }
     } catch (err) {
       console.error(err);
-      alert("Cannot connect to server (8081)");
+      alert("Không thể kết nối đến Server. Vui lòng thử lại sau.");
     }
   };
 
@@ -79,7 +84,7 @@ const Register = forwardRef(function Register(props, ref) {
     const googleClientId = OAuthConfig.clientId;
 
     const targetUrl = `${authUrl}?redirect_uri=${encodeURIComponent(
-      callbackUrl
+      callbackUrl,
     )}&response_type=token&client_id=${googleClientId}&scope=openid%20email%20profile`;
 
     window.location.href = targetUrl;
