@@ -1,8 +1,9 @@
-import "../Style/Navbar.css" ; 
+
 import { useRef } from "react";
 import {Link} from "react-router-dom"
 import logo from "../public/logo_no_bg.png" ;  
-import LogIn  from "./LogIn";
+import Register  from "./Register";
+import "../Style/Navbar.css" ; 
 
 
 export default function Navbar() {
@@ -13,13 +14,16 @@ export default function Navbar() {
     return (
         <>
         <nav className="navbar">
-            <LogIn ref={dialog}></LogIn>
+            <Register ref={dialog}></Register>
             <h1 className="logo"><img src={logo}></img></h1>
             <ul>
-                <li><Link to="/" id="router-link">Home</Link></li>
+                <li><Link to="../" id="router-link">Home</Link></li>
                 <li><Link to="../Page/About" id="router-link">About</Link></li>
                 <li><Link to="../Page/Event" id="router-link">Events</Link></li>
                 <li><Link to="../Page/Tradition" id="router-link">Traditons</Link></li>
+                <li><Link to="../Page/RevenueDashboard" id="router-link">RevenueDashboard</Link></li>
+                <li><Link to="../Page/ProfilePage" id="router-link">ProfileChange</Link></li>
+
             </ul>
             <button className="Register" onClick={handleClick}>Login / SignUp</button>       
         </nav>

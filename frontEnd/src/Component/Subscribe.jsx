@@ -1,4 +1,5 @@
-import "../Style/Subscribe.css" ; 
+import "../Style/Subscribe.css" ;  
+
 
 
 export default function Subscribe() {

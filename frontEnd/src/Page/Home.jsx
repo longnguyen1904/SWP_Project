@@ -8,11 +8,11 @@ import FilterList from "../Component/FilterList";
 
 
 
-export default function HomePage() {
+export default function Home() {
   return (
     <div className="app snow">
       <Hero />
-      <FilterList/>
+      <FilterList />
       <Events />
       <Traditions />
       <Subscribe />
