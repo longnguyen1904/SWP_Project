@@ -1,10 +1,14 @@
 package com.tallt.marketplace.controller;
 
 import com.tallt.marketplace.constant.MessageConstant;
+import com.tallt.marketplace.dto.AuthResponse;
 import com.tallt.marketplace.dto.LoginRequest;
 import com.tallt.marketplace.dto.RegisterRequest;
 import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.service.AuthService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,26 +20,18 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
-
-    // POST /api/auth/login
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        User user = authService.login(request);
-        if (user != null) {
-            return ResponseEntity.ok(user);
+    public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) { // Thêm @Valid
+        AuthResponse response = authService.login(request);
+        if (response != null) {
+            return ResponseEntity.ok(response);
         } else {
-            // Trả về message từ Constant
-            return ResponseEntity
-                    .status(401)
-                    .body(Map.of("message", MessageConstant.LOGIN_FAILED));
-
+            return ResponseEntity.status(401).body(Map.of("message", MessageConstant.LOGIN_FAILED));
         }
     }
 
-
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        // Nếu có lỗi (trùng email...), ExceptionHandler sẽ bắt và trả về lỗi 400
+    public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) { // Thêm @Valid
         return ResponseEntity.ok(authService.register(request));
     }
 }

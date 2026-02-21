@@ -1,10 +1,12 @@
 package com.tallt.marketplace.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.tallt.marketplace.constant.MessageConstant;
 import com.tallt.marketplace.constant.RoleConstant;
+import com.tallt.marketplace.dto.AuthResponse;
 import com.tallt.marketplace.dto.LoginRequest;
 import com.tallt.marketplace.dto.RegisterRequest;
 import com.tallt.marketplace.entity.Role;
@@ -22,41 +24,58 @@ public class AuthService {
     @Autowired
     private RoleRepository roleRepository;
 
-    // login
-    public User login(LoginRequest request) {
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public AuthResponse login(LoginRequest request) {
+
         User user = userRepository.findByEmail(request.getEmail());
-        if (user != null && user.getPasswordHash().equals(request.getPassword())) {
-            return user;
+
+        if (user != null && passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            return new AuthResponse(
+                    user.getEmail(),
+                    user.getFullName(),
+                    user.getRole().getRoleName(),
+                    "DUMMY-TOKEN"); // Sau này thay bằng JWT thật
         }
-        return null;
+
+        throw new AppException(MessageConstant.INVALID_CREDENTIALS);
     }
 
-    // register
-    public User register(RegisterRequest request) {
-        // 1. Kiểm tra email trùng
+    public AuthResponse register(RegisterRequest request) {
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AppException(MessageConstant.EMAIL_ALREADY_EXISTS);
         }
 
-        // 2. Lấy Role
-        int roleId = (request.getRoleID() != null) ? request.getRoleID() : RoleConstant.CUSTOMER;
+        int roleId = (request.getRoleID() != null)
+                ? request.getRoleID()
+                : RoleConstant.CUSTOMER;
 
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new AppException(MessageConstant.ROLE_NOT_FOUND));
 
-        // 3. Tạo User
         User newUser = new User();
         newUser.setEmail(request.getEmail());
-        newUser.setPasswordHash(request.getPassword());
+        newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         newUser.setFullName(request.getFullName());
         newUser.setRole(role);
         newUser.setIsActive(true);
-    String username = request.getUsername();
-    if (username == null || username.isBlank()) {
-        username = request.getEmail().split("@")[0];
-    }
 
-    newUser.setUsername(username);   // ⭐ DÒNG QUAN TRỌNG
-        return userRepository.save(newUser);
+        // Username: nếu không nhập thì lấy phần trước @
+        String username = request.getUsername();
+        if (username == null || username.isBlank()) {
+            username = request.getEmail().split("@")[0];
+        }
+        newUser.setUsername(username);
+
+        User savedUser = userRepository.save(newUser);
+
+        return new AuthResponse(
+                savedUser.getEmail(),
+                savedUser.getFullName(),
+                role.getRoleName(),
+                null
+        );
     }
 }
