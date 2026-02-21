@@ -25,19 +25,22 @@ public class AuthService {
     private PasswordEncoder passwordEncoder; // Inject Bean vừa tạo
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail());
+    User user = userRepository.findByEmail(request.getEmail());
 
-        // Dùng passwordEncoder.matches(raw, hash) để so sánh
-        if (user != null && passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            // Mapping sang DTO, KHÔNG trả về entity User gốc
-            return new AuthResponse(
-                    user.getEmail(),
-                    user.getFullName(),
-                    user.getRole().getRoleName(),
-                    "DUMMY-TOKEN-HOAC-JWT");
-        }
-        return null;
+    if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        throw new AppException("Invalid email or password");
     }
+
+    // 👉 tạo token phiên đăng nhập
+    String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
+
+    return new AuthResponse(
+            user.getEmail(),
+            user.getFullName(),
+            user.getRole().getRoleName(),
+            token
+    );
+}
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
