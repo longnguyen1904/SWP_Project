@@ -1,5 +1,8 @@
 package com.tallt.marketplace.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.tallt.marketplace.constant.MessageConstant;
 import com.tallt.marketplace.constant.RoleConstant;
 import com.tallt.marketplace.dto.AuthResponse;
@@ -61,6 +64,10 @@ public class AuthService {
         newUser.setFullName(request.getFullName());
         newUser.setRole(role);
         newUser.setIsActive(true);
+    String username = request.getUsername();
+    if (username == null || username.isBlank()) {
+        username = request.getEmail().split("@")[0];
+    }
 
         User savedUser = userRepository.save(newUser);
 
