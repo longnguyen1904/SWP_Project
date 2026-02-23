@@ -20,8 +20,3 @@ spring:
 
 server:
   port: 8081
-
-# Cấu hình JWT tự quản (Nimbus). Secret key phải đủ dài cho HS512 (tối thiểu 64 ký tự).
-jwt:
-  signerKey: "DayLaMotChuoiBiMatRatDaiVaPhucTapDeMaHoaTokenChuyenDungChoProjectMarketplaceNhom5"
-  valid-duration: 3600  # Thời gian sống token: 3600 giây = 1 tiếng
