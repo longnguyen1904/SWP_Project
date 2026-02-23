@@ -3,9 +3,9 @@ spring:
     name: marketplace
   datasource:
     # Thêm ?createDatabaseIfNotExist=true để tự tạo DB nếu chưa có
-    url: jdbc:mysql://localhost:3307/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+    url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: "root"
+    password: "root"
   jpa:
     hibernate:
       ddl-auto: update
