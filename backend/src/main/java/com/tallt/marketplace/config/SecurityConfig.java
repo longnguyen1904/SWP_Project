@@ -10,6 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -18,10 +19,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF để test Postman/React dễ dàng
-                .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // Cho phép tất cả request (Tạm thời để làm chức năng Auth)
-                );
+            .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF để test Postman/React
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().permitAll() // Tạm thời cho phép tất cả request
+            );
+
         return http.build();
     }
 }

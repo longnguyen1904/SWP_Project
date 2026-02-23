@@ -10,18 +10,19 @@ export default function Authenticate() {
   const [isLoggedin, setIsLoggedin] = useState(false);
 
   useEffect(() => {
-    const accessTokenRegex = /access_token=([^&]+)/;
-    const isMatch = window.location.href.match(accessTokenRegex);
+  const hash = window.location.hash;
+  const params = new URLSearchParams(hash.replace("#", ""));
+  const accessToken = params.get("access_token");
 
-    if (isMatch) {
-      const accessToken = isMatch[1];
+  if (accessToken) {
+    console.log("Token:", accessToken);
 
-      console.log("Token: ", accessToken);
-
-      setToken(accessToken);
-      setIsLoggedin(true);
-    }      
-  }, []);
+    setToken(accessToken);
+    window.dispatchEvent(new Event("authChanged"));
+    window.history.replaceState({}, document.title, "/");
+    setIsLoggedin(true);
+  }
+}, []);
 
   useEffect(() => {
     if (isLoggedin) {

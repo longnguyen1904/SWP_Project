@@ -2,6 +2,6 @@
 
 
 export default function Events(){
-   return(<div> <a> vai lon luon day la trang events </a></div>) 
+   return(<div> <a> day la trang events </a></div>) 
 
 }

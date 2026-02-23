@@ -1,5 +1,9 @@
 package com.tallt.marketplace.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.tallt.marketplace.constant.MessageConstant;
 import com.tallt.marketplace.constant.RoleConstant;
 import com.tallt.marketplace.dto.AuthResponse;
@@ -10,9 +14,6 @@ import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.RoleRepository;
 import com.tallt.marketplace.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
@@ -25,26 +26,30 @@ public class AuthService {
     private PasswordEncoder passwordEncoder; // Inject Bean vừa tạo
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail());
+    User user = userRepository.findByEmail(request.getEmail());
 
-        // Dùng passwordEncoder.matches(raw, hash) để so sánh
-        if (user != null && passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            // Mapping sang DTO, KHÔNG trả về entity User gốc
-            return new AuthResponse(
-                    user.getEmail(),
-                    user.getFullName(),
-                    user.getRole().getRoleName(),
-                    "DUMMY-TOKEN-HOAC-JWT");
-        }
-        return null;
+    if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        throw new AppException("Invalid email or password");
     }
+
+    // 👉 tạo token phiên đăng nhập
+    String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
+
+    return new AuthResponse(
+            user.getEmail(),
+            user.getFullName(),
+            user.getRole().getRoleName(),
+            token
+    );
+}
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AppException(MessageConstant.EMAIL_ALREADY_EXISTS);
         }
 
-        int roleId = (request.getRoleID() != null) ? request.getRoleID() : RoleConstant.CUSTOMER;
+        Integer roleIdWrapper = request.getRoleID();
+        int roleId = (roleIdWrapper != null) ? roleIdWrapper : RoleConstant.CUSTOMER;
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new AppException(MessageConstant.ROLE_NOT_FOUND));
 
@@ -58,6 +63,14 @@ public class AuthService {
         newUser.setFullName(request.getFullName());
         newUser.setRole(role);
         newUser.setIsActive(true);
+
+        // Ensure username value is used
+        String username = request.getUsername();
+        if (username == null || username.isBlank()) {
+            username = request.getEmail().split("@")[0];
+        }
+
+        newUser.setUsername(username);
 
         User savedUser = userRepository.save(newUser);
 

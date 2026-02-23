@@ -1,8 +1,16 @@
 package com.tallt.marketplace.entity;
 
-import jakarta.persistence.*;
-import lombok.Data;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
 @Table(name = "Users")
@@ -15,15 +23,15 @@ public class User {
 
     @Column(name = "Email", unique = true, nullable = false)
     private String email;
-    
-    @Column(name = "Username", unique = true, nullable = false)
-    private String username;
 
     @Column(name = "PasswordHash", nullable = false)
     private String passwordHash;
 
     @Column(name = "FullName")
     private String fullName;
+
+    @Column(name = "Username", unique = true, nullable = false)
+    private String username;
 
     @ManyToOne
     @JoinColumn(name = "RoleID", nullable = false)
@@ -34,4 +42,36 @@ public class User {
 
     @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public Integer getUserID() {
+        return userID;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 }
