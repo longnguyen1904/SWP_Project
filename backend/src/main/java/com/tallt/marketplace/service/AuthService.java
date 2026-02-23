@@ -1,6 +1,7 @@
 package com.tallt.marketplace.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.tallt.marketplace.constant.MessageConstant;
@@ -13,9 +14,6 @@ import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.RoleRepository;
 import com.tallt.marketplace.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
@@ -50,7 +48,8 @@ public class AuthService {
             throw new AppException(MessageConstant.EMAIL_ALREADY_EXISTS);
         }
 
-        int roleId = (request.getRoleID() != null) ? request.getRoleID() : RoleConstant.CUSTOMER;
+        Integer roleIdWrapper = request.getRoleID();
+        int roleId = (roleIdWrapper != null) ? roleIdWrapper : RoleConstant.CUSTOMER;
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new AppException(MessageConstant.ROLE_NOT_FOUND));
 
@@ -64,10 +63,14 @@ public class AuthService {
         newUser.setFullName(request.getFullName());
         newUser.setRole(role);
         newUser.setIsActive(true);
-    String username = request.getUsername();
-    if (username == null || username.isBlank()) {
-        username = request.getEmail().split("@")[0];
-    }
+
+        // Ensure username value is used
+        String username = request.getUsername();
+        if (username == null || username.isBlank()) {
+            username = request.getEmail().split("@")[0];
+        }
+
+        newUser.setUsername(username);
 
         User savedUser = userRepository.save(newUser);
 

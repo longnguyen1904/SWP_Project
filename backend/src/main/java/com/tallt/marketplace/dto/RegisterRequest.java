@@ -19,4 +19,8 @@ public class RegisterRequest {
     private String fullName;
 
     private Integer roleID;
+
+    public String getUsername() {
+        return null; // Placeholder implementation, adjust as needed
+    }
 }

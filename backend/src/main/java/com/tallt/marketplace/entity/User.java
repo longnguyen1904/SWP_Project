@@ -20,19 +20,18 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "UserID")
     private Integer userID;
-    @Column(name = "Username", nullable = false, unique = true)
-    private String username;
+
     @Column(name = "Email", unique = true, nullable = false)
     private String email;
-    
-    @Column(name = "Username", unique = true, nullable = false)
-    private String username;
 
     @Column(name = "PasswordHash", nullable = false)
     private String passwordHash;
 
     @Column(name = "FullName")
     private String fullName;
+
+    @Column(name = "Username", unique = true, nullable = false)
+    private String username;
 
     @ManyToOne
     @JoinColumn(name = "RoleID", nullable = false)
@@ -43,4 +42,36 @@ public class User {
 
     @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public Integer getUserID() {
+        return userID;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 }
