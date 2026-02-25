@@ -23,14 +23,15 @@ public class RevenueRepository {
             LocalDateTime to) {
 
         String sql = """
-            SELECT DATE(o.CreatedAt), SUM(o.TotalAmount)
-            FROM Orders o
-            JOIN Products p ON o.ProductID = p.ProductID
-            WHERE p.VendorID = :vendorId
-              AND o.PaymentStatus = 'Completed'
-              AND o.CreatedAt BETWEEN :from AND :to
-            GROUP BY DATE(o.CreatedAt)
-            ORDER BY DATE(o.CreatedAt)
+            SELECT DATE(wt.CreatedAt), SUM(wt.Amount)
+            FROM WalletTransactions wt
+            JOIN Wallets w ON wt.WalletID = w.WalletID
+            JOIN Vendors v ON w.UserID = v.UserID
+            WHERE v.VendorID = :vendorId
+              AND wt.Type = 'SALE_REVENUE'
+              AND wt.CreatedAt BETWEEN :from AND :to
+            GROUP BY DATE(wt.CreatedAt)
+            ORDER BY DATE(wt.CreatedAt)
         """;
 
         Query query = entityManager.createNativeQuery(sql);
@@ -48,12 +49,13 @@ public class RevenueRepository {
             LocalDateTime to) {
 
         String sql = """
-            SELECT SUM(o.TotalAmount), COUNT(o.OrderID)
-            FROM Orders o
-            JOIN Products p ON o.ProductID = p.ProductID
-            WHERE p.VendorID = :vendorId
-              AND o.PaymentStatus = 'Completed'
-              AND o.CreatedAt BETWEEN :from AND :to
+            SELECT COALESCE(SUM(wt.Amount), 0), COUNT(wt.TransactionID)
+            FROM WalletTransactions wt
+            JOIN Wallets w ON wt.WalletID = w.WalletID
+            JOIN Vendors v ON w.UserID = v.UserID
+            WHERE v.VendorID = :vendorId
+              AND wt.Type = 'SALE_REVENUE'
+              AND wt.CreatedAt BETWEEN :from AND :to
         """;
 
         Query query = entityManager.createNativeQuery(sql);

@@ -193,7 +193,7 @@ const [endDate, setEndDate] = useState(today); // <-- Cập nhật ở đây
                     <td style={{ padding: "14px 8px" }}>{row.date}</td>
                     <td style={{ padding: "14px 8px", textAlign: "right", fontWeight: "600" }}>${Number(row.revenue).toLocaleString()}</td>
                     <td style={{ padding: "14px 8px", textAlign: "right", color: "#94a3b8" }}>
-                      {((Number(row.revenue) / totalRevenue) * 100).toFixed(1)}%
+                      {totalRevenue > 0 ? ((Number(row.revenue) / totalRevenue) * 100).toFixed(1) : "0.0"}%
                     </td>
                   </tr>
                 ))}

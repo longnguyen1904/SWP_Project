@@ -27,16 +27,17 @@ public class RevenueAnalyticsService {
 
         String sql = """
             SELECT 
-                DATE(o.CreatedAt) AS date,
-                SUM(oi.Price) AS revenue
-            FROM Orders o
-            JOIN OrderItems oi ON o.OrderID = oi.OrderID
-            JOIN Products p ON o.ProductID = p.ProductID
-            WHERE p.VendorID = ?
-              AND o.PaymentStatus = 'Completed'
-              AND o.CreatedAt BETWEEN ? AND ?
-            GROUP BY DATE(o.CreatedAt)
-            ORDER BY DATE(o.CreatedAt)
+                DATE(wt.CreatedAt) AS date,
+                SUM(wt.Amount) AS revenue
+            FROM WalletTransactions wt
+            JOIN Wallets w ON wt.WalletID = w.WalletID
+            JOIN Vendors v ON w.UserID = v.UserID
+            WHERE v.VendorID = ?
+              AND wt.Type = 'SALE_REVENUE'
+              AND wt.CreatedAt >= ?
+              AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
+            GROUP BY DATE(wt.CreatedAt)
+            ORDER BY DATE(wt.CreatedAt)
         """;
 
         return jdbcTemplate.queryForList(
@@ -57,13 +58,14 @@ public class RevenueAnalyticsService {
     ) {
 
         String sql = """
-            SELECT COALESCE(SUM(oi.Price), 0)
-            FROM Orders o
-            JOIN OrderItems oi ON o.OrderID = oi.OrderID
-            JOIN Products p ON o.ProductID = p.ProductID
-            WHERE p.VendorID = ?
-              AND o.PaymentStatus = 'Completed'
-              AND o.CreatedAt BETWEEN ? AND ?
+            SELECT COALESCE(SUM(wt.Amount), 0)
+            FROM WalletTransactions wt
+            JOIN Wallets w ON wt.WalletID = w.WalletID
+            JOIN Vendors v ON w.UserID = v.UserID
+            WHERE v.VendorID = ?
+              AND wt.Type = 'SALE_REVENUE'
+              AND wt.CreatedAt >= ?
+              AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
         """;
 
         return jdbcTemplate.queryForObject(
@@ -87,13 +89,16 @@ public class RevenueAnalyticsService {
         String sql = """
             SELECT 
                 p.ProductName AS productName,
-                SUM(oi.Price) AS revenue
-            FROM Orders o
-            JOIN OrderItems oi ON o.OrderID = oi.OrderID
+                SUM(wt.Amount) AS revenue
+            FROM WalletTransactions wt
+            JOIN Wallets w ON wt.WalletID = w.WalletID
+            JOIN Vendors v ON w.UserID = v.UserID
+            JOIN Orders o ON wt.ReferenceID = o.OrderID
             JOIN Products p ON o.ProductID = p.ProductID
-            WHERE p.VendorID = ?
-              AND o.PaymentStatus = 'Completed'
-              AND o.CreatedAt BETWEEN ? AND ?
+            WHERE v.VendorID = ?
+              AND wt.Type = 'SALE_REVENUE'
+              AND wt.CreatedAt >= ?
+              AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
             GROUP BY p.ProductID, p.ProductName
             ORDER BY revenue DESC
             LIMIT 5
