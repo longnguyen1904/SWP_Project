@@ -26,13 +26,19 @@ function AdminReview() {
       const text = await res.text();
       if (!res.ok) throw new Error(text);
 
-      const updated = await fetch("http://localhost:8081/api/admin/review").then(
-        (res) => res.json()
-      );
+      const updated = await fetch("http://localhost:8081/api/admin/review")
+        .then((res) => res.json());
+
       setProducts(updated);
 
-      setMessage(text.includes("approved") ? "Product approved successfully!" : "Product rejected due to security risks!");
-      setMessageType(text.includes("approved") ? "success" : "error");
+      setMessage(
+        text.includes("approved")
+          ? "Product approved successfully!"
+          : "Product rejected due to security risks!"
+      );
+      setMessageType(
+        text.includes("approved") ? "success" : "error"
+      );
     } catch (error) {
       setMessage("Error reviewing product!");
       setMessageType("error");
@@ -53,7 +59,6 @@ function AdminReview() {
     }
   };
 
-  // Màu sắc hiện đại hơn
   const colors = {
     bg: "#0f172a",
     card: "#1e293b",
@@ -67,27 +72,33 @@ function AdminReview() {
 
   const statusStyle = (status) => {
     switch (status) {
-      case "APPROVED": return { color: colors.success, bg: "rgba(34, 197, 94, 0.1)" };
-      case "REJECTED": return { color: colors.error, bg: "rgba(239, 68, 68, 0.1)" };
-      default: return { color: colors.warning, bg: "rgba(245, 158, 11, 0.1)" };
+      case "APPROVED":
+        return { color: colors.success, bg: "rgba(34, 197, 94, 0.1)" };
+      case "REJECTED":
+        return { color: colors.error, bg: "rgba(239, 68, 68, 0.1)" };
+      default:
+        return { color: colors.warning, bg: "rgba(245, 158, 11, 0.1)" };
     }
   };
 
   return (
-    <div style={{ 
-      padding: "40px 20px", 
-      backgroundColor: colors.bg, 
-      minHeight: "100vh", 
+    <div style={{
+      padding: "40px 20px",
+      backgroundColor: colors.bg,
+      minHeight: "100vh",
       fontFamily: "'Inter', sans-serif",
-      color: colors.textMain 
+      color: colors.textMain
     }}>
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         <header style={{ marginBottom: "30px" }}>
-          <h2 style={{ fontSize: "28px", fontWeight: "700", margin: 0 }}>Product Review</h2>
-          <p style={{ color: colors.textMuted, marginTop: "8px" }}>Security scan and manual approval dashboard</p>
+          <h2 style={{ fontSize: "28px", fontWeight: "700", margin: 0 }}>
+            Product Review
+          </h2>
+          <p style={{ color: colors.textMuted, marginTop: "8px" }}>
+            Security scan and manual approval dashboard
+          </p>
         </header>
 
-        {/* Thông báo (Toast-like) */}
         {message && (
           <div style={{
             padding: "16px 20px",
@@ -95,23 +106,44 @@ function AdminReview() {
             marginBottom: "25px",
             fontSize: "14px",
             fontWeight: "500",
-            border: `1px solid ${statusStyle(messageType === "error" ? "REJECTED" : messageType === "success" ? "APPROVED" : "PENDING").color}`,
-            backgroundColor: statusStyle(messageType === "error" ? "REJECTED" : messageType === "success" ? "APPROVED" : "PENDING").bg,
-            color: statusStyle(messageType === "error" ? "REJECTED" : messageType === "success" ? "APPROVED" : "PENDING").color,
-            transition: "all 0.3s ease"
+            border: `1px solid ${statusStyle(
+              messageType === "error"
+                ? "REJECTED"
+                : messageType === "success"
+                ? "APPROVED"
+                : "PENDING"
+            ).color}`,
+            backgroundColor: statusStyle(
+              messageType === "error"
+                ? "REJECTED"
+                : messageType === "success"
+                ? "APPROVED"
+                : "PENDING"
+            ).bg,
+            color: statusStyle(
+              messageType === "error"
+                ? "REJECTED"
+                : messageType === "success"
+                ? "APPROVED"
+                : "PENDING"
+            ).color,
           }}>
             {messageType === "loading" && "⏳ "} {message}
           </div>
         )}
 
-        <div style={{ 
-          backgroundColor: colors.card, 
-          borderRadius: "16px", 
-          overflow: "hidden", 
+        <div style={{
+          backgroundColor: colors.card,
+          borderRadius: "16px",
+          overflow: "hidden",
           boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
           border: "1px solid #334155"
         }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <table style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            textAlign: "left"
+          }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #334155" }}>
                 <th style={thStyle}>ID</th>
@@ -119,27 +151,31 @@ function AdminReview() {
                 <th style={thStyle}>Vendor ID</th>
                 <th style={thStyle}>Price</th>
                 <th style={thStyle}>Security Status</th>
+                <th style={thStyle}>Rejected Note</th>
                 <th style={thStyle}>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {products.map((p) => {
                 const status = getStatus(p.scanStatus);
                 const style = statusStyle(status);
 
                 return (
-                  <tr key={p.productID} style={{ borderBottom: "1px solid #334155", transition: "0.2s" }} className="table-row">
+                  <tr key={p.productID} style={{ borderBottom: "1px solid #334155" }}>
                     <td style={tdStyle}>#{p.productID}</td>
-                    <td style={{ ...tdStyle, fontWeight: "600" }}>{p.productName}</td>
+                    <td style={{ ...tdStyle, fontWeight: "600" }}>
+                      {p.productName}
+                    </td>
                     <td style={tdStyle}>{p.vendorID}</td>
                     <td style={tdStyle}>${p.basePrice}</td>
+
                     <td style={tdStyle}>
                       <span style={{
                         padding: "4px 12px",
                         borderRadius: "6px",
                         fontSize: "12px",
                         fontWeight: "700",
-                        letterSpacing: "0.5px",
                         backgroundColor: style.bg,
                         color: style.color,
                         border: `1px solid ${style.color}`
@@ -147,6 +183,14 @@ function AdminReview() {
                         {status}
                       </span>
                     </td>
+
+                    {/* ✅ NEW COLUMN */}
+                    <td style={tdStyle}>
+                      {status === "REJECTED" && p.rejectionNote
+                        ? p.rejectionNote
+                        : "-"}
+                    </td>
+
                     <td style={tdStyle}>
                       {status === "PENDING" ? (
                         <button
@@ -156,17 +200,26 @@ function AdminReview() {
                             padding: "8px 16px",
                             borderRadius: "8px",
                             border: "none",
-                            backgroundColor: loadingId === p.productID ? "#475569" : colors.accent,
+                            backgroundColor:
+                              loadingId === p.productID
+                                ? "#475569"
+                                : colors.accent,
                             color: "#000",
                             fontWeight: "bold",
-                            cursor: loadingId === p.productID ? "not-allowed" : "pointer",
-                            transition: "transform 0.2s",
+                            cursor:
+                              loadingId === p.productID
+                                ? "not-allowed"
+                                : "pointer"
                           }}
                         >
-                          {loadingId === p.productID ? "Scanning..." : "Scan & Review"}
+                          {loadingId === p.productID
+                            ? "Scanning..."
+                            : "Scan & Review"}
                         </button>
                       ) : (
-                        <span style={{ color: colors.textMuted, fontSize: "13px" }}>Completed</span>
+                        <span style={{ color: colors.textMuted, fontSize: "13px" }}>
+                          Completed
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -174,8 +227,13 @@ function AdminReview() {
               })}
             </tbody>
           </table>
+
           {products.length === 0 && (
-            <div style={{ padding: "40px", textAlign: "center", color: colors.textMuted }}>
+            <div style={{
+              padding: "40px",
+              textAlign: "center",
+              color: colors.textMuted
+            }}>
               No products pending review.
             </div>
           )}

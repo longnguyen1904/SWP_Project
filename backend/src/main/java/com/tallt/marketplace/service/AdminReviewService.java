@@ -20,7 +20,9 @@ public class AdminReviewService {
     private final ProductVersionRepository versionRepository;
     private final VirusTotalService virusTotalService;
 
-
+    // =========================
+    // LẤY DANH SÁCH REVIEW
+    // =========================
     public List<AdminProductReviewDTO> getAllProductsForReview() {
 
         List<Product> products = productRepository.findAll();
@@ -28,9 +30,9 @@ public class AdminReviewService {
         return products.stream().map(product -> {
 
             List<ProductVersion> versions =
-                    versionRepository.findByProduct_ProductID(product.getProductID());
+                    versionRepository.findByProductID(product.getProductID());
 
-            String status = "PENDING";
+            String scanStatus = "PENDING";
 
             if (versions != null && !versions.isEmpty()) {
                 ProductVersion latest = versions.stream()
@@ -38,7 +40,7 @@ public class AdminReviewService {
                         .orElse(null);
 
                 if (latest != null && latest.getScanStatus() != null) {
-                    status = latest.getScanStatus();
+                    scanStatus = latest.getScanStatus();
                 }
             }
 
@@ -47,13 +49,18 @@ public class AdminReviewService {
                     product.getProductName(),
                     product.getVendorID(),
                     product.getBasePrice() != null ? product.getBasePrice().doubleValue() : null,
-                    status
+                    scanStatus,
+                    product.getStatus(),
+                    product.getRejectionNote()
             );
 
         }).toList();
     }
 
 
+    // =========================
+    // REVIEW PRODUCT (SCAN)
+    // =========================
     @Transactional
     public String reviewProduct(Integer productId) {
 
@@ -61,7 +68,7 @@ public class AdminReviewService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
         List<ProductVersion> versions =
-                versionRepository.findByProduct_ProductID(productId);
+                versionRepository.findByProductID(productId);
 
         if (versions == null || versions.isEmpty()) {
             throw new RuntimeException("No version uploaded");
@@ -71,17 +78,31 @@ public class AdminReviewService {
                 .max(Comparator.comparing(ProductVersion::getCreatedAt))
                 .orElseThrow(() -> new RuntimeException("Cannot find latest version"));
 
+        // ===== CALL VIRUSTOTAL =====
         boolean isMalicious = virusTotalService
                 .isFileMalicious(latestVersion.getFileUrl());
 
         if (isMalicious) {
+
+            // Update version
             latestVersion.setScanStatus("MALICIOUS");
             versionRepository.save(latestVersion);
+
+            // Update product
+            product.setStatus("REJECTED");
+            product.setRejectionNote("Detected malware by VirusTotal");
+            productRepository.save(product);
+
             return "Product rejected due to malware.";
         }
 
+        // CLEAN
         latestVersion.setScanStatus("CLEAN");
         versionRepository.save(latestVersion);
+
+        product.setStatus("APPROVED");
+        product.setRejectionNote(null);
+        productRepository.save(product);
 
         return "Product approved successfully.";
     }

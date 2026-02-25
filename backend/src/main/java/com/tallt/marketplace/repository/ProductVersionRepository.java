@@ -8,7 +8,7 @@ import java.util.List;
 public interface ProductVersionRepository extends JpaRepository<ProductVersion, Integer> {
 
     // Lấy tất cả version của 1 product
-    List<ProductVersion> findByProduct_ProductID(Integer productID);
+    List<ProductVersion> findByProductID(Integer productID);
 
     // Lấy version theo scan status
     List<ProductVersion> findByScanStatus(String scanStatus);

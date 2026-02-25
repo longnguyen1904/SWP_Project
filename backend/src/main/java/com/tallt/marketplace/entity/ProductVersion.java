@@ -14,23 +14,29 @@ public class ProductVersion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "VersionID")
     private Integer versionID;
 
+    @Column(name = "ProductID", nullable = false)
+    private Integer productID;
+
+    @Column(name = "ScanStatus")
+    private String scanStatus = "PENDING";
+
+    @Column(name = "VersionNumber")
     private String versionNumber;
 
+    @Column(name = "FileUrl", nullable = false)
     private String fileUrl;
 
     @Lob
+    @Column(name = "ReleaseNotes")
     private String releaseNotes;
 
-    @Column(name = "CreatedAt")
+    @Column(name = "CreatedAt", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "ScanStatus")
-    private String scanStatus; // PENDING / CLEAN / MALICIOUS
-
     @ManyToOne
-    @JoinColumn(name = "ProductID")
-    @JsonIgnore
+    @JoinColumn(name = "ProductID", insertable = false, updatable = false)
     private Product product;
 }

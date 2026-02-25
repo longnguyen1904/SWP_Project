@@ -1,52 +1,60 @@
-    package com.tallt.marketplace.entity;
+package com.tallt.marketplace.entity;
 
-    import jakarta.persistence.*;
-    import lombok.Getter;
-    import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
-    import java.math.BigDecimal;
-    import java.time.LocalDateTime;
-    import java.util.List;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
-    @Entity
-    @Table(name = "Products")
-    @Getter
-    @Setter
-    public class Product {
+@Entity
+@Table(name = "Products")
+@Getter
+@Setter
+public class Product {
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        @Column(name = "ProductID")
-        private Integer productID;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ProductID")
+    private Integer productID;
 
-        @Column(name = "VendorID", nullable = false)
-        private Integer vendorID;
+    // ====== FOREIGN KEY ======
+    @Column(name = "VendorID", nullable = false)
+    private Integer vendorID;
 
-        @Column(name = "CategoryID", nullable = false)
-        private Integer categoryID;
+    @Column(name = "CategoryID", nullable = false)
+    private Integer categoryID;
 
-        @Column(name = "ProductName", nullable = false)
-        private String productName;
+    // ====== BASIC INFO ======
+    @Column(name = "ProductName", nullable = false)
+    private String productName;
 
-        @Lob
-        @Column(name = "Description")
-        private String description;
+    @Lob
+    @Column(name = "Description")
+    private String description;
 
-        @Column(name = "BasePrice")
-        private BigDecimal basePrice;
+    @Column(name = "BasePrice")
+    private BigDecimal basePrice;
 
-        @Column(name = "IsApproved")
-        private Boolean isApproved = false;
+    // ====== NEW COLUMN (thay cho IsApproved) ======
+    @Column(name = "Status", nullable = false)
+    private String status = "DRAFT";
 
-        @Column(name = "CreatedAt")
-        private LocalDateTime createdAt;
+    @Lob
+    @Column(name = "RejectionNote")
+    private String rejectionNote;
 
-        @Column(name = "HasTrial")
-        private Boolean hasTrial = false;
+    @Column(name = "CreatedAt", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-        @Column(name = "TrialDurationDays")
-        private Integer trialDurationDays = 7;
+    @Column(name = "HasTrial")
+    private Boolean hasTrial = false;
 
-        @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-        private List<ProductVersion> versions;
-    }
+    @Column(name = "TrialDurationDays")
+    private Integer trialDurationDays = 7;
+
+    // ====== RELATION ======
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    private List<ProductVersion> versions;
+}
