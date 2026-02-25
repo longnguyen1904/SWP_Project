@@ -1,10 +1,19 @@
 package com.tallt.marketplace.exception;
 
 import com.tallt.marketplace.constant.MessageConstant;
+<<<<<<< HEAD
 import com.tallt.marketplace.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+=======
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+>>>>>>> a2a09c3a7a25716178ee1a006acc5464266ec17e
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -47,5 +56,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleUnwantedException(Exception e) {
         e.printStackTrace(); // In lỗi ra console để debug
         return ResponseEntity.status(500).body(ApiResponse.error(MessageConstant.SYSTEM_ERROR));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+        // Trả về map lỗi: key là tên trường, value là message lỗi
+        return ResponseEntity.badRequest().body(errors);
     }
 }

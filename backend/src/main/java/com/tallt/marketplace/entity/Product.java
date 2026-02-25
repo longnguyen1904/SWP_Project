@@ -1,4 +1,5 @@
 package com.tallt.marketplace.entity;
+<<<<<<< HEAD
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -54,4 +55,22 @@ public class Product {
     public enum ProductStatus {
         DRAFT, PENDING, APPROVED, REJECTED
     }
+=======
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "Products")
+public class Product {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer productID;
+
+    private Integer vendorID;
+    private String productName;
+>>>>>>> a2a09c3a7a25716178ee1a006acc5464266ec17e
 }

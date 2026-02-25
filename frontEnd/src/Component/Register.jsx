@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { OAuthConfig } from "../configurations/configuration";
 import { getToken } from "../services/localStorageService";
+import { setToken } from "../services/localStorageService";
 import "../Style/LogIn.css";
 
 const Register = forwardRef(function Register(props, ref) {
@@ -21,7 +22,7 @@ const Register = forwardRef(function Register(props, ref) {
     const accessToken = getToken();
     if (accessToken) {
       ref?.current?.close();
-      navigate("/");
+      
     }
   }, [navigate, ref]);
 
@@ -58,10 +59,12 @@ const Register = forwardRef(function Register(props, ref) {
       }
 
       if (isLogin) {
+        setToken(data.token);   // ⭐ QUAN TRỌNG
+        window.dispatchEvent(new Event("authChanged"));
         localStorage.setItem("user", JSON.stringify(data));
-        props?.onSuccess?.();
         ref?.current?.close();
         navigate("/");
+
       } else {
         alert("Register success! Please login.");
         setIsLogin(true);
