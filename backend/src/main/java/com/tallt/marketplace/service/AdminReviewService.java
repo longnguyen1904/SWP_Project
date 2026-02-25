@@ -58,9 +58,6 @@ public class AdminReviewService {
     }
 
 
-    // =========================
-    // REVIEW PRODUCT (SCAN)
-    // =========================
     @Transactional
     public String reviewProduct(Integer productId) {
 
