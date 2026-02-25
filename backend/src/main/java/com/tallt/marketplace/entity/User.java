@@ -26,6 +26,9 @@ public class User {
     @JoinColumn(name = "RoleID", nullable = false)
     private Role role;
 
+    @Column(name = "Username", unique = true, nullable = false)
+    private String username;
+
     @Column(name = "IsActive")
     private Boolean isActive = true;
 

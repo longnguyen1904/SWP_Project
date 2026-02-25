@@ -1,6 +1,7 @@
 spring:
   application:
     name: marketplace
+
   datasource:
     # Thêm ?createDatabaseIfNotExist=true để tự tạo DB nếu chưa có
     url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -17,6 +18,25 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        debug: false
+
+vnpay:
+  tmnCode: ${VNPAY_TMN_CODE:}
+  hashSecret: ${VNPAY_HASH_SECRET:}
+  payUrl: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  returnUrl: ${VNPAY_RETURN_URL:http://localhost:8081/api/checkout/vnpay-return}
 
 server:
   port: 8081
