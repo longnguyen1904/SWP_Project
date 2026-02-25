@@ -1,19 +1,10 @@
 package com.tallt.marketplace.exception;
 
 import com.tallt.marketplace.constant.MessageConstant;
-<<<<<<< HEAD
 import com.tallt.marketplace.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
-=======
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
->>>>>>> a2a09c3a7a25716178ee1a006acc5464266ec17e
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
