@@ -25,7 +25,6 @@ public class AdminReviewService {
         List<Product> products = productRepository.findAll();
 
         return products.stream().map(product -> {
-
             List<ProductVersion> versions =
                     versionRepository.findByProductID(product.getProductID());
 
