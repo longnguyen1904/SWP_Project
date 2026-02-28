@@ -20,9 +20,6 @@ public class AdminReviewService {
     private final ProductVersionRepository versionRepository;
     private final VirusTotalService virusTotalService;
 
-    // =========================
-    // LẤY DANH SÁCH REVIEW
-    // =========================
     public List<AdminProductReviewDTO> getAllProductsForReview() {
 
         List<Product> products = productRepository.findAll();
