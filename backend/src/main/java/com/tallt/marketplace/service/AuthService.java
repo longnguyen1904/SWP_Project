@@ -26,36 +26,33 @@ public class AuthService {
     private PasswordEncoder passwordEncoder; // Inject Bean vừa tạo
 
     public AuthResponse login(LoginRequest request) {
-    User user = userRepository.findByEmail(request.getEmail());
+        User user = userRepository.findByEmail(request.getEmail());
 
-    if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-        throw new AppException("Invalid email or password");
+        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new AppException("Invalid email or password");
+        }
+
+        // 👉 tạo token phiên đăng nhập
+        String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
+
+        return new AuthResponse(
+                user.getEmail(),
+                user.getFullName(),
+                user.getRole().getRoleName(),
+                token);
     }
-
-    // 👉 tạo token phiên đăng nhập
-    String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
-
-    return new AuthResponse(
-            user.getEmail(),
-            user.getFullName(),
-            user.getRole().getRoleName(),
-            token
-    );
-}
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AppException(MessageConstant.EMAIL_ALREADY_EXISTS);
         }
-
         Integer roleIdWrapper = request.getRoleID();
         int roleId = (roleIdWrapper != null) ? roleIdWrapper : RoleConstant.CUSTOMER;
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new AppException(MessageConstant.ROLE_NOT_FOUND));
-
         User newUser = new User();
         newUser.setEmail(request.getEmail());
-
+        
         // MÃ HÓA MẬT KHẨU TRƯỚC KHI LƯU
         newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         String generatedUsername = request.getEmail().split("@")[0];

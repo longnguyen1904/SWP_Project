@@ -56,5 +56,5 @@ public class Product {
 
     // ====== RELATION ======
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private List<ProductVersion> versions;
+    private List<ProductVersion> versions;                
 }

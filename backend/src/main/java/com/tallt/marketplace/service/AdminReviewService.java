@@ -27,7 +27,6 @@ public class AdminReviewService {
         return products.stream().map(product -> {
             List<ProductVersion> versions =
                     versionRepository.findByProductID(product.getProductID());
-
             String scanStatus = "PENDING";
 
             if (versions != null && !versions.isEmpty()) {
@@ -38,7 +37,7 @@ public class AdminReviewService {
                 if (latest != null && latest.getScanStatus() != null) {
                     scanStatus = latest.getScanStatus();
                 }
-            }
+            }           
 
             return new AdminProductReviewDTO(
                     product.getProductID(),

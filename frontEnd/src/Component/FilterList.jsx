@@ -21,8 +21,6 @@ const ITEMS = [
   { id: 14, name: "zxcsv Juice", type: "fruit" },
   { id: 15, name: "jjrtetqe Juice", type: "Drink" },
 
-  
-  
 ];
 
 export default function FilterList() {

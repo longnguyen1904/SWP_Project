@@ -18,7 +18,6 @@ export default function Navbar() {
   function handleLogout() {
     logOut();
     setLoggedIn(false);
-    
   }
 
   useEffect(() => {
@@ -44,7 +43,6 @@ export default function Navbar() {
                 <li><Link to="../Page/RevenueDashboard" id="router-link">RevenueDashboard</Link></li>
                 <li><Link to="../Page/ProfilePage" id="router-link">ProfileChange</Link></li>
                 <li><Link to="../Page/AdminReview" id="router-link">Admin Review</Link></li>
-
             </ul>
 
         {loggedIn ? (
