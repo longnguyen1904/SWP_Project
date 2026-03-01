@@ -242,7 +242,7 @@ function AdminVendorManagement() {
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.02)"}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                   >
-                    <td style={tdStyle}>#{vendor.vendorID}</td>
+                    <td style={tdStyle}>{vendor.vendorID}</td>
                     <td style={{ ...tdStyle, fontWeight: "600", color: colors.textMain }}>
                       {vendor.companyName || "—"}
                     </td>

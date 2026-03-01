@@ -27,6 +27,11 @@ public class VendorManagementController {
         return vendorManagementService.getVendors(page, size, sortBy, direction, status, type);
     }
 
+    @GetMapping("/{id}")
+    public Vendor getVendorById(@PathVariable Integer id) {
+        return vendorManagementService.getVendorById(id);
+    }
+
     @PutMapping("/{id}/status")
     public Vendor updateVendorStatus(
             @PathVariable Integer id,
