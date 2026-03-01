@@ -9,7 +9,7 @@ import Authenticate from "./Page/Authenticate";
 import RevenueDashboard from "./Page/RevenueDashboard";
 import ProfilePage from "./Page/ProfilePage";
 import AdminReview from "./Page/AdminReview";
-
+import AdminVendorManagement from "./Page/AdminVendorManagement";
 export default function App() {
   return (
     <div className="app snow">
@@ -23,6 +23,7 @@ export default function App() {
         <Route path="/Page/RevenueDashboard" element={<RevenueDashboard/>} />
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />
         <Route path="/Page/AdminReview" element={<AdminReview/>} />
+        <Route path="/Page/AdminVendorManagement" element={<AdminVendorManagement/>} />
       </Routes>
       
     </div>
