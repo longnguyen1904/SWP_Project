@@ -9,7 +9,7 @@ import lombok.Data;
 public class Role {
     @Id
     @Column(name = "RoleID")
-    private Integer roleID; // 1: Admin, 2: Vendor, 3: Customer
+    private Integer roleID; 
 
     @Column(name = "RoleName")
     private String roleName;

@@ -23,18 +23,15 @@ public class VendorManagementController {
             @RequestParam(defaultValue = "asc") String direction,
             @RequestParam(required = false) VendorStatus status,
             @RequestParam(required = false) VendorType type) {
-        return vendorManagementService.getVendors(page, size, sortBy, direction, status, type);
-    }
 
-    @GetMapping("/{id}")
-    public Vendor getVendorById(@PathVariable Integer id) {
-        return vendorManagementService.getVendorById(id);
+        return vendorManagementService.getVendors(page, size, sortBy, direction, status, type);
     }
 
     @PutMapping("/{id}/status")
     public Vendor updateVendorStatus(
             @PathVariable Integer id,
-            @RequestParam Vendor.VendorStatus status) {
+            @RequestParam VendorStatus status) {
+
         return vendorManagementService.updateVendorStatus(id, status);
     }
 }
