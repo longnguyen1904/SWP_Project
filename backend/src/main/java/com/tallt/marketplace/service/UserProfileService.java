@@ -29,12 +29,10 @@ public void updateProfile(UpdateProfileRequest request) {
                 )
             );
 
-    // Update full name
     if (request.getFullName() != null && !request.getFullName().isBlank()) {
         user.setFullName(request.getFullName());
     }
 
-    // Update password
     if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
 
         if (request.getOldPassword() == null ||

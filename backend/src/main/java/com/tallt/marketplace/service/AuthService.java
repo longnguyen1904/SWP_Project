@@ -15,7 +15,7 @@ import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.RoleRepository;
 import com.tallt.marketplace.repository.UserRepository;
 
-@Service
+@Service     
 public class AuthService {
 
     @Autowired
@@ -76,5 +76,5 @@ public class AuthService {
                 savedUser.getFullName(),
                 role.getRoleName(),
                 null);
-    }
-}
+    }                             
+}                                                     
