@@ -6,6 +6,10 @@ import com.tallt.marketplace.entity.ProductVersion;
 import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.ProductVersionRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,40 +24,72 @@ public class AdminReviewService {
     private final ProductVersionRepository versionRepository;
     private final VirusTotalService virusTotalService;
 
-    public List<AdminProductReviewDTO> getAllProductsForReview() {
+    public Page<AdminProductReviewDTO> getAllProductsForReview(
+            String status,
+            String keyword,
+            Pageable pageable) {
 
-        List<Product> products = productRepository.findAll();
+        Page<Product> productPage;
 
-        return products.stream().map(product -> {
+        // ==== FILTER LOGIC ====
+        if (status != null && !status.isEmpty()
+                && keyword != null && !keyword.isEmpty()) {
 
-            List<ProductVersion> versions =
-                    versionRepository.findByProductID(product.getProductID());
+            productPage = productRepository
+                    .findByStatusAndProductNameContainingIgnoreCase(
+                            status, keyword, pageable);
 
-            String scanStatus = "PENDING";
+        } else if (status != null && !status.isEmpty()) {
 
-            if (versions != null && !versions.isEmpty()) {
-                ProductVersion latest = versions.stream()
-                        .max(Comparator.comparing(ProductVersion::getCreatedAt))
-                        .orElse(null);
+            productPage = productRepository
+                    .findByStatus(status, pageable);
 
-                if (latest != null && latest.getScanStatus() != null) {
-                    scanStatus = latest.getScanStatus();
-                }
-            }
+        } else if (keyword != null && !keyword.isEmpty()) {
 
-            return new AdminProductReviewDTO(
-                    product.getProductID(),
-                    product.getProductName(),
-                    product.getVendorID(),
-                    product.getBasePrice() != null ? product.getBasePrice().doubleValue() : null,
-                    scanStatus,
-                    product.getStatus(),
-                    product.getRejectionNote()
-            );
+            productPage = productRepository
+                    .findByProductNameContainingIgnoreCase(keyword, pageable);
 
-        }).toList();
+        } else {
+            productPage = productRepository.findAll(pageable);
+        }
+
+        // ==== MAP DTO ====
+        List<AdminProductReviewDTO> dtoList = productPage.getContent()
+                .stream()
+                .map(product -> {
+
+                    List<ProductVersion> versions = versionRepository.findByProductID(product.getProductID());
+
+                    String scanStatus = "PENDING";
+
+                    if (versions != null && !versions.isEmpty()) {
+                        ProductVersion latest = versions.stream()
+                                .max(Comparator.comparing(ProductVersion::getCreatedAt))
+                                .orElse(null);
+
+                        if (latest != null && latest.getScanStatus() != null) {
+                            scanStatus = latest.getScanStatus();
+                        }
+                    }
+
+                    return new AdminProductReviewDTO(
+                            product.getProductID(),
+                            product.getProductName(),
+                            product.getVendorID(),
+                            product.getBasePrice() != null
+                                    ? product.getBasePrice().doubleValue()
+                                    : null,
+                            scanStatus,
+                            product.getStatus(),
+                            product.getRejectionNote());
+
+                }).toList();
+
+        return new PageImpl<>(
+                dtoList,
+                pageable,
+                productPage.getTotalElements());
     }
-
 
     @Transactional
     public String reviewProduct(Integer productId) {
@@ -61,8 +97,7 @@ public class AdminReviewService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        List<ProductVersion> versions =
-                versionRepository.findByProductID(productId);
+        List<ProductVersion> versions = versionRepository.findByProductID(productId);
 
         if (versions == null || versions.isEmpty()) {
             throw new RuntimeException("No version uploaded");
