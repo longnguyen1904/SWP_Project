@@ -114,7 +114,14 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version> <!-- Cập nhật lên phiên bản mới nhất -->
                 <configuration>
-                    <release>21</release>
+                    <source>21</source>
+                    <target>21</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 

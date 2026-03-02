@@ -7,7 +7,8 @@ import Tradition from "./Page/Tradition";
 import Event from "./Page/Event";
 import Authenticate from "./Page/Authenticate";
 import RevenueDashboard from "./Page/RevenueDashboard";
-
+import ProfilePage from "./Page/ProfilePage";
+import AdminReview from "./Page/AdminReview";
 
 export default function App() {
   return (
@@ -20,7 +21,8 @@ export default function App() {
         <Route path="/Page/Event" element={<Event/>} />
         <Route path="/Page/Tradition" element={<Tradition/>} />
         <Route path="/Page/RevenueDashboard" element={<RevenueDashboard/>} />
-        
+        <Route path="/Page/ProfilePage" element={<ProfilePage />} />
+        <Route path="/Page/AdminReview" element={<AdminReview/>} />
       </Routes>
       
     </div>
