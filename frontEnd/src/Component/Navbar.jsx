@@ -6,10 +6,17 @@ import Register from "./Register";
 import "../Style/Navbar.css";
 import { isAuthenticated, logOut } from "../services/authService";
 
+// Giả sử có hàm kiểm tra quyền admin, ví dụ:
+function isAdmin() {
+  // TODO: Thay bằng logic thực tế lấy từ localStorage hoặc context
+  return localStorage.getItem("role") === "ADMIN";
+}
+
 export default function Navbar() {
   const dialog = useRef();
   
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
+  const [admin, setAdmin] = useState(isAdmin());
 
   function handleClick() {
     dialog.current.showModal();
@@ -22,7 +29,10 @@ export default function Navbar() {
   }
 
   useEffect(() => {
-    const updateAuth = () => setLoggedIn(isAuthenticated());
+    const updateAuth = () => {
+      setLoggedIn(isAuthenticated());
+      setAdmin(isAdmin());
+    };
     window.addEventListener("authChanged", updateAuth);
     return () => window.removeEventListener("authChanged", updateAuth);
   }, []);
@@ -33,20 +43,26 @@ export default function Navbar() {
         <Register ref={dialog}></Register>
 
         <h1 className="logo">
-          <img src={logo}></img>
+          <img src={logo} alt="logo" />
         </h1>
 
         <ul>
-                <li><Link to="../" id="router-link">Home</Link></li>
-                <li><Link to="../Page/About" id="router-link">About</Link></li>
-                <li><Link to="../Page/Event" id="router-link">Events</Link></li>
-                <li><Link to="../Page/Tradition" id="router-link">Traditons</Link></li>
-                <li><Link to="../Page/RevenueDashboard" id="router-link">RevenueDashboard</Link></li>
-                <li><Link to="../Page/ProfilePage" id="router-link">ProfileChange</Link></li>
-                <li><Link to="../Page/AdminVendorManagement" id="router-link">Admin Vendor Management</Link></li>
-                <li><Link to="../Page/AdminReview" id="router-link">Admin Review</Link></li>
-
-            </ul>
+          {admin ? (
+            <>
+              <li><Link to="../Page/AdminVendorManagement" id="router-link">Admin Vendor Management</Link></li>
+              <li><Link to="../Page/AdminReview" id="router-link">Admin Review</Link></li>
+            </>
+          ) : (
+            <>
+              <li><Link to="../" id="router-link">Home</Link></li>
+              <li><Link to="../Page/About" id="router-link">About</Link></li>
+              <li><Link to="../Page/Event" id="router-link">Events</Link></li>
+              <li><Link to="../Page/Tradition" id="router-link">Traditons</Link></li>
+              <li><Link to="../Page/RevenueDashboard" id="router-link">RevenueDashboard</Link></li>
+              <li><Link to="../Page/ProfilePage" id="router-link">ProfileChange</Link></li>
+            </>
+          )}
+        </ul>
 
         {loggedIn ? (
           <button className="Register" onClick={handleLogout}>
