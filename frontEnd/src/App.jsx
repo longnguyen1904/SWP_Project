@@ -24,6 +24,7 @@ export default function App() {
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />
         <Route path="/Page/AdminReview" element={<AdminReview/>} />
         <Route path="/Page/AdminVendorManagement" element={<AdminVendorManagement/>} />
+        <Route path="/Page/PurchasedProducts" element={<PurchasedProducts/>} />
       </Routes>
       
     </div>
