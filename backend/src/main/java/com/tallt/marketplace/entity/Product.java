@@ -19,14 +19,12 @@ public class Product {
     @Column(name = "ProductID")
     private Integer productID;
 
-    // ====== FOREIGN KEY ======
     @Column(name = "VendorID", nullable = false)
     private Integer vendorID;
 
     @Column(name = "CategoryID", nullable = false)
     private Integer categoryID;
 
-    // ====== BASIC INFO ======
     @Column(name = "ProductName", nullable = false)
     private String productName;
 
@@ -37,7 +35,6 @@ public class Product {
     @Column(name = "BasePrice")
     private BigDecimal basePrice;
 
-    // ====== NEW COLUMN (thay cho IsApproved) ======
     @Column(name = "Status", nullable = false)
     private String status = "DRAFT";
 

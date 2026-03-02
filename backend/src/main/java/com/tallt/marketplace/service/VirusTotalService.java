@@ -23,7 +23,6 @@ public class VirusTotalService {
 
         String analysisId = uploadFile(filePath);
 
-        // Đợi VirusTotal xử lý (Free API khá chậm)
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {

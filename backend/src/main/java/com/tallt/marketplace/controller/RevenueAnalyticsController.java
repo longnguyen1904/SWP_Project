@@ -40,7 +40,6 @@ public class RevenueAnalyticsController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate endDate
     ) {
-
         BigDecimal totalRevenue =
                 revenueService.getTotalRevenueByVendor(
                         vendorId, startDate, endDate);
@@ -105,7 +104,8 @@ public ResponseEntity<byte[]> exportRevenueCSV(
         @RequestParam
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         LocalDate endDate
-) {
+) 
+{
 
     List<Map<String, Object>> data =
             revenueService.getDailyRevenue(

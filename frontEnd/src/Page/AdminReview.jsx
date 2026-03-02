@@ -95,7 +95,6 @@ function AdminReview() {
             Product Review
           </h2>
           <p style={{ color: colors.textMuted, marginTop: "8px" }}>
-            Security scan and manual approval dashboard
           </p>
         </header>
 
