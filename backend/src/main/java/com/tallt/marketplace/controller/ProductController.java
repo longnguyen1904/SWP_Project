@@ -61,7 +61,6 @@ public class ProductController {
             @PathVariable Integer productId,
             @RequestParam(defaultValue = "6") int relatedSize) {
         ProductDetailResponse result = productService.getPublicProductDetail(productId, relatedSize);
-        System.out.println("Product Detail Page");
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
