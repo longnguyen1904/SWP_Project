@@ -74,10 +74,9 @@ export default function Navbar() {
             </div>
 
             <div className="dropdown-content">
-              <Link to="../Page/RevenueDashboard" id="router-link">RevenueDashboard</Link>
+              <Link to="../Page/Vendor" id="router-link">Vendor Dashboard</Link>
               <Link to="../Page/ProfilePage" id="router-link">ProfileChange</Link>
-              <Link to="../Page/AdminVendorManagement" id="router-link">Admin Vendor Management</Link>
-              <Link to="../Page/AdminReview" id="router-link">Admin Review</Link>
+              <Link to="../Page/Admin" id="router-link">Admin Dashboard</Link>
               <Link to="../Page/PurchasedProducts" id="router-link">PurchasedProducts</Link>
             </div>
           </div>
