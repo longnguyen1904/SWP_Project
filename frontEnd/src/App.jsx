@@ -10,6 +10,7 @@ import RevenueDashboard from "./Page/RevenueDashboard";
 import ProfilePage from "./Page/ProfilePage";
 import AdminReview from "./Page/AdminReview";
 import AdminVendorManagement from "./Page/AdminVendorManagement";
+import PurchasedProducts from "./Page/PurchasedProducts";
 export default function App() {
   return (
     <div className="app snow">

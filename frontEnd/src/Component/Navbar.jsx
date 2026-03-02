@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import logo from "../public/logo_no_bg.png";
 import Register from "./Register";
 import "../Style/Navbar.css";
+
 import { isAuthenticated, logOut } from "../services/authService";
 
 export default function Navbar() {

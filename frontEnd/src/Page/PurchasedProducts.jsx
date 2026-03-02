@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 export default function PurchasedProducts({ onReturnHome }) {
 
-  // ===== MOCK DATABASE =====
+  
   const purchasedProducts = [
     {
       id: 1,
