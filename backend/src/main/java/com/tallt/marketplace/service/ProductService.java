@@ -83,6 +83,7 @@ public class ProductService {
         product.setStatus(Product.ProductStatus.DRAFT);
         product.setHasTrial(request.getHasTrial() != null ? request.getHasTrial() : false);
         product.setTrialDurationDays(request.getTrialDurationDays() != null ? request.getTrialDurationDays() : 7);
+          System.out.println("Product Service");
         productRepository.save(product);
 
         // 5. Xử lý Tags
