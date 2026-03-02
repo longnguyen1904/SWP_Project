@@ -1,5 +1,6 @@
 import { useState } from "react";
-import "../Style/FilterList.css";
+import "../Style/FilterList.css" ; 
+
 
 const FILTERS = ["All", "Fruit", "Vegetable", "Drink"];
 
