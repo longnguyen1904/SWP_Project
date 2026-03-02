@@ -13,6 +13,7 @@ import AdminVendorManagement from "./Page/AdminVendorManagement";
 import PurchasedProducts from "./Page/PurchasedProducts";
 import AdminDashboard from "./Page/AdminDashboard";
 import VendorDashboard from "./Page/VendorDashboard";
+import CustomerDashboard from "./Page/CustomerDashboard";
 export default function App() {
   return (
     <div className="app snow">
@@ -23,6 +24,15 @@ export default function App() {
         <Route path="/Page/About" element={<About />} />
         <Route path="/Page/Event" element={<Event />} />
         <Route path="/Page/Tradition" element={<Tradition />} />
+
+
+        <Route path="/Page/Customer" element={<CustomerDashboard />}>
+          <Route index element={<Navigate to="PurchasedProducts" replace />} />
+          <Route path="PurchasedProducts" element={<PurchasedProducts />} />
+          <Route path="Profile" element={<ProfilePage />} />
+        </Route>
+
+
         <Route path="/Page/Vendor" element={<VendorDashboard />}>
           {/* Mặc định nhảy vào trang thống kê doanh thu */}
           <Route index element={<Navigate to="RevenueDashboard" replace />} />

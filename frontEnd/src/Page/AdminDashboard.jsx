@@ -104,10 +104,7 @@ export default function AdminDashboard() {
                         </style>
                     </div>
 
-                    <div className="ms-auto d-flex align-items-center gap-3">
-                        <div className="vr text-white opacity-25" style={{ height: "25px" }}></div>
 
-                    </div>
                 </nav>
 
                 {/* ========== CONTENT AREA ========== */}

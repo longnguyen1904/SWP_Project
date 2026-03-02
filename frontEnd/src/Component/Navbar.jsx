@@ -74,10 +74,10 @@ export default function Navbar() {
             </div>
 
             <div className="dropdown-content">
-              <Link to="../Page/Vendor" id="router-link">Vendor Dashboard</Link>
               <Link to="../Page/ProfilePage" id="router-link">ProfileChange</Link>
+              <Link to="../Page/Customer" id="router-link">CustomerDashboard</Link>
+              <Link to="../Page/Vendor" id="router-link">Vendor Dashboard</Link>
               <Link to="../Page/Admin" id="router-link">Admin Dashboard</Link>
-              <Link to="../Page/PurchasedProducts" id="router-link">PurchasedProducts</Link>
             </div>
           </div>
 

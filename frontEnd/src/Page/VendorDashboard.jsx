@@ -94,17 +94,7 @@ export default function VendorDashboard() {
                         </style>
                     </div>
 
-                    <div className="ms-auto d-flex align-items-center gap-3">
-                        <div className="d-flex align-items-center bg-white bg-opacity-10 rounded-pill p-1 pe-3 border border-secondary border-opacity-25">
-                            <img
-                                src="https://i.pravatar.cc/40?img=5"
-                                alt="vendor"
-                                className="rounded-circle me-2 border border-2 border-success"
-                                style={{ width: "32px", height: "32px" }}
-                            />
-                            <span className="text-white small fw-bold">Vendor Store</span>
-                        </div>
-                    </div>
+
                 </nav>
 
                 {/* ========== CHI TIẾT NỘI DUNG (DỮ LIỆU SẼ HIỆN Ở ĐÂY) ========== */}
