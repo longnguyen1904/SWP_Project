@@ -7,5 +7,8 @@ export const isAuthenticated = () => {
 export const logOut = () => {
   removeToken();
   localStorage.removeItem("user");
+  localStorage.removeItem("role");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("vendorId");
   window.dispatchEvent(new Event("authChanged"));
 };

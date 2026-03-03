@@ -27,7 +27,24 @@ export default function AdminDashboard() {
                 <ul className="nav nav-pills flex-column mb-auto">
                     <li className="nav-item mb-2">
                         <NavLink
-                            to="/Page/Admin/AdminVendorManagement"
+                            to="revenue"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-primary text-white shadow' : 'text-light opacity-75 hover-opacity-100'
+                                }`
+                            }
+                            style={({ isActive }) => ({
+                                color: isActive ? "#ffffff" : "#cfd8dc",
+                                fontWeight: isActive ? "600" : "400"
+                            })}
+                        >
+                            <i className="bi bi-graph-up-arrow me-3"></i>
+                            Revenue Dashboard
+                        </NavLink>
+                    </li>
+
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="vendor-management"
                             className={({ isActive }) =>
                                 `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-primary text-white shadow' : 'text-light opacity-75 hover-opacity-100'
                                 }`
@@ -44,7 +61,7 @@ export default function AdminDashboard() {
 
                     <li className="nav-item mb-2">
                         <NavLink
-                            to="/Page/Admin/AdminReview"
+                            to="review-management"
                             className={({ isActive }) =>
                                 `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-primary text-white shadow' : 'text-light opacity-75 hover-opacity-100'
                                 }`
