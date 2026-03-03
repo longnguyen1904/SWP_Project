@@ -23,8 +23,3 @@ server:
 virustotal:
   api-key: fbeee19f2a7b45408e220ff4a07384ff9041af712a50f4fe6eb38b32b3c250b7
 
-jwt:
-  secret: mysupersecretkeymysupersecretkey123456
-  expiration: 86400000
-
-#  set JWT_SECRET=your-super-long-very-secure-random-key-123456789012345

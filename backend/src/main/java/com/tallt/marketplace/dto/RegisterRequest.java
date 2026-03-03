@@ -17,6 +17,10 @@ public class RegisterRequest {
 
     @NotBlank(message = "Họ tên không được để trống")
     private String fullName;
-    private Integer roleID ; 
-    private String userName ; 
+
+    private Integer roleID;
+
+    public String getUsername() {
+        return null; // Placeholder implementation, adjust as needed
+    }
 }
