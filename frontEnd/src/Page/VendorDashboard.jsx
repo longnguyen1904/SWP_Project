@@ -1,109 +1,319 @@
-import React, { useState } from "react";
-import { Outlet, Link, NavLink } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  CircularProgress,
+  Chip,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Divider,
+} from "@mui/material";
+// Using text buttons instead of icons to avoid @mui/icons-material dependency
+import { vendorAPI } from "../services/api";
 
-export default function VendorDashboard() {
-    const [searchTerm, setSearchTerm] = useState("");
+const VendorDashboard = () => {
+  const [vendorData, setVendorData] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    approvedProducts: 0,
+    pendingProducts: 0,
+    totalRevenue: 0,
+    totalDownloads: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    return (
-        <div className="d-flex" style={{ minHeight: "100vh", backgroundColor: "transparent" }}>
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-            {/* ================= SIDEBAR (VENDOR STYLE) ================= */}
-            <div
-                className="text-white border-end border-secondary p-3 shadow-lg"
-                style={{
-                    width: "280px",
-                    backgroundColor: "rgba(0, 0, 0, 0.85)",
-                    backdropFilter: "blur(15px)",
-                    zIndex: 10
-                }}
-            >
-                <div className="d-flex align-items-center mb-4 px-2 pt-2">
-                    <div className="bg-success rounded-3 p-2 me-2 shadow-sm">
-                        <i className="bi bi-shop-window text-white"></i>
-                    </div>
-                    <h5 className="fw-bold mb-0 text-white" style={{ letterSpacing: "1px" }}>VENDOR HUB</h5>
-                </div>
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    setError("");
 
-                <ul className="nav nav-pills flex-column mb-auto">
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/RevenueDashboard"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-graph-up me-3"></i>
-                            Revenue Dashboard
-                        </NavLink>
-                    </li>
+    try {
+      // Fetch vendor products
+      const productsResponse = await vendorAPI.getVendorProducts();
+      const productsData = productsResponse.data || [];
+      setProducts(productsData);
 
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/MyProducts"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-box-seam me-3"></i>
-                            My Products
-                        </NavLink>
-                    </li>
-                </ul>
+      // Calculate stats
+      const calculatedStats = {
+        totalProducts: productsData.length,
+        approvedProducts: productsData.filter(p => p.status === "APPROVED").length,
+        pendingProducts: productsData.filter(p => p.status === "PENDING").length,
+        totalRevenue: productsData
+          .filter(p => p.status === "APPROVED")
+          .reduce((sum, p) => sum + (p.price || p.basePrice || 0), 0),
+        totalDownloads: productsData
+          .filter(p => p.status === "APPROVED")
+          .reduce((sum, p) => sum + (p.downloadCount || 0), 0),
+      };
+      setStats(calculatedStats);
 
-                <hr className="border-secondary opacity-50" />
+      // TODO: Fetch vendor-specific data when API is available
+      // const vendorResponse = await vendorAPI.getVendorProfile();
+      // setVendorData(vendorResponse.data);
 
-                <div className="px-2 mt-auto pb-3">
-                    <Link to="/" className="nav-link text-danger p-2 small d-flex align-items-center fw-bold bg-danger bg-opacity-10 rounded">
-                        <i className="bi bi-arrow-left-circle me-2"></i> Trở về cửa hàng
-                    </Link>
-                </div>
-            </div>
-
-            {/* ================= MAIN CONTENT AREA ================= */}
-            <div className="flex-grow-1 d-flex flex-column">
-
-                {/* ========== TOPBAR ========== */}
-                <nav className="navbar navbar-expand px-4 py-3" style={{ backgroundColor: "rgba(0,0,0,0.4)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                    <div className="d-flex position-relative" style={{ width: "350px" }}>
-                        <span className="position-absolute top-50 start-0 translate-middle-y ps-3 text-white-50">
-                            <i className="bi bi-search"></i>
-                        </span>
-                        <input
-                            className="form-control ps-5 border-0 text-white shadow-none custom-placeholder"
-                            type="search"
-                            placeholder="Tìm kiếm nhanh..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{
-                                backgroundColor: "rgba(255, 255, 255, 0.12)", // Tăng độ sáng nền một chút
-                                borderRadius: "12px",
-                                color: "white" // Chữ người dùng nhập
-                            }}
-                        />
-
-                        {/* Thêm thẻ style này ngay trong component nếu bạn không muốn mở file CSS */}
-                        <style>
-                            {`
-    .custom-placeholder::placeholder {
-      color: white !important;
-      opacity: 0.8;
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to fetch dashboard data");
+    } finally {
+      setLoading(false);
     }
-  `}
-                        </style>
-                    </div>
+  };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "APPROVED":
+        return "success";
+      case "PENDING":
+        return "warning";
+      case "REJECTED":
+        return "error";
+      case "DRAFT":
+        return "default";
+      default:
+        return "default";
+    }
+  };
 
-                </nav>
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "APPROVED":
+        return "Approved";
+      case "PENDING":
+        return "Pending Review";
+      case "REJECTED":
+        return "Rejected";
+      case "DRAFT":
+        return "Draft";
+      default:
+        return status;
+    }
+  };
 
-                {/* ========== CHI TIẾT NỘI DUNG (DỮ LIỆU SẼ HIỆN Ở ĐÂY) ========== */}
-                <div className="container-fluid p-4 overflow-auto" style={{ flex: 1 }}>
-                    <Outlet context={{ searchTerm }} />
-                </div>
+  const StatCard = ({ title, value, icon, color }) => (
+    <Card>
+      <CardContent>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+          <Box sx={{ p: 1, borderRadius: 1, bgcolor: `${color}.light`, mr: 2 }}>
+            <Typography variant="h6" color={`${color}.main`}>
+              {icon}
+            </Typography>
+          </Box>
+          <Typography variant="h6" component="div">
+            {title}
+          </Typography>
+        </Box>
+        <Typography variant="h4" color={`${color}.main`}>
+          {value}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
 
-            </div>
-        </div>
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
     );
-} 
+  }
 
+  return (
+    <Box sx={{ maxWidth: 1200, mx: "auto", p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Vendor Dashboard
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        Manage your products and track your marketplace performance
+      </Typography>
+
+      {error && (
+        <Card sx={{ mb: 3, bgcolor: "error.light" }}>
+          <CardContent>
+            <Typography color="error">{error}</Typography>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Total Products"
+            value={stats.totalProducts}
+            icon="📦"
+            color="primary"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Approved"
+            value={stats.approvedProducts}
+            icon="✅"
+            color="success"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Pending Review"
+            value={stats.pendingProducts}
+            icon="⏳"
+            color="warning"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Total Downloads"
+            value={stats.totalDownloads}
+            icon="👁️"
+            color="info"
+          />
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3}>
+        {/* Recent Products */}
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+                <Typography variant="h6">Recent Products</Typography>
+                <Button variant="outlined" size="small" href="/vendor/products">
+                  View All
+                </Button>
+              </Box>
+              
+              {products.length === 0 ? (
+                <Box sx={{ textAlign: "center", py: 4 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No products yet. Start by uploading your first product.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    sx={{ mt: 2 }}
+                    href="/vendor/products/upload"
+                  >
+                    Upload Product
+                  </Button>
+                </Box>
+              ) : (
+                <List>
+                  {products.slice(0, 5).map((product, index) => (
+                    <React.Fragment key={product.id}>
+                      <ListItem
+                        secondaryAction={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Typography variant="body2" color="primary">
+                              ${product.price || product.basePrice}
+                            </Typography>
+                            <Chip
+                              label={getStatusLabel(product.status)}
+                              color={getStatusColor(product.status)}
+                              size="small"
+                            />
+                          </Box>
+                        }
+                      >
+                        <ListItemText
+                          primary={product.name || product.productName}
+                          secondary={
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">
+                                {product.description?.length > 80
+                                  ? `${product.description.substring(0, 80)}...`
+                                  : product.description}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Created: {new Date(product.createdAt).toLocaleDateString()}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                      {index < Math.min(products.length - 1, 4) && <Divider />}
+                    </React.Fragment>
+                  ))}
+                </List>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Quick Actions */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Quick Actions
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Button
+                  variant="contained"
+                  href="/vendor/products/upload"
+                  fullWidth
+                >
+                  Upload New Product
+                </Button>
+                <Button
+                  variant="outlined"
+                  href="/vendor/products"
+                  fullWidth
+                >
+                  Manage Products
+                </Button>
+                <Button
+                  variant="outlined"
+                  href="/vendor/analytics"
+                  fullWidth
+                >
+                  View Analytics
+                </Button>
+                <Button
+                  variant="outlined"
+                  href="/vendor/reviews"
+                  fullWidth
+                >
+                  Customer Reviews
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Vendor Status */}
+          <Card sx={{ mt: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Vendor Status
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Chip
+                  label="Verified"
+                  color="success"
+                  size="small"
+                  sx={{ mr: 2 }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Your vendor account is verified and active
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Member since: {new Date().toLocaleDateString()}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+};
+
+export default VendorDashboard;

@@ -4,8 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.tallt.marketplace.constant.MessageConstant;
-import com.tallt.marketplace.constant.RoleConstant;
 import com.tallt.marketplace.dto.AuthResponse;
 import com.tallt.marketplace.dto.LoginRequest;
 import com.tallt.marketplace.dto.RegisterRequest;
@@ -14,6 +12,7 @@ import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.RoleRepository;
 import com.tallt.marketplace.repository.UserRepository;
+import com.tallt.marketplace.security.JwtUtils;
 
 @Service
 public class AuthService {
@@ -23,61 +22,48 @@ public class AuthService {
     @Autowired
     private RoleRepository roleRepository;
     @Autowired
-    private PasswordEncoder passwordEncoder; // Inject Bean vừa tạo
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private JwtUtils jwtUtils; // 1. Tiêm JwtUtils vào đây
 
     public AuthResponse login(LoginRequest request) {
-    User user = userRepository.findByEmail(request.getEmail());
+        User user = userRepository.findByEmail(request.getEmail());
 
-    if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-        throw new AppException("Invalid email or password");
+        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new AppException("Sai email hoặc mật khẩu");
+        }
+
+        String token = jwtUtils.generateToken(user.getEmail(), user.getRole().getRoleName());
+        System.out.println(">>> DEBUG LOGIN: Email = " + user.getEmail());
+        System.out.println(">>> DEBUG LOGIN: Token sinh ra = " + token);
+        return new AuthResponse(
+                user.getEmail(),
+                user.getFullName(),
+                user.getRole().getRoleName(),
+                token);
     }
-
-    // 👉 tạo token phiên đăng nhập
-    String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
-
-    return new AuthResponse(
-            user.getEmail(),
-            user.getFullName(),
-            user.getRole().getRoleName(),
-            token
-    );
-}
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(MessageConstant.EMAIL_ALREADY_EXISTS);
+            throw new AppException("Email đã tồn tại");
         }
 
-        Integer roleIdWrapper = request.getRoleID();
-        int roleId = (roleIdWrapper != null) ? roleIdWrapper : RoleConstant.CUSTOMER;
-        Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new AppException(MessageConstant.ROLE_NOT_FOUND));
+        Role customerRole = roleRepository.findByRoleName("CUSTOMER")
+                .orElseThrow(() -> new AppException("Hệ thống chưa cấu hình Role CUSTOMER"));
 
         User newUser = new User();
         newUser.setEmail(request.getEmail());
-
-        // MÃ HÓA MẬT KHẨU TRƯỚC KHI LƯU
         newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        String generatedUsername = request.getEmail().split("@")[0];
-        newUser.setUsername(generatedUsername);
         newUser.setFullName(request.getFullName());
-        newUser.setRole(role);
+        newUser.setRole(customerRole);
         newUser.setIsActive(true);
 
-        // Ensure username value is used
-        String username = request.getUsername();
-        if (username == null || username.isBlank()) {
-            username = request.getEmail().split("@")[0];
-        }
-
+        String username = (request.getUsername() == null || request.getUsername().isBlank())
+                ? request.getEmail().split("@")[0]
+                : request.getUsername();
         newUser.setUsername(username);
 
-        User savedUser = userRepository.save(newUser);
-
-        return new AuthResponse(
-                savedUser.getEmail(),
-                savedUser.getFullName(),
-                role.getRoleName(),
-                null);
+        userRepository.save(newUser);
+        return new AuthResponse(newUser.getEmail(), newUser.getFullName(), "CUSTOMER", null);
     }
 }

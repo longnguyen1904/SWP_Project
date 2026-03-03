@@ -10,4 +10,6 @@ public class AuthResponse {
     private String fullName;
     private String roleName;
     private String token; // Sau này dùng JWT thì nhét vào đây
+    
+    
 }
