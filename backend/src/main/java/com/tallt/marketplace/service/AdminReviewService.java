@@ -27,7 +27,7 @@ public class AdminReviewService {
         return products.stream().map(product -> {
 
             List<ProductVersion> versions =
-                    versionRepository.findByProductID(product.getProductID());
+                    versionRepository.findByProduct_ProductID(product.getProductID(), null).getContent();
 
             String scanStatus = "PENDING";
 
@@ -47,7 +47,7 @@ public class AdminReviewService {
                     product.getVendorID(),
                     product.getBasePrice() != null ? product.getBasePrice().doubleValue() : null,
                     scanStatus,
-                    product.getStatus(),
+                    product.getStatus().name(),
                     product.getRejectionNote()
             );
 
@@ -65,7 +65,7 @@ public class AdminReviewService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
         List<ProductVersion> versions =
-                versionRepository.findByProductID(productId);
+                versionRepository.findByProduct_ProductID(productId, null).getContent();
 
         if (versions == null || versions.isEmpty()) {
             throw new RuntimeException("No version uploaded");
@@ -86,7 +86,7 @@ public class AdminReviewService {
             versionRepository.save(latestVersion);
 
             // Update product
-            product.setStatus("REJECTED");
+            product.setStatus(Product.ProductStatus.REJECTED);
             product.setRejectionNote("Detected malware by VirusTotal");
             productRepository.save(product);
 
@@ -97,7 +97,7 @@ public class AdminReviewService {
         latestVersion.setScanStatus("CLEAN");
         versionRepository.save(latestVersion);
 
-        product.setStatus("APPROVED");
+        product.setStatus(Product.ProductStatus.APPROVED);
         product.setRejectionNote(null);
         productRepository.save(product);
 

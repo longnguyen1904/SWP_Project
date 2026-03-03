@@ -1,6 +1,8 @@
 spring:
   application:
     name: marketplace
+  profiles:
+    active: docker
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
@@ -21,4 +23,19 @@ server:
 
 virustotal:
   api-key: fbeee19f2a7b45408e220ff4a07384ff9041af712a50f4fe6eb38b32b3c250b7
+
+cloudinary:
+  cloud_name: ${CLOUDINARY_CLOUD_NAME:demo_cloud}
+  api_key: ${CLOUDINARY_API_KEY:demo_key}
+  api_secret: ${CLOUDINARY_API_SECRET:demo_secret}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:mysql://mysql-marketplace:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
 
