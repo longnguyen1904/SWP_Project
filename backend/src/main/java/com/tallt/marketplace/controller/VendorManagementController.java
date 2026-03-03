@@ -4,9 +4,14 @@ import com.tallt.marketplace.entity.Vendor;
 import com.tallt.marketplace.entity.Vendor.VendorStatus;
 import com.tallt.marketplace.entity.Vendor.VendorType;
 import com.tallt.marketplace.service.VendorManagementService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/admin/vendors")
@@ -30,6 +35,14 @@ public class VendorManagementController {
     @GetMapping("/{id}")
     public Vendor getVendorById(@PathVariable Integer id) {
         return vendorManagementService.getVendorById(id);
+    }
+
+    @PostMapping("/{id}/upload-cccd")
+    public Vendor uploadIdentification(
+            @PathVariable Integer id,
+            @RequestParam("url") String url) {
+
+        return vendorManagementService.saveIdentificationUrl(id, url);
     }
 
     @PutMapping("/{id}/status")
