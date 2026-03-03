@@ -23,3 +23,6 @@ server:
 virustotal:
   api-key: fbeee19f2a7b45408e220ff4a07384ff9041af712a50f4fe6eb38b32b3c250b7
 
+jwt:
+  secret: "TALLT_MARKETPLACE_SUPER_SECRET_KEY_2024_DO_NOT_SHARE" # Chuỗi này càng dài càng tốt
+  expiration: 86400000 # Thời hạn 1 ngày (tính bằng milisec)
