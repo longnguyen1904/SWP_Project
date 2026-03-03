@@ -15,31 +15,36 @@ import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.RoleRepository;
 import com.tallt.marketplace.repository.UserRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
-    @Autowired
+   
     private UserRepository userRepository;
-    @Autowired
+
     private RoleRepository roleRepository;
-    @Autowired
+   
     private PasswordEncoder passwordEncoder; // Inject Bean vừa tạo
     private JwtService jwtService;
     public AuthResponse login(LoginRequest request) {
-        
-        User user = userRepository.findByEmail(request.getEmail());
-        if (user == null ||
-                !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new AppException("Invalid email or password");
-        }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Wrong password");
+        User user = userRepository.findByEmail(request.getEmail());
+
+        if (user == null ||
+            !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new AppException("Invalid email or password");
         }
 
         String token = jwtService.generateToken(user);
 
-        return new AuthResponse(user.getEmail(), user.getFullName(), request.getRoleName(), token );
+        return new AuthResponse(
+                user.getEmail(),
+                user.getFullName(),
+                user.getRole().getRoleName(),
+                token
+        );
     }
 
     // public AuthResponse login(LoginRequest request) {
