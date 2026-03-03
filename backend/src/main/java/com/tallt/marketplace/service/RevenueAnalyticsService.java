@@ -16,9 +16,7 @@ public class RevenueAnalyticsService {
 
     private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * 📈 Doanh thu theo ngày
-     */
+   
     public List<Map<String, Object>> getDailyRevenue(
             int vendorId,
             LocalDate startDate,

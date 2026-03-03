@@ -44,7 +44,6 @@ public class AuthController {
         user.setFullName(request.getFullName());
         user.setUsername(request.getUserName());
         user.setRole(customerRole);
-
         userRepository.save(user);
         return "Đăng ký thành công";
     }
