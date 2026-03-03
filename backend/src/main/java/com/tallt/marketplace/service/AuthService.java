@@ -24,24 +24,43 @@ public class AuthService {
     private RoleRepository roleRepository;
     @Autowired
     private PasswordEncoder passwordEncoder; // Inject Bean vừa tạo
-
+    private JwtService jwtService;
     public AuthResponse login(LoginRequest request) {
-    User user = userRepository.findByEmail(request.getEmail());
+        
+        User user = userRepository.findByEmail(request.getEmail());
+        if (user == null ||
+                !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new AppException("Invalid email or password");
+        }
 
-    if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-        throw new AppException("Invalid email or password");
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Wrong password");
+        }
+
+        String token = jwtService.generateToken(user);
+
+        return new AuthResponse(user.getEmail(), user.getFullName(), request.getRoleName(), token );
     }
 
-    // 👉 tạo token phiên đăng nhập
-    String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
+    // public AuthResponse login(LoginRequest request) {
+    // User user = userRepository.findByEmail(request.getEmail());
 
-    return new AuthResponse(
-            user.getEmail(),
-            user.getFullName(),
-            user.getRole().getRoleName(),
-            token
-    );
-}
+    // if (user == null || !passwordEncoder.matches(request.getPassword(),
+    // user.getPasswordHash())) {
+    // throw new AppException("Invalid email or password");
+    // }
+
+    // // 👉 tạo token phiên đăng nhập
+    // String token = "TOKEN_" + user.getUserID() + "_" +
+    // System.currentTimeMillis();
+
+    // return new AuthResponse(
+    // user.getEmail(),
+    // user.getFullName(),
+    // user.getRole().getRoleName(),
+    // token
+    // );
+    // }
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -65,7 +84,7 @@ public class AuthService {
         newUser.setIsActive(true);
 
         // Ensure username value is used
-        String username = request.getUsername();
+        String username = request.getUserName();
         if (username == null || username.isBlank()) {
             username = request.getEmail().split("@")[0];
         }

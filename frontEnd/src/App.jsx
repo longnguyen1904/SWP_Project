@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route, Link,Navigate } from "react-router-dom";
+import ProtectedRoute from "./Component/ProtectedRoute";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
 import Home from "./Page/Home";
 import Navbar from "./Component/Navbar";
 import About from "./Page/About";
@@ -25,27 +25,27 @@ export default function App() {
         <Route path="/Page/Event" element={<Event />} />
         <Route path="/Page/Tradition" element={<Tradition />} />
 
-
-        <Route path="/Page/Customer" element={<CustomerDashboard />}>
+        <Route path="/Page/Customer" element={
+          <ProtectedRoute>
+            <CustomerDashboard />
+          </ProtectedRoute>}>
           <Route index element={<Navigate to="PurchasedProducts" replace />} />
           <Route path="PurchasedProducts" element={<PurchasedProducts />} />
           <Route path="Profile" element={<ProfilePage />} />
         </Route>
 
-
         <Route path="/Page/Vendor" element={<VendorDashboard />}>
-          {/* Mặc định nhảy vào trang thống kê doanh thu */}
           <Route index element={<Navigate to="RevenueDashboard" replace />} />
           <Route path="RevenueDashboard" element={<RevenueDashboard />} />
-
-          {/* Sau này bạn có thể thêm: <Route path="MyProducts" element={<MyProducts />} /> */}
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />
-        <Route path="/Page/Admin" element={<AdminDashboard />}>
-          {/* Dòng quan trọng nhất: Khi path là "/Page/Admin", tự động nhảy sang trang Vendor */}
+        <Route path="/Page/Admin" element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }>
           <Route index element={<Navigate to="AdminVendorManagement" replace />} />
-
           <Route path="AdminVendorManagement" element={<AdminVendorManagement />} />
           <Route path="AdminReview" element={<AdminReview />} />
         </Route>

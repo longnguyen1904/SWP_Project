@@ -53,9 +53,6 @@ public class VendorManagementService {
         return vendorRepository.findAll(pageable);
     }
 
-    // ==============================
-    // DUYỆT VENDOR
-    // ==============================
     @Transactional
     public Vendor updateVendorStatus(Integer id, VendorStatus status) {
 
@@ -67,8 +64,8 @@ public class VendorManagementService {
         if (status == VendorStatus.APPROVED) {
 
             // 1️⃣ Lấy role VENDOR
-            Role vendorRole = roleRepository.findByRoleName("VENDOR")
-                    .orElseThrow(() -> new RuntimeException("Role VENDOR not found"));
+            Role vendorRole = roleRepository.findByRoleName("VENDOR") ; 
+                    
 
             // 2️⃣ Update role cho user
             User user = vendor.getUser();
