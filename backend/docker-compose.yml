@@ -1,0 +1,55 @@
+services:
+  # Spring Boot Application - Connect to Remote MySQL VPS
+  marketplace-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marketplace-backend-remote
+    restart: always
+    ports:
+      - "8081:8081"  # Map to port 8081 on host and container
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://42.96.18.227:3306/TALLT_SoftwareMarket?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: MySQLStrong!Passw0rd
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update  # Code First - generate schema
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
+      SPRING_PROFILES_ACTIVE: docker
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+      SERVER_PORT: 8081
+      # Mail configuration (optional - set your own)
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: ""
+      SPRING_MAIL_PASSWORD: ""
+      # VNPay Configuration
+      VNPAY_TMN_CODE: 1A1WQ9ZN
+      VNPAY_HASH_SECRET: HFWWS0H1PTNNWO8C114AIRI5CR1RA9DP
+      VNPAY_URL: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+      VNPAY_API_URL: https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
+      VNPAY_RETURN_URL: http://localhost:8081/api/checkout/return
+      VNPAY_VERSION: 2.1.0
+      VNPAY_COMMAND: pay
+      # Cloudinary Configuration
+      CLOUDINARY_CLOUD_NAME: dk1911sqa
+      CLOUDINARY_API_KEY: 461427875698879
+      CLOUDINARY_API_SECRET: UQuOUmhoApo-hy2qauyBDKY9ujQ
+    networks:
+      - marketplace-network-remote
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  marketplace-network-remote:
+    driver: bridge

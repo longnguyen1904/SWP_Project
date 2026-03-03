@@ -35,6 +35,8 @@ public class AdminReviewService {
         if (status != null && !status.isEmpty()
                 && keyword != null && !keyword.isEmpty()) {
 
+            List<ProductVersion> versions =
+                    versionRepository.findByProduct_ProductID(product.getProductID(), null).getContent();
             productPage = productRepository
                     .findByStatusAndProductNameContainingIgnoreCase(
                             status, keyword, pageable);
@@ -46,8 +48,15 @@ public class AdminReviewService {
 
         } else if (keyword != null && !keyword.isEmpty()) {
 
-            productPage = productRepository
-                    .findByProductNameContainingIgnoreCase(keyword, pageable);
+            return new AdminProductReviewDTO(
+                    product.getProductID(),
+                    product.getProductName(),
+                    product.getVendorID(),
+                    product.getBasePrice() != null ? product.getBasePrice().doubleValue() : null,
+                    scanStatus,
+                    product.getStatus().name(),
+                    product.getRejectionNote()
+            );
 
         } else {
             productPage = productRepository.findAll(pageable);
@@ -97,7 +106,8 @@ public class AdminReviewService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        List<ProductVersion> versions = versionRepository.findByProductID(productId);
+        List<ProductVersion> versions =
+                versionRepository.findByProduct_ProductID(productId, null).getContent();
 
         if (versions == null || versions.isEmpty()) {
             throw new RuntimeException("No version uploaded");
@@ -118,7 +128,7 @@ public class AdminReviewService {
             versionRepository.save(latestVersion);
 
             // Update product
-            product.setStatus("REJECTED");
+            product.setStatus(Product.ProductStatus.REJECTED);
             product.setRejectionNote("Detected malware by VirusTotal");
             productRepository.save(product);
 
@@ -129,7 +139,7 @@ public class AdminReviewService {
         latestVersion.setScanStatus("CLEAN");
         versionRepository.save(latestVersion);
 
-        product.setStatus("APPROVED");
+        product.setStatus(Product.ProductStatus.APPROVED);
         product.setRejectionNote(null);
         productRepository.save(product);
 
