@@ -1,26 +1,21 @@
 package com.tallt.marketplace.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ProductVersions")
-@Getter
-@Setter
+@Data
 public class ProductVersion {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "VersionID")
     private Integer versionID;
 
-    @Column(name = "ProductID", nullable = false)
-    private Integer productID;
-
-    @Column(name = "ScanStatus")
-    private String scanStatus = "PENDING";
+    @ManyToOne
+    @JoinColumn(name = "ProductID", nullable = false)
+    private Product product;
 
     @Column(name = "VersionNumber")
     private String versionNumber;
@@ -28,14 +23,12 @@ public class ProductVersion {
     @Column(name = "FileUrl", nullable = false)
     private String fileUrl;
 
-    @Lob
-    @Column(name = "ReleaseNotes")
+    @Column(name = "ReleaseNotes", columnDefinition = "LONGTEXT")
     private String releaseNotes;
 
-    @Column(name = "CreatedAt", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "ScanStatus", length = 50)
+    private String scanStatus = "PENDING";
 
-    @ManyToOne
-    @JoinColumn(name = "ProductID", insertable = false, updatable = false)
-    private Product product;
+    @Column(name = "CreatedAt", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 }
