@@ -31,13 +31,10 @@ export default function App() {
           </ProtectedRoute>}>
           <Route index element={<Navigate to="PurchasedProducts" replace />} />
           <Route path="PurchasedProducts" element={<PurchasedProducts />} />
-
+          <Route path="Profile" element={<ProfilePage />} />
         </Route>
 
-        <Route path="/Page/Vendor" element={
-          <ProtectedRoute>
-            <VendorDashboard />
-          </ProtectedRoute>} >
+        <Route path="/Page/Vendor" element={<VendorDashboard />}>
           <Route index element={<Navigate to="RevenueDashboard" replace />} />
           <Route path="RevenueDashboard" element={<RevenueDashboard />} />
         </Route>
