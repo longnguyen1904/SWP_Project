@@ -187,12 +187,6 @@ export default function Navbar() {
                 <Link to="/Page/AdminDashboard/revenue" id="router-link">
                   RevenueDashboard
                 </Link>
-                <Link to="/Page/AdminDashboard/vendor-management" id="router-link">
-                  Admin Vendor Management
-                </Link>
-                <Link to="/Page/AdminDashboard/review-management" id="router-link">
-                  Admin Review
-                </Link>
               </>
             )}
 
