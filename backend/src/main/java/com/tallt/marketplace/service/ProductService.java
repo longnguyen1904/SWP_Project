@@ -50,6 +50,12 @@ public class ProductService {
     private ReviewRepository reviewRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
     private EmailService emailService;
 
     /**
@@ -83,6 +89,9 @@ public class ProductService {
         product.setStatus(Product.ProductStatus.DRAFT);
         product.setHasTrial(request.getHasTrial() != null ? request.getHasTrial() : false);
         product.setTrialDurationDays(request.getTrialDurationDays() != null ? request.getTrialDurationDays() : 7);
+        if (request.getGuideDocumentUrl() != null && !request.getGuideDocumentUrl().isBlank()) {
+            product.setGuideDocumentUrl(request.getGuideDocumentUrl().trim());
+        }
         productRepository.save(product);
 
         // 5. Xử lý Tags
@@ -163,6 +172,20 @@ public class ProductService {
     }
 
     /**
+     * Xóa một ảnh sản phẩm (Vendor chỉ xóa ảnh của sản phẩm mình sở hữu).
+     */
+    @Transactional
+    public void deleteProductImage(Integer vendorId, Integer productId, Integer imageId) {
+        Product product = getProductAndValidateOwner(vendorId, productId);
+        ProductImage image = productImageRepository.findById(imageId)
+                .orElseThrow(() -> new AppException("Ảnh không tồn tại"));
+        if (!image.getProduct().getProductID().equals(product.getProductID())) {
+            throw new AppException("Ảnh không thuộc sản phẩm này");
+        }
+        productImageRepository.delete(image);
+    }
+
+    /**
      * Cập nhật thông tin sản phẩm
      * - Chỉ cho update khi Product chưa Approved
      * - Vendor phải là chủ sở hữu
@@ -184,6 +207,9 @@ public class ProductService {
         }
         if (request.getBasePrice() != null) {
             product.setBasePrice(request.getBasePrice());
+        }
+        if (request.getGuideDocumentUrl() != null) {
+            product.setGuideDocumentUrl(request.getGuideDocumentUrl().isBlank() ? null : request.getGuideDocumentUrl().trim());
         }
         productRepository.save(product);
 
@@ -580,6 +606,101 @@ public class ProductService {
         return response;
     }
 
+    /**
+     * UC12 - Chỉ Customer đã mua hàng (Order PaymentStatus != Pending) mới được gửi đánh giá.
+     * Admin: không được đánh giá. Vendor: không được đánh giá (chỉ xem).
+     */
+    @Transactional
+    public ReviewResponse createReview(Integer productId, Integer userId, Integer rating, String comment) {
+        if (userId == null) {
+            throw new AppException("Bạn cần đăng nhập để đánh giá sản phẩm");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("User không tồn tại"));
+        String roleName = user.getRole() != null ? user.getRole().getRoleName() : "";
+        if ("ADMIN".equalsIgnoreCase(roleName)) {
+            throw new AppException("Admin không được đánh giá sản phẩm. Chỉ được xem.");
+        }
+        if ("VENDOR".equalsIgnoreCase(roleName)) {
+            throw new AppException("Vendor chỉ được xem review, không được nhập hoặc gửi đánh giá.");
+        }
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
+        if (product.getStatus() != Product.ProductStatus.APPROVED) {
+            throw new AppException("Không thể đánh giá sản phẩm chưa được duyệt");
+        }
+        if (!orderRepository.existsByProduct_ProductIDAndUser_UserIDAndPaymentStatusIgnoreCaseNot(
+                productId, userId, "Pending")) {
+            throw new AppException("Bạn cần mua sản phẩm trước khi đánh giá.");
+        }
+        if (reviewRepository.existsByProduct_ProductIDAndUser_UserID(productId, userId)) {
+            throw new AppException("Bạn đã đánh giá sản phẩm này rồi. Chỉ được đánh giá 1 lần.");
+        }
+        Review review = new Review();
+        review.setProduct(product);
+        review.setUser(user);
+        review.setRating(rating != null ? rating : 0);
+        review.setComment(comment != null ? comment : "");
+        review = reviewRepository.save(review);
+        ReviewResponse rr = new ReviewResponse();
+        rr.setReviewId(review.getReviewID());
+        rr.setUserId(review.getUser().getUserID());
+        rr.setFullName(review.getUser().getFullName());
+        rr.setRating(review.getRating());
+        rr.setComment(review.getComment());
+        rr.setCreatedAt(review.getCreatedAt());
+        return rr;
+    }
+
+    /**
+     * Kiểm tra user đã có đơn hàng đã thanh toán (PaymentStatus != Pending) cho sản phẩm.
+     */
+    public boolean hasPurchasedProduct(Integer productId, Integer userId) {
+        if (productId == null || userId == null) return false;
+        return orderRepository.existsByProduct_ProductIDAndUser_UserIDAndPaymentStatusIgnoreCaseNot(
+                productId, userId, "Pending");
+    }
+
+    /**
+     * Customer chỉ được sửa review của chính mình; 1 review/user/product.
+     */
+    @Transactional
+    public ReviewResponse updateReview(Integer reviewId, Integer userId, Integer rating, String comment) {
+        if (userId == null) throw new AppException("Bạn cần đăng nhập.");
+        if (reviewId == null) throw new AppException("Review ID không hợp lệ.");
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new AppException("Đánh giá không tồn tại"));
+        if (review.getUser() == null || !review.getUser().getUserID().equals(userId)) {
+            throw new AppException("Bạn chỉ được sửa đánh giá của chính mình.");
+        }
+        review.setRating(rating != null ? rating : review.getRating());
+        review.setComment(comment != null ? comment : review.getComment());
+        review = reviewRepository.save(review);
+        ReviewResponse rr = new ReviewResponse();
+        rr.setReviewId(review.getReviewID());
+        rr.setUserId(review.getUser().getUserID());
+        rr.setFullName(review.getUser().getFullName());
+        rr.setRating(review.getRating());
+        rr.setComment(review.getComment());
+        rr.setCreatedAt(review.getCreatedAt());
+        return rr;
+    }
+
+    /**
+     * Customer chỉ được xóa review của chính mình.
+     */
+    @Transactional
+    public void deleteReview(Integer reviewId, Integer userId) {
+        if (userId == null) throw new AppException("Bạn cần đăng nhập.");
+        if (reviewId == null) throw new AppException("Review ID không hợp lệ.");
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new AppException("Đánh giá không tồn tại"));
+        if (review.getUser() == null || !review.getUser().getUserID().equals(userId)) {
+            throw new AppException("Bạn chỉ được xóa đánh giá của chính mình.");
+        }
+        reviewRepository.delete(review);
+    }
+
     // ==================== HELPER METHODS ====================
 
     /**
@@ -627,6 +748,7 @@ public class ProductService {
 
         // Xác định status
         response.setStatus(product.getStatus().name());
+        response.setGuideDocumentUrl(product.getGuideDocumentUrl());
 
         return response;
     }
