@@ -14,25 +14,27 @@ const Register = forwardRef(function Register(props, ref) {
     email: "",
     password: "",
     fullName: "",
-    roleID: 3, // Customer
+    roleID: 3,
   });
 
-  /* ===== Nếu đã có token thì đóng dialog ===== */
   useEffect(() => {
     const accessToken = getToken();
     if (accessToken) {
       ref?.current?.close();
-      
     }
   }, [navigate, ref]);
 
-  /* ===== Handle input ===== */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  /* ===== Login / Register bằng Email ===== */
+  const parseUserIdFromToken = (token) => {
+    if (!token || typeof token !== "string") return null;
+    const match = token.match(/^TOKEN_(\d+)_/);
+    return match ? match[1] : null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -59,12 +61,23 @@ const Register = forwardRef(function Register(props, ref) {
       }
 
       if (isLogin) {
-        setToken(data.token);   // ⭐ QUAN TRỌNG
-        window.dispatchEvent(new Event("authChanged"));
+        if (data?.token) {
+          setToken(data.token);
+        }
+
+        if (data?.roleName) {
+          localStorage.setItem("role", String(data.roleName).toUpperCase());
+        }
+
+        const userId = parseUserIdFromToken(data?.token);
+        if (userId) {
+          localStorage.setItem("userId", userId);
+        }
+
         localStorage.setItem("user", JSON.stringify(data));
+        window.dispatchEvent(new Event("authChanged"));
         ref?.current?.close();
         navigate("/");
-
       } else {
         alert("Register success! Please login.");
         setIsLogin(true);
@@ -75,7 +88,6 @@ const Register = forwardRef(function Register(props, ref) {
     }
   };
 
-  /* ===== GOOGLE LOGIN (GIỮ NGUYÊN FILE T2) ===== */
   const handleGoogleLogin = () => {
     const callbackUrl = OAuthConfig.redirectUri;
     const authUrl = OAuthConfig.authUri;
@@ -91,7 +103,7 @@ const Register = forwardRef(function Register(props, ref) {
   return (
     <dialog ref={ref} className="result-modal">
       <form method="dialog">
-        <button className="close-btn">✕</button>
+        <button className="close-btn">x</button>
       </form>
 
       <div className="login-form">
@@ -141,7 +153,6 @@ const Register = forwardRef(function Register(props, ref) {
           </button>
         </form>
 
-        {/* ===== GOOGLE LOGIN – GIỮ NGUYÊN ===== */}
         <button
           type="button"
           className="google-btn"
@@ -153,7 +164,7 @@ const Register = forwardRef(function Register(props, ref) {
         <div className="divider"></div>
 
         <p className="footer-text">
-          {isLogin ? "Don’t have an account? " : "Already have an account? "}
+          {isLogin ? "Don't have an account? " : "Already have an account? "}
           <span
             onClick={() => setIsLogin(!isLogin)}
             style={{ cursor: "pointer", color: "blue", fontWeight: "bold" }}

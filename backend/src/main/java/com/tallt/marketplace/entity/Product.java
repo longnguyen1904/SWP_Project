@@ -1,49 +1,45 @@
 package com.tallt.marketplace.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
+import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "Products")
-@Getter
-@Setter
+@Data
 public class Product {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ProductID")
     private Integer productID;
 
-    @Column(name = "VendorID", nullable = false)
-    private Integer vendorID;
+    @ManyToOne
+    @JoinColumn(name = "VendorID", nullable = false)
+    private Vendor vendor;
 
-    @Column(name = "CategoryID", nullable = false)
-    private Integer categoryID;
+    @ManyToOne
+    @JoinColumn(name = "CategoryID", nullable = false)
+    private Category category;
 
     @Column(name = "ProductName", nullable = false)
     private String productName;
 
-    @Lob
-    @Column(name = "Description")
+    @Column(name = "Description", columnDefinition = "LONGTEXT")
     private String description;
 
     @Column(name = "BasePrice")
     private BigDecimal basePrice;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "Status", nullable = false)
-    private String status = "DRAFT";
+    private ProductStatus status = ProductStatus.DRAFT;
 
-    @Lob
     @Column(name = "RejectionNote")
     private String rejectionNote;
 
-    @Column(name = "CreatedAt", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "CreatedAt", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "HasTrial")
     private Boolean hasTrial = false;
@@ -51,7 +47,15 @@ public class Product {
     @Column(name = "TrialDurationDays")
     private Integer trialDurationDays = 7;
 
-    // ====== RELATION ======
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private List<ProductVersion> versions;
+    public Boolean getIsApproved() {
+        return this.status == ProductStatus.APPROVED;
+    }
+
+    public Integer getVendorID() {
+        return this.vendor != null ? this.vendor.getVendorID() : null;
+    }
+
+    public enum ProductStatus {
+        DRAFT, PENDING, APPROVED, REJECTED
+    }
 }
