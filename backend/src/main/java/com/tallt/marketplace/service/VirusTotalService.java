@@ -19,12 +19,12 @@ public class VirusTotalService {
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String BASE_URL = "https://www.virustotal.com/api/v3";
 
-    public boolean isFileMalicious(String filePath) {
+    public boolean isUrlMalicious(String urlToScan) {
 
-        String analysisId = uploadFile(filePath);
+        String analysisId = submitUrl(urlToScan);
 
         try {
-            Thread.sleep(10000);
+            Thread.sleep(10000); // đợi VirusTotal phân tích
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -32,25 +32,21 @@ public class VirusTotalService {
         return checkResultOnce(analysisId);
     }
 
-
-    private String uploadFile(String filePath) {
-
-        File file = new File(filePath);
-
-        if (!file.exists()) {
-            throw new RuntimeException("File not found: " + filePath);
-        }
+    // 1️⃣ Gửi URL lên VirusTotal
+    private String submitUrl(String urlToScan) {
 
         LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", new FileSystemResource(file));
+        body.add("url", urlToScan);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.set("x-apikey", apiKey);
 
-        HttpEntity<LinkedMultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
+        HttpEntity<LinkedMultiValueMap<String, Object>> request =
+                new HttpEntity<>(body, headers);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(BASE_URL + "/files", request, Map.class);
+        ResponseEntity<Map> response =
+                restTemplate.postForEntity(BASE_URL + "/urls", request, Map.class);
 
         if (response.getBody() == null)
             throw new RuntimeException("VirusTotal response is null");
@@ -64,6 +60,7 @@ public class VirusTotalService {
         return data.get("id").toString();
     }
 
+    // 2️⃣ Kiểm tra kết quả
     private boolean checkResultOnce(String analysisId) {
 
         String url = BASE_URL + "/analyses/" + analysisId;
@@ -73,7 +70,8 @@ public class VirusTotalService {
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);
+        ResponseEntity<Map> response =
+                restTemplate.exchange(url, HttpMethod.GET, request, Map.class);
 
         if (response.getBody() == null)
             throw new RuntimeException("VirusTotal analysis response is null");
@@ -84,7 +82,6 @@ public class VirusTotalService {
         Map<String, Object> stats = (Map<String, Object>) attributes.get("stats");
 
         Number malicious = (Number) stats.get("malicious");
-
         int maliciousCount = malicious != null ? malicious.intValue() : 0;
 
         System.out.println("Malicious engines: " + maliciousCount);
