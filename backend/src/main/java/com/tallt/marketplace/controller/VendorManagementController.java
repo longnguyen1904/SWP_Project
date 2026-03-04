@@ -9,9 +9,13 @@ import com.tallt.marketplace.service.VendorManagementService;
 import com.tallt.marketplace.service.VendorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 import java.util.Map;
 
@@ -38,6 +42,14 @@ public class VendorManagementController {
     @GetMapping("/{id}")
     public Vendor getVendorById(@PathVariable Integer id) {
         return vendorManagementService.getVendorById(id);
+    }
+
+    @PostMapping("/{id}/upload-cccd")
+    public Vendor uploadIdentification(
+            @PathVariable Integer id,
+            @RequestParam("url") String url) {
+
+        return vendorManagementService.saveIdentificationUrl(id, url);
     }
 
     @PutMapping("/{id}/status")
