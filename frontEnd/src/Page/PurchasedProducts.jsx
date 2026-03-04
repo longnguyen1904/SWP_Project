@@ -1,8 +1,6 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function PurchasedProducts({ onReturnHome }) {
-  const navigate = useNavigate();
 
   
   const purchasedProducts = [
@@ -150,7 +148,7 @@ export default function PurchasedProducts({ onReturnHome }) {
 
         {/* RETURN BUTTON */}
         <div style={{ marginTop: 24 }}>
-          <button style={s.btnPrimary} onClick={onReturnHome || (() => navigate("/"))}>
+          <button style={s.btnPrimary} onClick={onReturnHome}>
             ← Return to Home
           </button>
         </div>
