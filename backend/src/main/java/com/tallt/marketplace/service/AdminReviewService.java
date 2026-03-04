@@ -3,7 +3,6 @@ package com.tallt.marketplace.service;
 import com.tallt.marketplace.dto.AdminProductReviewDTO;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.entity.ProductVersion;
-import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.ProductVersionRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -34,20 +33,29 @@ public class AdminReviewService {
 
                 Page<Product> productPage;
 
+                // ===== CONVERT STATUS STRING -> ENUM =====
+                Product.ProductStatus statusEnum = null;
+                if (status != null && !status.isBlank()) {
+                        try {
+                                statusEnum = Product.ProductStatus.valueOf(status.toUpperCase());
+                        } catch (IllegalArgumentException e) {
+                                throw new RuntimeException("Invalid status value: " + status);
+                        }
+                }
+
                 // ===== FILTER LOGIC =====
-                if (status != null && !status.isEmpty()
-                                && keyword != null && !keyword.isEmpty()) {
+                if (statusEnum != null && keyword != null && !keyword.isBlank()) {
 
                         productPage = productRepository
                                         .findByStatusAndProductNameContainingIgnoreCase(
-                                                        status, keyword, pageable);
+                                                        statusEnum.name(), keyword, pageable);
 
-                } else if (status != null && !status.isEmpty()) {
+                } else if (statusEnum != null) {
 
                         productPage = productRepository
-                                        .findByStatus(status, pageable);
+                                        .findByStatus(statusEnum.name(), pageable);
 
-                } else if (keyword != null && !keyword.isEmpty()) {
+                } else if (keyword != null && !keyword.isBlank()) {
 
                         productPage = productRepository
                                         .findByProductNameContainingIgnoreCase(keyword, pageable);
@@ -61,17 +69,15 @@ public class AdminReviewService {
                                 .stream()
                                 .map(product -> {
 
-                                        List<ProductVersion> versions = versionRepository
-                                                        .findByProductID(product.getProductID());
-
                                         String scanStatus = "PENDING";
 
-                                        if (versions != null && !versions.isEmpty()) {
-                                                ProductVersion latest = versions.stream()
-                                                                .max(Comparator.comparing(ProductVersion::getCreatedAt))
-                                                                .orElse(null);
+                                        Optional<ProductVersion> latestOpt = versionRepository
+                                                        .findTopByProduct_ProductIDOrderByCreatedAtDesc(
+                                                                        product.getProductID());
 
-                                                if (latest != null && latest.getScanStatus() != null) {
+                                        if (latestOpt.isPresent()) {
+                                                ProductVersion latest = latestOpt.get();
+                                                if (latest.getScanStatus() != null) {
                                                         scanStatus = latest.getScanStatus();
                                                 }
                                         }
@@ -79,19 +85,19 @@ public class AdminReviewService {
                                         return new AdminProductReviewDTO(
                                                         product.getProductID(),
                                                         product.getProductName(),
-                                                        product.getVendorID(),
+                                                        product.getVendor() != null
+                                                                        ? product.getVendor().getVendorID()
+                                                                        : null,
                                                         product.getBasePrice() != null
                                                                         ? product.getBasePrice().doubleValue()
                                                                         : null,
                                                         scanStatus,
-                                                        product.getStatus(),
+                                                        product.getStatus().name(),
                                                         product.getRejectionNote());
-                                }).toList();
+                                })
+                                .toList();
 
-                return new PageImpl<>(
-                                dtoList,
-                                pageable,
-                                productPage.getTotalElements());
+                return new PageImpl<>(dtoList, pageable, productPage.getTotalElements());
         }
 
         // =========================
@@ -103,35 +109,25 @@ public class AdminReviewService {
                 Product product = productRepository.findById(productId)
                                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-                List<ProductVersion> versions = versionRepository.findByProductID(productId);
+                ProductVersion latestVersion = versionRepository
+                                .findTopByProduct_ProductIDOrderByCreatedAtDesc(productId)
+                                .orElseThrow(() -> new RuntimeException("No version uploaded"));
 
-                if (versions == null || versions.isEmpty()) {
-                        throw new RuntimeException("No version uploaded");
-                }
-
-                ProductVersion latestVersion = versions.stream()
-                                .max(Comparator.comparing(ProductVersion::getCreatedAt))
-                                .orElseThrow(() -> new RuntimeException("Cannot find latest version"));
-
-                // ===== CHECK URL EXIST =====
-                if (latestVersion.getFileUrl() == null ||
-                                latestVersion.getFileUrl().isEmpty()) {
+                if (latestVersion.getFileUrl() == null
+                                || latestVersion.getFileUrl().isBlank()) {
                         throw new RuntimeException("Download URL is empty");
                 }
 
-                // ===== CALL VIRUSTOTAL (SCAN URL) =====
-                boolean isMalicious = virusTotalService
-                                .isUrlMalicious(latestVersion.getFileUrl());
+                boolean isMalicious = virusTotalService.isUrlMalicious(latestVersion.getFileUrl());
 
                 if (isMalicious) {
 
-                        // Update version
                         latestVersion.setScanStatus("MALICIOUS");
                         versionRepository.save(latestVersion);
 
-                        // Update product
-                        product.setStatus("REJECTED");
-                        product.setRejectionNote("Detected malware by VirusTotal (URL Scan)");
+                        product.setStatus(Product.ProductStatus.REJECTED);
+                        product.setRejectionNote(
+                                        "Detected malware by VirusTotal (URL Scan)");
                         productRepository.save(product);
 
                         return "Product rejected due to malicious download link.";
@@ -141,10 +137,10 @@ public class AdminReviewService {
                 latestVersion.setScanStatus("CLEAN");
                 versionRepository.save(latestVersion);
 
-                product.setStatus("APPROVED");
+                product.setStatus(Product.ProductStatus.APPROVED);
                 product.setRejectionNote(null);
                 productRepository.save(product);
 
                 return "Product approved successfully.";
         }
-}       
+}
