@@ -5,7 +5,7 @@
     url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: root
-  jpa:
+  jpa:           
     hibernate:
       ddl-auto: update
       naming:
