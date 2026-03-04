@@ -17,7 +17,6 @@ export default function LogOut() {
 
   const isMenuOpen = Boolean(anchorEl);
 
-  // Lấy thông tin user Google (ảnh đại diện)??
   React.useEffect(() => {
     const accessToken = getToken();
     if (!accessToken) return;
@@ -48,7 +47,7 @@ export default function LogOut() {
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="fixed">
         <Toolbar sx={{ justifyContent: "flex-end" }}>
-          {/* AVATAR GOOGLE */}
+   
           <IconButton
             size="large"
             edge="end"
@@ -68,7 +67,7 @@ export default function LogOut() {
             )}
           </IconButton>
 
-          {/* MENU ACCOUNT */}
+    
           <Menu
             anchorEl={anchorEl}
             open={isMenuOpen}

@@ -10,7 +10,7 @@ const LogIn = forwardRef(function LogIn(props, ref) {
     email: "",
     password: "",
     fullName: "",
-    roleID: 3 
+    roleID: 3                   
   });
 
   const handleChange = (e) => {
@@ -21,11 +21,10 @@ const LogIn = forwardRef(function LogIn(props, ref) {
     });
   };
 
-  // 4. Hàm xử lý khi bấm nút Submit
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Chặn reload trang
+    e.preventDefault(); 
 
-    // Chọn đường dẫn API
+   
     const endpoint = isLogin
       ? "http://localhost:8081/api/auth/login"
       : "http://localhost:8081/api/auth/register";
@@ -36,6 +35,7 @@ const LogIn = forwardRef(function LogIn(props, ref) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData), 
       });
+
 
       const data = await response.json();
 

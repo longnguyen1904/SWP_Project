@@ -16,8 +16,6 @@ function AdminVendorManagement() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
-  const unwrapResponse = (raw) => (raw && raw.data !== undefined ? raw.data : raw);
-
   // ===============================
   // COLORS & STYLES
   // ===============================
@@ -60,10 +58,9 @@ function AdminVendorManagement() {
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch vendors");
 
-      const raw = await res.json();
-      const data = unwrapResponse(raw);
-      setVendors(data?.content || []);
-      setTotalPages(data?.totalPages || 0);
+      const data = await res.json();
+      setVendors(data.content);
+      setTotalPages(data.totalPages);
       setPage(customPage);
     } catch (err) {
       setMessage(err.message);
@@ -88,8 +85,7 @@ function AdminVendorManagement() {
     try {
       const res = await fetch(`http://localhost:8081/api/admin/vendors/${searchId}`);
       if (!res.ok) throw new Error("Vendor not found");
-      const raw = await res.json();
-      const data = unwrapResponse(raw);
+      const data = await res.json();
       setVendors([data]);
       setTotalPages(1);
       setPage(0);
