@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,25 @@ public class VendorProductController {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    /**
+     * Lấy vendorId của user hiện tại (chỉ khi user là Vendor).
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> getCurrentVendorId(
+            @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
+        Map<String, Integer> body = new HashMap<>();
+        if (userId == null) {
+            return ResponseEntity.ok(ApiResponse.success(body));
+        }
+        try {
+            Vendor vendor = vendorService.getVendorByUserId(userId);
+            body.put("vendorId", vendor.getVendorID());
+            return ResponseEntity.ok(ApiResponse.success(body));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.success(body));
+        }
+    }
 
     // ==================== PRODUCT CRUD ====================
 
@@ -111,6 +131,20 @@ public class VendorProductController {
 
         Map<String, Object> result = productService.uploadProductImages(vendor.getVendorID(), productId, urls, imageType);
         return ResponseEntity.ok(ApiResponse.success("Upload ảnh thành công", result));
+    }
+
+    /**
+     * Xóa một ảnh sản phẩm
+     * DELETE /api/vendor/products/{productId}/images/{imageId}
+     */
+    @DeleteMapping("/products/{productId}/images/{imageId}")
+    public ResponseEntity<ApiResponse<Void>> deleteProductImage(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId,
+            @PathVariable Integer imageId) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        productService.deleteProductImage(vendor.getVendorID(), productId, imageId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     /**

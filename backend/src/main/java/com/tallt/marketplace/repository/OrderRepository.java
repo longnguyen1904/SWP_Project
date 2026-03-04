@@ -10,4 +10,8 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     Optional<Order> findByTransactionRef(String transactionRef);
+
+    /** Kiểm tra user đã có đơn hàng đã thanh toán (PaymentStatus != Pending) cho sản phẩm. */
+    boolean existsByProduct_ProductIDAndUser_UserIDAndPaymentStatusIgnoreCaseNot(
+            Integer productID, Integer userID, String paymentStatus);
 }
