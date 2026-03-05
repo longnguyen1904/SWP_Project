@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { vendorAPI } from "../services/api";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -22,7 +22,6 @@ const today = new Date().toISOString().split('T')[0];
 const [startDate, setStartDate] = useState("2026-01-01");
 const [endDate, setEndDate] = useState(today); // <-- Cập nhật ở đây
   const [activeRange, setActiveRange] = useState("custom"); // Track range selection
-  const vendorId = 1;
 
   // Hàm xử lý chọn nhanh khoảng thời gian
   const handleQuickRange = (days, label) => {
@@ -42,26 +41,25 @@ const [endDate, setEndDate] = useState(today); // <-- Cập nhật ở đây
   };
 
   const loadRevenue = (sDate = startDate, eDate = endDate) => {
-    axios.get("http://localhost:8081/api/vendor/revenue/daily", {
-      params: { vendorId, startDate: sDate, endDate: eDate }
-    })
-    .then(res => setData(res.data))
-    .catch(err => console.error("API error:", err));
+    vendorAPI
+      .getDailyRevenue({ startDate: sDate, endDate: eDate })
+      .then((res) => setData(res.data))
+      .catch((err) => console.error("API error:", err));
   };
 
   const downloadCSV = () => {
-    axios.get("http://localhost:8081/api/vendor/revenue/export", {
-      params: { vendorId, startDate, endDate },
-      responseType: "blob"
-    }).then(res => {
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `revenue_${startDate}_to_${endDate}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    });
+    vendorAPI
+      .exportRevenueCSV({ startDate, endDate })
+      .then((res) => {
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `revenue_${startDate}_to_${endDate}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      })
+      .catch((err) => console.error("Export error:", err));
   };
 
   useEffect(() => { loadRevenue(); }, []);

@@ -24,4 +24,5 @@ public class ProductResponse {
     private LocalDateTime createdAt;
     private List<String> tags;
     private String status;
+    private String guideDocumentUrl;
 }

@@ -60,6 +60,8 @@ const Register = forwardRef(function Register(props, ref) {
 
       if (isLogin) {
         setToken(data.token);   // ⭐ QUAN TRỌNG
+        if (data.roleName) localStorage.setItem("role", data.roleName);
+        if (data.userID != null) localStorage.setItem("userId", String(data.userID));
         window.dispatchEvent(new Event("authChanged"));
         localStorage.setItem("user", JSON.stringify(data));
         ref?.current?.close();

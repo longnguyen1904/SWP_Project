@@ -19,7 +19,9 @@ export const getCurrentUser = () => {
 export const logOut = () => {
   removeToken(); // Xóa accessToken
   localStorage.removeItem("user"); // Xóa thông tin user
-  
+  localStorage.removeItem("role"); // Xóa role để lần login sau không hiển thị menu sai
+  localStorage.removeItem("userId"); // Xóa userId
+
   // Phát sự kiện để các Component khác (như Header) biết để cập nhật giao diện
   window.dispatchEvent(new Event("authChanged"));
   

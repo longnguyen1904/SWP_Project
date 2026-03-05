@@ -80,6 +80,9 @@ public class VendorService {
         vendor.setUser(user);
         vendor.setType(vendorType);
         vendor.setCompanyName(request.getCompanyName());
+        if (request.getDescription() != null && !request.getDescription().isBlank()) {
+            vendor.setDescription(request.getDescription().trim());
+        }
         vendor.setTaxCode(request.getTaxCode());
         vendor.setCitizenID(request.getCitizenId());
         vendor.setIdentificationDoc(request.getIdentificationDoc());

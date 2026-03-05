@@ -46,6 +46,9 @@ public class Vendor {
     @Column(name = "RejectionNote")
     private String rejectionNote;
 
+    @Column(name = "Description", columnDefinition = "TEXT")
+    private String description;
+
     public Boolean getIsVerified() {
         return this.status == VendorStatus.APPROVED;
     }
