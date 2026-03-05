@@ -24,6 +24,7 @@ public class EmailService {
         if (fromEmail != null && !fromEmail.isBlank()) {
             message.setFrom(fromEmail);
         }
+        System.out.println(message);
         message.setTo(to);
         message.setSubject(subject);
         message.setText(body);
