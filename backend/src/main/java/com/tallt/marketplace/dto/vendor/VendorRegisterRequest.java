@@ -15,6 +15,9 @@ public class VendorRegisterRequest {
 
     private String companyName;
 
+    /** Mô tả doanh nghiệp / sản phẩm dự định bán (tùy chọn). */
+    private String description;
+
     private String taxCode;
 
     @NotBlank(message = "Số CMND/CCCD không được để trống")

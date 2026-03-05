@@ -14,6 +14,12 @@ import PurchasedProducts from "./Page/PurchasedProducts";
 import AdminDashboard from "./Page/AdminDashboard";
 import VendorDashboard from "./Page/VendorDashboard";
 import CustomerDashboard from "./Page/CustomerDashboard";
+import Marketplace from "./Page/Marketplace";
+import ProductDetail from "./Page/ProductDetail";
+import VendorRegistration from "./Page/VendorRegistration";
+import ProductUpload from "./Page/ProductUpload";
+import ProductManagement from "./Page/ProductManagement";
+
 export default function App() {
   return (
     <div className="app snow">
@@ -36,7 +42,8 @@ export default function App() {
         <Route path="/Page/Vendor" element={<VendorDashboard />}>
           <Route index element={<Navigate to="RevenueDashboard" replace />} />
           <Route path="RevenueDashboard" element={<RevenueDashboard />} />
-
+          <Route path="ProductUpload" element={<ProductUpload />} />
+          <Route path="MyProducts" element={<ProductManagement />} />
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />
@@ -48,6 +55,10 @@ export default function App() {
 
 
         <Route path="/Page/PurchasedProducts" element={<PurchasedProducts />} />
+
+        <Route path="/marketplace" element={<Marketplace />} />
+        <Route path="/products/:productId" element={<ProductDetail />} />
+        <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
       </Routes>
 
     </div>
