@@ -1,80 +1,156 @@
+/* ===== GLOBAL CONTAINER FULL WIDTH ===== */
+
+.filter-container {
+  width: 100%;
+  padding: 40px 60px;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: white;
+}
+
+/* ===== SEARCH + FILTER BAR ===== */
+
+.searching {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+/* ===== DROPDOWN ===== */
 
 .dropdown {
   position: relative;
-  margin-bottom: 5vh;
-  width: 20vw ;
+  flex: 1;
 }
 
 .dropdown-header {
-  padding: 10px;
-  border: 1px solid #ccc;
-  cursor: pointer ; 
-  background: black;
+  padding: 12px 16px;
+  border: 1px solid #444;
+  cursor: pointer;
+  background: #111;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height : 6vh ; 
-  weight : 20vw ; 
+  height: 48px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.dropdown-header:hover {
+  border-color: #00bfff;
+  box-shadow: 0 0 8px rgba(0,191,255,0.3);
 }
 
 .dropdown-list {
   list-style: none;
-  padding: 0;
-  border: 1px solid #ccc;
-  border-top: none;
+  padding: 6px 0;
+  border: 1px solid #444;
+  border-radius: 12px;
   position: absolute;
   width: 100%;
-  background: black;
+  background: #111;
+  margin-top: 6px;
   z-index: 10;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
 }
 
 .dropdown-list li {
-  padding: 10px;
+  padding: 10px 16px;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
 .dropdown-list li:hover {
-  background: #f0f0f0;
+  background: #1f1f1f;
 }
 
 .dropdown-list li.active {
-  background: black;
+  background: #00bfff;
   color: white;
 }
+
+/* ===== ARROW ===== */
+
+.arrow {
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+/* ===== SEARCH INPUT ===== */
+
+.searching input {
+  flex: 2;
+  height: 48px;
+  color: white;
+  background: #111;
+  border: 1px solid #444;
+  border-radius: 25px;
+  padding: 0 18px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.searching input:focus {
+  border-color: #00bfff;
+  box-shadow: 0 0 10px rgba(0,191,255,0.3);
+}
+
+/* ===== PRODUCT GRID FULL WIDTH ===== */
 
 .item-list {
   list-style: none;
   padding: 0;
+  margin: 0;
+
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+
+  max-height: calc((160px * 3) + (24px * 2));
+  overflow-y: auto;
 }
+
+/* ===== PRODUCT CARD ===== */
 
 .item-list li {
-  padding: 6px 0;
-  border-bottom: 1px solid #eee;
-  background: #222;
+  background: linear-gradient(145deg,#1a1a1a,#111);
   height: 160px;
   border-radius: 16px;
-}
 
-.arrow {
-  font-size: 12px;
-}
-
-.searching {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  width: 45vw ; 
-  gap : 6vh ; 
-}
-.searching input {
-  height : 6vh ;
-  color : white ;  
-  background-color : rgba(17, 17, 17 , 0);  
-  background: black;
-  weight : 20vw ; 
-  border: 1px solid #ccc;
+  display: flex;
   align-items: center;
-  border-radius : 50px ; 
+  justify-content: center;
+
+  font-size: 15px;
+  font-weight: 500;
+
+  transition: all 0.25s ease;
+  border: 1px solid #333;
+}
+
+.item-list li:hover {
+  transform: translateY(-8px);
+  border-color: #00bfff;
+  box-shadow: 0 15px 25px rgba(0,191,255,0.25);
+}
+
+/* ===== SCROLLBAR ===== */
+
+.item-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.item-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.item-list::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 20px;
+}
+
+.item-list::-webkit-scrollbar-thumb:hover {
+  background: #00bfff;
 }

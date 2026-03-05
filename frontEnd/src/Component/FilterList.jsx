@@ -1,6 +1,5 @@
 import { useState } from "react";
-import "../Style/FilterList.css" ; 
-
+import "../Style/FilterList.css";
 
 const FILTERS = ["All", "Fruit", "Vegetable", "Drink"];
 
@@ -20,9 +19,6 @@ const ITEMS = [
   { id: 13, name: "ưqewqew Juice", type: "fruit" },
   { id: 14, name: "zxcsv Juice", type: "fruit" },
   { id: 15, name: "jjrtetqe Juice", type: "Drink" },
-
-  
-  
 ];
 
 export default function FilterList() {
@@ -30,7 +26,6 @@ export default function FilterList() {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchName, setSearchName] = useState("");
 
-  // 🔥 FILTER THEO TYPE + NAME
   const filteredItems = ITEMS
     .filter(item => {
       if (selectedFilter === "All") return true;
@@ -46,9 +41,8 @@ export default function FilterList() {
   }
 
   return (
-
     <section className="filter-container">
-      
+
       <div className="searching">
         <div className="dropdown">
           <div className="dropdown-header" onClick={() => setOpen(!open)}>
