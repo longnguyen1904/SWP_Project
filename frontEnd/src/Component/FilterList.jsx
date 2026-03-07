@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState , useEffect } from "react";
 import "../Style/FilterList.css";
 
 const FILTERS = ["All", "Fruit", "Vegetable", "Drink"];
@@ -38,47 +38,72 @@ export default function FilterList() {
   function handleSelect(filter) {
     setSelectedFilter(filter);
     setOpen(false);
-  }
+  } 
+
+  const [products, setProducts] = useState([]);  
+  useEffect(() => {
+    fetch("http://localhost:8081/api/products")
+    .then(res => res.json())
+    .then(data => setProducts(data.data.content)) ; 
+  } , []); 
+
+
 
   return (
+    
     <section className="filter-container">
+  <div>
+    <h2>Product List</h2>
+  </div>
 
-      <div className="searching">
-        <div className="dropdown">
-          <div className="dropdown-header" onClick={() => setOpen(!open)}>
-            {selectedFilter}
-            <span className={`arrow ${open ? "up" : "down"}`}>▾</span>
-          </div>
-
-          {open && (
-            <ul className="dropdown-list">
-              {FILTERS.map(filter => (
-                <li
-                  key={filter}
-                  className={filter === selectedFilter ? "active" : ""}
-                  onClick={() => handleSelect(filter)}
-                >
-                  {filter}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Search by name..."
-          value={searchName}
-          onChange={(e) => setSearchName(e.target.value)}
-        />
+  <div className="searching">
+    <div className="dropdown">
+      <div className="dropdown-header" onClick={() => setOpen(!open)}>
+        {selectedFilter}
+        <span className={`arrow ${open ? "up" : "down"}`}>▾</span>
       </div>
 
-      <ul className="item-list">
-        {filteredItems.map(item => (
-          <li key={item.id}>{item.name}</li>
-        ))}
-      </ul>
-    </section>
-  );
+      {open && (
+        <ul className="dropdown-list">
+          {FILTERS.map(filter => (
+            <li
+              key={filter}
+              className={filter === selectedFilter ? "active" : ""}
+              onClick={() => handleSelect(filter)}
+            >
+              {filter}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+
+    <input
+      type="text"
+      className="search-input"
+      placeholder="Search by name..."
+      value={searchName}
+      onChange={(e) => setSearchName(e.target.value)}
+    />
+  </div>
+
+  <ul className="item-list">
+    {products
+      .filter(product => {
+        if (selectedFilter === "All") return true;
+        return product.categoryName === selectedFilter;
+      })
+      .filter(product =>
+        product.productName
+          .toLowerCase()
+          .includes(searchName.toLowerCase())
+      )
+      .map(product => (
+        <li key={product.productId}>
+          <h3>{product.productName}</h3>
+          <p>Price: ${product.basePrice}</p>
+        </li>
+      ))}
+  </ul>
+</section>); 
 }

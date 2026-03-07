@@ -105,7 +105,8 @@
   margin: 0;
 
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+   grid-template-columns: repeat(5, 1fr); /* 5 cột */
+  grid-template-rows: repeat(6, auto);   /* 3 hàng */
   gap: 24px;
 
   max-height: calc((160px * 3) + (24px * 2));
