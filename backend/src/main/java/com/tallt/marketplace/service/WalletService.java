@@ -99,6 +99,7 @@ public class WalletService {
         transaction.setReferenceID(payout.getPayoutID());
         transaction.setDescription("Yêu cầu rút tiền #" + payout.getPayoutID());
         walletTransactionRepository.save(transaction);
+        // System.out.println(wallet);
 
         return Map.of(
                 "payoutId", payout.getPayoutID(),
