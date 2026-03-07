@@ -102,6 +102,7 @@ export default function FilterList() {
         <li key={product.productId}>
           <h3>{product.productName}</h3>
           <p>Price: ${product.basePrice}</p>
+          <button>Buy</button>
         </li>
       ))}
   </ul>
