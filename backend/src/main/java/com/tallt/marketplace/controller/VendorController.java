@@ -40,6 +40,7 @@ public class VendorController {
     public ResponseEntity<ApiResponse<VendorRegisterResponse>> registerVendor(
             @RequestHeader("X-User-Id") Integer userId,
             @Valid @RequestBody VendorRegisterRequest request) {
+                System.out.println("Hello World");
         VendorRegisterResponse result = vendorService.registerVendor(userId, request);
         return ResponseEntity.ok(ApiResponse.success("Đăng ký Vendor thành công", result));
     }
