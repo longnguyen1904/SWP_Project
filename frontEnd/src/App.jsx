@@ -51,7 +51,7 @@ export default function App() {
           <Route path="AdminVendorManagement" element={<AdminVendorManagement />} />
           <Route path="AdminReview" element={<AdminReview />} />
         </Route>
-        
+         
 
 
         <Route path="/Page/PurchasedProducts" element={<PurchasedProducts />} />

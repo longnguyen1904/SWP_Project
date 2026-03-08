@@ -538,7 +538,7 @@ const ProductDetail = () => {
                       value={reviewRating}
                       onChange={(_, v) => setReviewRating(v ?? 5)}
                       sx={{ "& .MuiRating-iconFilled": { color: theme.accent }, "& .MuiRating-iconEmpty": { color: "rgba(230,237,243,0.35)" } }}
-                    />
+                    />                                       
                   </Box>
                   <TextField
                     fullWidth
