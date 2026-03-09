@@ -22,7 +22,7 @@ import ProductManagement from "./Page/ProductManagement";
 import CreateSupportTicketWizard from "./Page/CreateSupportTicketWizard";
 import VendorTicketManagement from "./Page/VendorTicketManagement";
 import CustomerTicketManagement from "./Page/CustomerTicketManagement";
-import PaymentResult from "./Page/PaymentResult";
+
 export default function App() {
   return (
     <div className="app snow">
