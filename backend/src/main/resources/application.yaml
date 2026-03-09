@@ -1,4 +1,4 @@
-spring:
+﻿spring:
   application:
     name: marketplace
   datasource:
@@ -25,7 +25,6 @@ cloudinary:
   cloud_name: ${CLOUDINARY_CLOUD_NAME:dwfxvobn3}
   api_key: ${CLOUDINARY_API_KEY:223312713834276}
   api_secret: ${CLOUDINARY_API_SECRET:yG5aXxOkoLXNX2736_2KwJuYpu0}
-
 vnpay:
   tmn-code: 1A1WQ9ZN
   hash-secret: HFWWS0H1PTNNWO8C114AIRI5CR1RA9DP
