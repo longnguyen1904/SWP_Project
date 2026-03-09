@@ -1,8 +1,7 @@
-spring:
+﻿spring:
   application:
     name: marketplace
   datasource:
-    # Thêm ?createDatabaseIfNotExist=true để tự tạo DB nếu chưa có
     url: jdbc:mysql://localhost:3307/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: 123456
@@ -11,7 +10,6 @@ spring:
       ddl-auto: update
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-
     show-sql: true
     properties:
       hibernate:
@@ -23,3 +21,7 @@ server:
 virustotal:
   api-key: fbeee19f2a7b45408e220ff4a07384ff9041af712a50f4fe6eb38b32b3c250b7
 
+cloudinary:
+  cloud_name: ${CLOUDINARY_CLOUD_NAME:dwfxvobn3}
+  api_key: ${CLOUDINARY_API_KEY:223312713834276}
+  api_secret: ${CLOUDINARY_API_SECRET:yG5aXxOkoLXNX2736_2KwJuYpu0}

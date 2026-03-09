@@ -6,16 +6,30 @@ import "../Style/Navbar.css";
 
 import { isAuthenticated, logOut } from "../services/authService";
 
-// Giả sử có hàm kiểm tra quyền admin, ví dụ:
-function isAdmin() {
-  // TODO: Thay bằng logic thực tế lấy từ localStorage hoặc context
-  return localStorage.getItem("role") === "ADMIN";
+function getRole() {
+  const role = localStorage.getItem("role");
+  if (role) return role.toUpperCase().replace("ROLE_", "");
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const r = user.roleName || user.role;
+    return r ? String(r).toUpperCase().replace("ROLE_", "") : null;
+  } catch {
+    return null;
+  }
 }
-
+function isAdmin() {
+  return getRole() === "ADMIN";
+}
+function isVendor() {
+  return getRole() === "VENDOR";
+}
+function isCustomer() {
+  return getRole() === "CUSTOMER";
+}
 export default function Navbar() {
   const dialog = useRef();
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
-  const [admin, setAdmin] = useState(isAdmin());
+  const [role, setRole] = useState(getRole());
 
   function handleClick() {
     dialog.current.showModal();
@@ -24,12 +38,13 @@ export default function Navbar() {
   function handleLogout() {
     logOut();
     setLoggedIn(false);
+    setRole(null);
   }
 
   useEffect(() => {
     const updateAuth = () => {
       setLoggedIn(isAuthenticated());
-      setAdmin(isAdmin());
+      setRole(getRole());
     };
     window.addEventListener("authChanged", updateAuth);
     return () => window.removeEventListener("authChanged", updateAuth);
@@ -44,9 +59,10 @@ export default function Navbar() {
           <img src={logo} alt="logo" />
         </h1>
 
-        {/* ===== MAIN MENU (4 items) ===== */}
+
         <ul>
           <li><Link to="../" id="router-link">Home</Link></li>
+          <li><Link to="/marketplace" id="router-link">Marketplace</Link></li>
           <li><Link to="../Page/About" id="router-link">About</Link></li>
           <li><Link to="../Page/Event" id="router-link">Events</Link></li>
           <li><Link to="../Page/Tradition" id="router-link">Traditons</Link></li>
@@ -65,21 +81,42 @@ export default function Navbar() {
             </button>
           )}
 
-          {/* ===== HAMBURGER MENU ===== */}
-          <div className="menu-dropdown">
-            <div className="hamburger">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
 
-            <div className="dropdown-content">
-              <Link to="../Page/ProfilePage" id="router-link">ProfileChange</Link>
-              <Link to="../Page/Customer" id="router-link">CustomerDashboard</Link>
-              <Link to="../Page/Vendor" id="router-link">Vendor Dashboard</Link>
-              <Link to="../Page/Admin" id="router-link">Admin Dashboard</Link>
+          {loggedIn ? (
+            <div className="menu-dropdown">
+              <div className="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+
+              <div className="dropdown-content">
+                <Link to="/Page/ProfilePage" id="router-link">ProfileChange</Link>
+                {role === "CUSTOMER" && (
+                  <>
+                    <Link to="/Page/Customer" id="router-link">CustomerDashboard</Link>
+                    <Link to="/Page/VendorRegistration" id="router-link">Become a Vendor</Link>
+                  </>
+                )}
+                {role === "VENDOR" && (
+                  <>
+                    <Link to="/Page/Vendor" id="router-link">Vendor Dashboard</Link>
+                    <Link to="/Page/Vendor/ProductUpload" id="router-link">Upload Product</Link>
+                    <Link to="/Page/Vendor/MyProducts" id="router-link">My Products</Link>
+                  </>
+                )}
+                {role === "ADMIN" && (
+                  <Link to="/Page/Admin" id="router-link">Admin Dashboard</Link>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            < >
+
+            </>
+          )}
+
+
 
         </div>
       </nav>

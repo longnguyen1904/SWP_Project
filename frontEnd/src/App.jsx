@@ -14,6 +14,12 @@ import PurchasedProducts from "./Page/PurchasedProducts";
 import AdminDashboard from "./Page/AdminDashboard";
 import VendorDashboard from "./Page/VendorDashboard";
 import CustomerDashboard from "./Page/CustomerDashboard";
+import Marketplace from "./Page/Marketplace";
+import ProductDetail from "./Page/ProductDetail";
+import VendorRegistration from "./Page/VendorRegistration";
+import ProductUpload from "./Page/ProductUpload";
+import ProductManagement from "./Page/ProductManagement";
+
 export default function App() {
   return (
     <div className="app snow">
@@ -25,7 +31,6 @@ export default function App() {
         <Route path="/Page/Event" element={<Event />} />
         <Route path="/Page/Tradition" element={<Tradition />} />
 
-
         <Route path="/Page/Customer" element={<CustomerDashboard />}>
           <Route index element={<Navigate to="PurchasedProducts" replace />} />
           <Route path="PurchasedProducts" element={<PurchasedProducts />} />
@@ -34,24 +39,26 @@ export default function App() {
 
 
         <Route path="/Page/Vendor" element={<VendorDashboard />}>
-          {/* Mặc định nhảy vào trang thống kê doanh thu */}
           <Route index element={<Navigate to="RevenueDashboard" replace />} />
           <Route path="RevenueDashboard" element={<RevenueDashboard />} />
-
-          {/* Sau này bạn có thể thêm: <Route path="MyProducts" element={<MyProducts />} /> */}
+          <Route path="ProductUpload" element={<ProductUpload />} />
+          <Route path="MyProducts" element={<ProductManagement />} />
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />
         <Route path="/Page/Admin" element={<AdminDashboard />}>
-          {/* Dòng quan trọng nhất: Khi path là "/Page/Admin", tự động nhảy sang trang Vendor */}
           <Route index element={<Navigate to="AdminVendorManagement" replace />} />
-
           <Route path="AdminVendorManagement" element={<AdminVendorManagement />} />
           <Route path="AdminReview" element={<AdminReview />} />
         </Route>
+         
 
 
         <Route path="/Page/PurchasedProducts" element={<PurchasedProducts />} />
+
+        <Route path="/marketplace" element={<Marketplace />} />
+        <Route path="/products/:productId" element={<ProductDetail />} />
+        <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
       </Routes>
 
     </div>
