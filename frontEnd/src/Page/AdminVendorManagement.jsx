@@ -39,7 +39,7 @@ function AdminVendorManagement() {
     }
   };
 
-  // ================= FETCH =================
+  //FETCH
   const fetchVendors = async (customPage = page) => {
     setLoading(true);
     setMessage("");
@@ -68,7 +68,7 @@ function AdminVendorManagement() {
     fetchVendors(0);
   }, []);
 
-  // ================= SEARCH =================
+  //SEARCH
   const handleSearchById = async () => {
     if (!searchId) return;
     setLoading(true);
@@ -97,7 +97,7 @@ function AdminVendorManagement() {
     fetchVendors(0);
   };
 
-  // ================= UPDATE STATUS =================
+  //UPDATE STATUS 
   const handleUpdateStatus = async (vendorID, newStatus) => {
     try {
       const res = await fetch(
