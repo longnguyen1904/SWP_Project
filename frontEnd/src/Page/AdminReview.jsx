@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 
 function AdminReview() {
-
+  // ---------------------------------------------------------
   // 1. STATES & CONFIG
+  // ---------------------------------------------------------
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingId, setLoadingId] = useState(null);
@@ -28,8 +29,9 @@ function AdminReview() {
     border: "#334155",
   };
 
-
+  // ---------------------------------------------------------
   // 2. FETCH DATA LOGIC (PAGEABLE)
+  // ---------------------------------------------------------
   const fetchProducts = async (targetPage = page) => {
     setLoading(true);
     try {
@@ -58,8 +60,9 @@ function AdminReview() {
     fetchProducts(page);
   }, [page]);
 
-
+  // ---------------------------------------------------------
   // 3. HANDLERS
+  // ---------------------------------------------------------
   const handleApplyFilter = () => {
     fetchProducts(0); // Luôn về trang 0 khi lọc mới
   };
@@ -115,7 +118,9 @@ function AdminReview() {
     }
   };
 
+  // ---------------------------------------------------------
   // 4. RENDER UI
+  // ---------------------------------------------------------
   return (
     <div style={{ padding: "40px 20px", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "'Inter', sans-serif", color: colors.textMain }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
@@ -150,7 +155,7 @@ function AdminReview() {
               style={inputStyle}
               value={keyword}
               onChange={e => setKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
+              onKeyPress={(e) => e.key === 'Enter' && handleApplyFilter()}
             />
             <button onClick={handleApplyFilter} style={btnSecondary}>Search</button>
             <button onClick={handleReset} style={{...btnSecondary, color: colors.error}}>Reset</button>
