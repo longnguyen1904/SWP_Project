@@ -57,6 +57,7 @@ function PurchasedProducts() {
               <th style={thStyle}>Tier</th>
               <th style={thStyle}>Quantity</th>
               <th style={thStyle}>Price</th>
+              <th style={thStyle}>License Key</th>
               <th style={thStyle}>Status</th>
               <th style={thStyle}>Action</th>
             </tr>
@@ -75,6 +76,10 @@ function PurchasedProducts() {
                 <td style={tdStyle}>{order.quantity}</td>
 
                 <td style={tdStyle}>${order.totalAmount}</td>
+
+                <td style={tdStyle}>
+                  {order.license?.licenseKey || "Generating..."}
+                </td>
 
                 <td style={tdStyle}>{order.paymentStatus}</td>
 
@@ -102,7 +107,7 @@ function PurchasedProducts() {
               background: "rgba(255,255,255,0.1)",
               fontWeight: "bold"
             }}>
-              <td colSpan="3" style={tdStyle}>Total</td>
+              <td colSpan="4" style={tdStyle}>Total</td>
 
               <td style={tdStyle}>${totalPrice}</td>
 
