@@ -19,6 +19,7 @@ import ProductDetail from "./Page/ProductDetail";
 import VendorRegistration from "./Page/VendorRegistration";
 import ProductUpload from "./Page/ProductUpload";
 import ProductManagement from "./Page/ProductManagement";
+import PaymentResult from "./Page/PaymentResult";
 
 export default function App() {
   return (
@@ -58,6 +59,7 @@ export default function App() {
 
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
+        <Route path="/payment-result" element={<PaymentResult />} />
         <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
       </Routes>
 

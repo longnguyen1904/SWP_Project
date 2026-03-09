@@ -1,0 +1,171 @@
+/**
+ * Payment.css — Styles cho module Checkout & Payment.
+ *
+ * Bao gồm:
+ * 1. Tier Selection (nút chọn gói)
+ * 2. Checkout Modal (xác nhận mua hàng)
+ * 3. Payment Result (trang kết quả thanh toán)
+ * 4. Payment Failed Alert (thông báo trên ProductDetail)
+ */
+
+/* === 1. Tier Selection ================================================= */
+.btn--selected {
+  border-color: var(--color-accent) !important;
+  background: rgba(248, 97, 21, 0.12) !important;
+  color: var(--color-accent) !important;
+}
+
+/* === 2. Checkout Modal ================================================= */
+.checkout-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.checkout-modal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  padding: 24px;
+  color: var(--color-text);
+}
+
+.checkout-modal__header { margin-bottom: 20px; }
+
+.checkout-modal__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.checkout-modal__subtitle {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.checkout-modal__product {
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.checkout-modal__image {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--color-surface-raised);
+}
+
+.checkout-modal__details { flex: 1; }
+
+.checkout-modal__product-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.checkout-modal__tier-name,
+.checkout-modal__price,
+.checkout-modal__quantity,
+.checkout-modal__delivery {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 4px 0;
+}
+
+.checkout-modal__price { color: var(--color-accent); font-weight: 600; }
+
+.checkout-modal__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.checkout-modal__total-amount {
+  font-size: 1.2rem;
+  color: var(--color-accent);
+}
+
+.checkout-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* === 3. Payment Result ================================================= */
+.payment-result {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  color: var(--color-text);
+  padding: 24px;
+}
+
+.payment-result__card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  max-width: 460px;
+  width: 100%;
+}
+
+.payment-result__icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.payment-result__title {
+  font-size: 1.5rem;
+  margin: 0 0 12px;
+}
+
+.payment-result__message {
+  color: var(--color-text-muted);
+  margin: 0 0 8px;
+}
+
+.payment-result__order-id {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.payment-result__actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* === 4. Payment Failed Alert =========================================== */
+.payment-failed-alert {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.payment-failed-alert__close {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
