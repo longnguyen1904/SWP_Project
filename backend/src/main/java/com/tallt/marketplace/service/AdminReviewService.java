@@ -13,113 +13,135 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class AdminReviewService {
 
-    private final ProductRepository productRepository;
-    private final ProductVersionRepository versionRepository;
-    private final VirusTotalService virusTotalService;
+        private final ProductRepository productRepository;
+        private final ProductVersionRepository versionRepository;
+        private final VirusTotalService virusTotalService;
 
-    public Page<AdminProductReviewDTO> getAllProductsForReview(
-            String status,
-            String keyword,
-            Pageable pageable) {
+        // =========================
+        // GET PRODUCTS FOR REVIEW
+        // =========================
+        public Page<AdminProductReviewDTO> getAllProductsForReview(
+                        String status,
+                        String keyword,
+                        Pageable pageable) {
 
-        Page<Product> productPage;
+                Page<Product> productPage;
 
-        boolean hasStatus = status != null && !status.isBlank();
-        boolean hasKeyword = keyword != null && !keyword.isBlank();
-
-        if (hasStatus && hasKeyword) {
-            productPage = productRepository
-                    .findByStatusAndProductNameContainingIgnoreCase(status, keyword, pageable);
-        } else if (hasStatus) {
-            productPage = productRepository.findByStatus(status, pageable);
-        } else if (hasKeyword) {
-            productPage = productRepository.findByProductNameContainingIgnoreCase(keyword, pageable);
-        } else {
-            productPage = productRepository.findAll(pageable);
-        }
-
-        List<AdminProductReviewDTO> dtoList = productPage.getContent()
-                .stream()
-                .map(product -> {
-                    List<ProductVersion> versions = versionRepository
-                            .findByProduct_ProductID(product.getProductID(), Pageable.unpaged())
-                            .getContent();
-
-                    String scanStatus = "PENDING";
-
-                    if (versions != null && !versions.isEmpty()) {
-                        ProductVersion latest = versions.stream()
-                                .max(Comparator.comparing(ProductVersion::getCreatedAt))
-                                .orElse(null);
-
-                        if (latest != null && latest.getScanStatus() != null) {
-                            scanStatus = latest.getScanStatus();
+                // ===== CONVERT STATUS STRING -> ENUM =====
+                Product.ProductStatus statusEnum = null;
+                if (status != null && !status.isBlank()) {
+                        try {
+                                statusEnum = Product.ProductStatus.valueOf(status.toUpperCase());
+                        } catch (IllegalArgumentException e) {
+                                throw new AppException("Invalid status value: " + status);
                         }
-                    }
+                }
 
-                    return new AdminProductReviewDTO(
-                            product.getProductID(),
-                            product.getProductName(),
-                            product.getVendorID(),
-                            product.getBasePrice() != null ? product.getBasePrice().doubleValue() : null,
-                            scanStatus,
-                            product.getStatus() != null ? product.getStatus().name() : null,
-                            product.getRejectionNote());
-                }).toList();
+                // ===== FILTER LOGIC =====
+                if (statusEnum != null && keyword != null && !keyword.isBlank()) {
 
-        return new PageImpl<>(dtoList, pageable, productPage.getTotalElements());
-    }
+                        productPage = productRepository
+                                        .findByStatusAndProductNameContainingIgnoreCase(
+                                                        statusEnum.name(), keyword, pageable);
 
-    @Transactional
-    public String reviewProduct(Integer productId) {
+                } else if (statusEnum != null) {
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new AppException("Product not found: " + productId));
+                        productPage = productRepository
+                                        .findByStatus(statusEnum.name(), pageable);
 
-        List<ProductVersion> versions = versionRepository
-                .findByProduct_ProductID(productId, Pageable.unpaged())
-                .getContent();
+                } else if (keyword != null && !keyword.isBlank()) {
 
-        if (versions.isEmpty()) {
-            throw new AppException("No version uploaded for product: " + productId);
+                        productPage = productRepository
+                                        .findByProductNameContainingIgnoreCase(keyword, pageable);
+
+                } else {
+                        productPage = productRepository.findAll(pageable);
+                }
+
+                // ===== MAP DTO =====
+                List<AdminProductReviewDTO> dtoList = productPage.getContent()
+                                .stream()
+                                .map(product -> {
+
+                                        String scanStatus = "PENDING";
+
+                                        Optional<ProductVersion> latestOpt = versionRepository
+                                                        .findTopByProduct_ProductIDOrderByCreatedAtDesc(
+                                                                        product.getProductID());
+
+                                        if (latestOpt.isPresent()) {
+                                                ProductVersion latest = latestOpt.get();
+                                                if (latest.getScanStatus() != null) {
+                                                        scanStatus = latest.getScanStatus();
+                                                }
+                                        }
+
+                                        return new AdminProductReviewDTO(
+                                                        product.getProductID(),
+                                                        product.getProductName(),
+                                                        product.getVendor() != null
+                                                                        ? product.getVendor().getVendorID()
+                                                                        : null,
+                                                        product.getBasePrice() != null
+                                                                        ? product.getBasePrice().doubleValue()
+                                                                        : null,
+                                                        scanStatus,
+                                                        product.getStatus().name(),
+                                                        product.getRejectionNote());
+                                })
+                                .toList();
+
+                return new PageImpl<>(dtoList, pageable, productPage.getTotalElements());
         }
 
-        ProductVersion latestVersion = versions.stream()
-                .max(Comparator.comparing(ProductVersion::getCreatedAt))
-                .orElseThrow(() -> new AppException("Cannot find latest version for product: " + productId));
+        // =========================
+        // REVIEW PRODUCT (SCAN URL)
+        // =========================
+        @Transactional
+        public String reviewProduct(Integer productId) {
 
-        boolean isMalicious;
-        try {
-            isMalicious = virusTotalService.isFileMalicious(latestVersion.getFileUrl());
-        } catch (Exception e) {
-            throw new AppException("Scan failed: " + e.getMessage());
+                Product product = productRepository.findById(productId)
+                                .orElseThrow(() -> new AppException("Product not found"));
+
+                ProductVersion latestVersion = versionRepository
+                                .findTopByProduct_ProductIDOrderByCreatedAtDesc(productId)
+                                .orElseThrow(() -> new AppException("No version uploaded"));
+
+                if (latestVersion.getFileUrl() == null
+                                || latestVersion.getFileUrl().isBlank()) {
+                        throw new AppException("Download URL is empty");
+                }
+
+                boolean isMalicious = virusTotalService.isUrlMalicious(latestVersion.getFileUrl());
+
+                if (isMalicious) {
+
+                        latestVersion.setScanStatus("MALICIOUS");
+                        versionRepository.save(latestVersion);
+
+                        product.setStatus(Product.ProductStatus.REJECTED);
+                        product.setRejectionNote(
+                                        "Detected malware by VirusTotal (URL Scan)");
+                        productRepository.save(product);
+
+                        return "Product rejected due to malicious download link.";
+                }
+
+                // ===== CLEAN =====
+                latestVersion.setScanStatus("CLEAN");
+                versionRepository.save(latestVersion);
+
+                product.setStatus(Product.ProductStatus.APPROVED);
+                product.setRejectionNote(null);
+                productRepository.save(product);
+
+                return "Product approved successfully.";
         }
-
-        if (isMalicious) {
-            latestVersion.setScanStatus("MALICIOUS");
-            versionRepository.save(latestVersion);
-
-            product.setStatus(Product.ProductStatus.REJECTED);
-            product.setRejectionNote("Detected malware by VirusTotal");
-            productRepository.save(product);
-
-            return "Product rejected due to malware.";
-        }
-
-        latestVersion.setScanStatus("CLEAN");
-        versionRepository.save(latestVersion);
-
-        product.setStatus(Product.ProductStatus.APPROVED);
-        product.setRejectionNote(null);
-        productRepository.save(product);
-
-        return "Product approved successfully.";
-    }
 }

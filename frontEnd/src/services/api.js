@@ -3,17 +3,22 @@ import { APIConfig } from "../configurations/configuration";
 
 const api = axios.create({
   baseURL: APIConfig.baseURL,
-  timeout: APIConfig.timeout,
-  headers: APIConfig.headers,
+  timeout: APIConfig.timeout || 10000,
+  headers: APIConfig.headers || { "Content-Type": "application/json" },
 });
 
 api.interceptors.request.use(
   (config) => {
-    const userId = localStorage.getItem("userId");
+    const user = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("user") || "{}");
+      } catch {
+        return {};
+      }
+    })();
+    const userId = user.userID ?? user.userId ?? localStorage.getItem("userId");
     if (userId) {
-      config.headers["X-User-Id"] = userId;
-    } else if (config.headers && config.headers["X-User-Id"]) {
-      delete config.headers["X-User-Id"];
+      config.headers["X-User-Id"] = String(userId);
     }
     return config;
   },
@@ -34,73 +39,73 @@ export const authAPI = {
 };
 
 export const vendorAPI = {
-  registerVendor: (vendorData) => api.post("/api/vendors/register", vendorData),
-  getVendorStatus: (vendorId) => api.get(`/api/vendors/${vendorId}/status`),
-  uploadDocuments: (vendorId, formData) =>
-    api.post(`/api/vendors/${vendorId}/documents`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
-
+  registerVendor: (data) => api.post("/api/vendors/register", data),
+  getMe: () => api.get("/api/vendor/me"),
   createProduct: (productData) => api.post("/api/vendor/products", productData),
   getVendorProducts: (params = {}) => api.get("/api/vendor/products", { params }),
-  getProduct: (productId) => api.get(`/api/products/${productId}`),
-  updateProduct: (productId, productData) => api.put(`/api/products/${productId}`, productData),
-  deleteProduct: (productId) => api.delete(`/api/products/${productId}`),
-
-  uploadProductImage: (productId, imageData) => api.post(`/api/vendor/products/${productId}/images`, imageData),
-  createProductVersion: (productId, versionData) => api.post(`/api/vendor/products/${productId}/versions`, versionData),
-  createLicenseTier: (productId, tierData) => api.post(`/api/vendor/products/${productId}/license-tiers`, tierData),
+  getProduct: (productId) => api.get(`/api/vendor/products/${productId}`),
+  updateProduct: (productId, data) => api.put(`/api/vendor/products/${productId}`, data),
+  deleteProduct: (productId) => api.delete(`/api/vendor/products/${productId}`),
+  uploadProductImage: (productId, imageData) =>
+    api.post(`/api/vendor/products/${productId}/images`, imageData),
+  deleteProductImage: (productId, imageId) =>
+    api.delete(`/api/vendor/products/${productId}/images/${imageId}`),
+  createProductVersion: (productId, versionData) =>
+    api.post(`/api/vendor/products/${productId}/versions`, versionData),
+  createLicenseTier: (productId, tierData) =>
+    api.post(`/api/vendor/products/${productId}/license-tiers`, tierData),
   submitProduct: (productId) => api.post(`/api/vendor/products/${productId}/submit`),
-
-  getProductVersions: (productId, params = {}) => api.get(`/api/vendor/products/${productId}/versions`, { params }),
-  getProductLicenseTiers: (productId) => api.get(`/api/vendor/products/${productId}/license-tiers`),
-  updateLicenseTier: (productId, tierId, tierData) =>
-    api.put(`/api/vendor/products/${productId}/license-tiers/${tierId}`, tierData),
-  deleteLicenseTier: (productId, tierId) =>
-    api.delete(`/api/vendor/products/${productId}/license-tiers/${tierId}`),
-
-  getWalletInfo: () => api.get("/api/vendor/wallet"),
-  requestPayout: (payoutData) => api.post("/api/vendor/wallet/payout", payoutData),
+  getDailyRevenue: (params) => api.get("/api/vendor/revenue/daily", { params }),
+  exportRevenueCSV: (params) =>
+    api.get("/api/vendor/revenue/export", { params, responseType: "blob" }),
 };
 
-export const adminAPI = {
-  getVendors: (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    const url = queryString ? `/api/admin/vendors?${queryString}` : "/api/admin/vendors";
-    return api.get(url);
-  },
+function buildProductsQueryString(params) {
+  const parts = [];
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    if (Array.isArray(value)) {
+      value.forEach((v) => parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`));
+    } else {
+      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+    }
+  });
+  const qs = parts.join("&");
+  return qs ? `?${qs}` : "";
+}
 
-  getVendorById: (vendorId) => api.get(`/api/admin/vendors/${vendorId}`),
-  verifyVendor: (vendorId, verificationData) => api.put(`/api/admin/vendors/${vendorId}/verify`, verificationData),
-
+export const customerAPI = {
   getProducts: (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    const url = queryString ? `/api/admin/products?${queryString}` : "/api/admin/products";
-    return api.get(url);
+    const adapted = { ...params };
+    if (Array.isArray(params.categoryIds) && params.categoryIds.length > 0) {
+      adapted.categoryId = params.categoryIds[0];
+    }
+    if (Array.isArray(params.tags) && params.tags.length > 0) {
+      adapted.tag = params.tags[0];
+    }
+    const queryString = buildProductsQueryString(adapted);
+    return api.get(`/api/products${queryString}`);
   },
-
-  reviewProduct: (productId, reviewData) => api.put(`/api/admin/products/${productId}/review`, reviewData),
-  getAllUsers: () => api.get("/api/admin/users"),
-  getUserById: (userId) => api.get(`/api/admin/users/${userId}`),
+  getProductDetails: (productId) => api.get(`/api/products/${productId}`),
+  getProductReviews: (productId, params = {}) =>
+    api.get(`/api/products/${productId}/reviews`, { params }),
+  getProductPurchased: (productId) => api.get(`/api/products/${productId}/purchased`),
+  addProductReview: (productId, data) =>
+    api.post(`/api/products/${productId}/reviews`, data),
+  updateProductReview: (reviewId, data) => api.put(`/api/reviews/${reviewId}`, data),
+  deleteProductReview: (reviewId) => api.delete(`/api/reviews/${reviewId}`),
+  getCategories: () => api.get("/api/categories"),
+  getTags: () => api.get("/api/tags"),
+  createCheckout: (data) => api.post("/api/checkout/create", data),
 };
-
-export const customerAPI = {};
 
 export const uploadAPI = {
   uploadImage: (formData) =>
-    api.post("/api/upload/image", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
-
-  uploadImages: (formData) =>
-    api.post("/api/upload/images", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
-
+    api.post("/api/upload/image", formData, { headers: { "Content-Type": "multipart/form-data" } }),
   uploadDocument: (formData) =>
-    api.post("/api/upload/document", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
+    api.post("/api/upload/document", formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  uploadInstaller: (formData) =>
+    api.post("/api/upload/installer", formData, { headers: { "Content-Type": "multipart/form-data" } }),
 };
 
 export default api;

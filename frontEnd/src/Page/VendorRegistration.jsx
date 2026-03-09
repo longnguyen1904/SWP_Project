@@ -1,7 +1,6 @@
+import React from "react";
 import VendorRegistration from "../Component/Vendor/VendorRegistration";
 
-const VendorRegistrationPage = () => {
+export default function VendorRegistrationPage() {
   return <VendorRegistration />;
-};
-
-export default VendorRegistrationPage;
+}

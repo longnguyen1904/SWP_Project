@@ -1,7 +1,6 @@
+import React from "react";
 import ProductUploadForm from "../Component/Vendor/ProductUploadForm";
 
-const ProductUploadPage = () => {
+export default function ProductUploadPage() {
   return <ProductUploadForm />;
-};
-
-export default ProductUploadPage;
+}

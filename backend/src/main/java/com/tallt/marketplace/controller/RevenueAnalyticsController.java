@@ -175,5 +175,4 @@ public class RevenueAnalyticsController {
                 .header(HttpHeaders.CONTENT_TYPE, "text/csv")
                 .body(csvBytes);
     }
-
 }

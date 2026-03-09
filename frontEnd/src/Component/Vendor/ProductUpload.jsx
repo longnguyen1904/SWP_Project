@@ -29,7 +29,7 @@ const ProductUpload = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [productId, setProductId] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     productName: "",
     categoryId: "",
@@ -100,10 +100,9 @@ const ProductUpload = () => {
     setSuccess("");
 
     try {
-      // Step 1: Create product
       const productData = {
         productName: formData.productName,
-        categoryId: parseInt(formData.categoryId),
+        categoryId: parseInt(formData.categoryId, 10),
         description: formData.description,
         basePrice: parseFloat(formData.basePrice),
         hasTrial: formData.hasTrial,
@@ -112,37 +111,34 @@ const ProductUpload = () => {
       };
 
       const productResponse = await vendorAPI.createProduct(productData);
-      const newProductId = productResponse.data.id || productResponse.data.productId;
+      const data = productResponse.data?.data ?? productResponse.data;
+      const newProductId = data?.productId ?? data?.id;
       setProductId(newProductId);
 
-      // Step 2: Upload image
       if (formData.imageUrl) {
         await vendorAPI.uploadProductImage(newProductId, {
           imageUrl: formData.imageUrl,
           imageType: formData.imageType,
-          sortOrder: formData.sortOrder,
+          sortOrder: Number(formData.sortOrder),
           isPrimary: formData.isPrimary,
         });
       }
 
-      // Step 3: Create version
       await vendorAPI.createProductVersion(newProductId, {
         versionNumber: formData.versionNumber,
         fileUrl: formData.fileUrl,
         releaseNotes: formData.releaseNotes,
       });
 
-      // Step 4: Create license tier
       await vendorAPI.createLicenseTier(newProductId, {
         tierName: formData.tierName,
         price: parseFloat(formData.tierPrice),
-        maxDevices: formData.maxDevices,
-        durationDays: formData.durationDays,
+        maxDevices: Number(formData.maxDevices),
+        durationDays: Number(formData.durationDays),
         content: `${formData.tierName} license for ${formData.productName}`,
-        tierCode: formData.tierCode,
+        tierCode: formData.tierCode || "STD",
       });
 
-      // Step 5: Submit for approval
       await vendorAPI.submitProduct(newProductId);
 
       setSuccess("Product created and submitted for approval successfully!");
@@ -332,7 +328,7 @@ const ProductUpload = () => {
                 label="Download URL"
                 value={formData.fileUrl}
                 onChange={handleInputChange("fileUrl")}
-                placeholder="https://example.com/product-file.zip"
+                placeholder="https://example.com/product-file.zip or upload via Upload Installer first"
                 helperText="URL to the downloadable product file"
               />
             </Grid>
@@ -358,7 +354,7 @@ const ProductUpload = () => {
                 label="Image URL"
                 value={formData.imageUrl}
                 onChange={handleInputChange("imageUrl")}
-                placeholder="https://example.com/product-screenshot.png"
+                placeholder="https://example.com/product-screenshot.png or upload via Upload Image first"
               />
             </Grid>
             <Grid item xs={12} md={6}>

@@ -25,13 +25,14 @@ const VendorRegistration = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
+
   const [formData, setFormData] = useState({
     type: "INDIVIDUAL",
     companyName: "",
+    description: "",
     taxCode: "",
-    citizenId: "079123456789", // Default from API docs
-    identificationDoc: "https://drive.google.com/cccd-vendor1.jpg", // Default from API docs
+    citizenId: "",
+    identificationDoc: "",
   });
 
   const steps = ["Basic Information", "Business Details", "Documents"];
@@ -62,9 +63,8 @@ const VendorRegistration = () => {
     setSuccess("");
 
     try {
-      const response = await vendorAPI.registerVendor(formData);
+      await vendorAPI.registerVendor(formData);
       setSuccess("Vendor registration submitted successfully! Please wait for admin approval.");
-      console.log("Registration response:", response.data);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
@@ -110,6 +110,7 @@ const VendorRegistration = () => {
                 value={formData.description}
                 onChange={handleInputChange("description")}
                 placeholder="Tell us about your business and the products you plan to sell"
+                helperText="Optional: describe your business and what you plan to offer on the marketplace"
               />
             </Grid>
           </Grid>
@@ -130,7 +131,7 @@ const VendorRegistration = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Citizen ID / Personal ID"
+                label="Citizen ID / CCCD"
                 value={formData.citizenId}
                 onChange={handleInputChange("citizenId")}
                 required
@@ -151,7 +152,7 @@ const VendorRegistration = () => {
                 onChange={handleInputChange("identificationDoc")}
                 required
                 placeholder="https://example.com/identification-document.pdf"
-                helperText="Provide a link to your business license or identification document"
+                helperText="Provide a link to your business license or identification document (or upload via Upload Document first)"
               />
             </Grid>
             <Grid item xs={12}>

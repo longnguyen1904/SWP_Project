@@ -18,6 +18,6 @@ export default function HomeLogIn() {
       <Subscribe />
       <Footer />
     </div>
-  );
+  );    
 }
 

@@ -17,10 +17,6 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Table,
   TableBody,
   TableCell,
@@ -28,10 +24,8 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
 } from "@mui/material";
-import { Delete as DeleteIcon, Add as AddIcon } from "@mui/icons-material";
-import { vendorAPI, uploadAPI } from "../../services/api";
+import { vendorAPI, customerAPI } from "../../services/api";
 
 const ProductUploadForm = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -41,7 +35,6 @@ const ProductUploadForm = () => {
   const [categories, setCategories] = useState([]);
   const [productId, setProductId] = useState(null);
 
-  // Product Basic Info
   const [productData, setProductData] = useState({
     productName: "",
     categoryId: "",
@@ -52,22 +45,19 @@ const ProductUploadForm = () => {
     tags: [],
   });
 
-  // Product Images
   const [images, setImages] = useState([]);
   const [imageUpload, setImageUpload] = useState({ imageUrl: "", isPrimary: false, sortOrder: 0 });
 
-  // Product Version
   const [version, setVersion] = useState({
     versionNumber: "",
     fileUrl: "",
     releaseNotes: "",
   });
 
-  // License Tiers
   const [licenseTiers, setLicenseTiers] = useState([]);
   const [tierForm, setTierForm] = useState({
     tierName: "",
-    tierCode: "",
+    tierCode: "STD",
     price: "",
     maxDevices: 1,
     durationDays: 365,
@@ -77,14 +67,23 @@ const ProductUploadForm = () => {
   const steps = ["Basic Information", "Upload Images", "Product Version", "License Tiers", "Submit"];
 
   useEffect(() => {
-    // Load categories (mock data for now)
-    setCategories([
-      { id: 1, name: "IDE & Code Editor" },
-      { id: 2, name: "Project Management" },
-      { id: 3, name: "Design Tools" },
-      { id: 4, name: "Security & Antivirus" },
-      { id: 5, name: "Database Tools" },
-    ]);
+    const load = async () => {
+      try {
+        const res = await customerAPI.getCategories();
+        const data = res.data?.data ?? res.data;
+        const list = Array.isArray(data) ? data : (data?.content ?? []);
+        setCategories(list.map((c) => ({ id: c.categoryID ?? c.id, name: c.categoryName ?? c.name })));
+      } catch {
+        setCategories([
+          { id: 1, name: "Development Tools" },
+          { id: 2, name: "Business Software" },
+          { id: 3, name: "Games" },
+          { id: 4, name: "Education" },
+          { id: 5, name: "Productivity" },
+        ]);
+      }
+    };
+    load();
   }, []);
 
   const handleNext = () => {
@@ -108,7 +107,7 @@ const ProductUploadForm = () => {
         return true;
       case 1:
         if (images.length === 0) {
-          setError("Please upload at least one product image");
+          setError("Please add at least one product image URL");
           return false;
         }
         return true;
@@ -133,10 +132,17 @@ const ProductUploadForm = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await vendorAPI.createProduct(productData);
-      setProductId(response.data.data.productId);
+      const payload = {
+        ...productData,
+        categoryId: Number(productData.categoryId),
+        basePrice: parseFloat(productData.basePrice),
+      };
+      const response = await vendorAPI.createProduct(payload);
+      const data = response.data?.data ?? response.data;
+      const id = data?.productId ?? data?.id;
+      setProductId(id);
       setSuccess("Product created successfully!");
-      return response.data.data.productId;
+      return id;
     } catch (err) {
       setError("Failed to create product: " + (err.response?.data?.message || err.message));
       throw err;
@@ -145,36 +151,43 @@ const ProductUploadForm = () => {
     }
   };
 
-  const uploadProductImage = async (productId, imageData) => {
+  const uploadProductImage = async (pid, imageData) => {
     try {
-      await vendorAPI.uploadProductImage(productId, imageData);
+      await vendorAPI.uploadProductImage(pid, imageData);
     } catch (err) {
       setError("Failed to upload image: " + (err.response?.data?.message || err.message));
       throw err;
     }
   };
 
-  const createProductVersion = async (productId) => {
+  const createProductVersion = async (pid) => {
     try {
-      await vendorAPI.createProductVersion(productId, version);
+      await vendorAPI.createProductVersion(pid, version);
     } catch (err) {
       setError("Failed to create version: " + (err.response?.data?.message || err.message));
       throw err;
     }
   };
 
-  const createLicenseTier = async (productId, tierData) => {
+  const createLicenseTier = async (pid, tier) => {
     try {
-      await vendorAPI.createLicenseTier(productId, tierData);
+      await vendorAPI.createLicenseTier(pid, {
+        tierName: tier.tierName,
+        tierCode: tier.tierCode || "STD",
+        price: parseFloat(tier.price),
+        maxDevices: Number(tier.maxDevices),
+        durationDays: Number(tier.durationDays),
+        content: tier.content || "",
+      });
     } catch (err) {
       setError("Failed to create license tier: " + (err.response?.data?.message || err.message));
       throw err;
     }
   };
 
-  const submitProduct = async (productId) => {
+  const submitProduct = async (pid) => {
     try {
-      await vendorAPI.submitProduct(productId);
+      await vendorAPI.submitProduct(pid);
       setSuccess("Product submitted for approval!");
     } catch (err) {
       setError("Failed to submit product: " + (err.response?.data?.message || err.message));
@@ -186,31 +199,25 @@ const ProductUploadForm = () => {
     setLoading(true);
     setError("");
     try {
-      // Step 1: Create product
       let currentProductId = productId;
       if (!currentProductId) {
         currentProductId = await createProduct();
         setProductId(currentProductId);
       }
 
-      // Step 2: Upload images
       for (const image of images) {
         await uploadProductImage(currentProductId, image);
       }
 
-      // Step 3: Create version
       await createProductVersion(currentProductId);
 
-      // Step 4: Create license tiers
       for (const tier of licenseTiers) {
         await createLicenseTier(currentProductId, tier);
       }
 
-      // Step 5: Submit for approval
       await submitProduct(currentProductId);
 
       setSuccess("Product successfully created and submitted for approval!");
-      // Reset form
       setActiveStep(0);
       setProductId(null);
       setProductData({
@@ -225,7 +232,7 @@ const ProductUploadForm = () => {
       setImages([]);
       setVersion({ versionNumber: "", fileUrl: "", releaseNotes: "" });
       setLicenseTiers([]);
-    } catch (err) {
+    } catch {
       // Error already set in individual functions
     } finally {
       setLoading(false);
@@ -240,7 +247,7 @@ const ProductUploadForm = () => {
   };
 
   const removeImage = (id) => {
-    setImages(images.filter(img => img.id !== id));
+    setImages(images.filter((img) => img.id !== id));
   };
 
   const addLicenseTier = () => {
@@ -248,7 +255,7 @@ const ProductUploadForm = () => {
       setLicenseTiers([...licenseTiers, { ...tierForm, id: Date.now() }]);
       setTierForm({
         tierName: "",
-        tierCode: "",
+        tierCode: "STD",
         price: "",
         maxDevices: 1,
         durationDays: 365,
@@ -258,7 +265,7 @@ const ProductUploadForm = () => {
   };
 
   const removeLicenseTier = (id) => {
-    setLicenseTiers(licenseTiers.filter(tier => tier.id !== id));
+    setLicenseTiers(licenseTiers.filter((tier) => tier.id !== id));
   };
 
   const renderStepContent = (step) => {
@@ -305,7 +312,7 @@ const ProductUploadForm = () => {
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Base Price (VND)"
+                label="Base Price ($)"
                 type="number"
                 value={productData.basePrice}
                 onChange={(e) => setProductData({ ...productData, basePrice: e.target.value })}
@@ -318,7 +325,7 @@ const ProductUploadForm = () => {
                 <Select
                   value={productData.hasTrial}
                   label="Has Trial"
-                  onChange={(e) => setProductData({ ...productData, hasTrial: e.target.value })}
+                  onChange={(e) => setProductData({ ...productData, hasTrial: e.target.value === true })}
                 >
                   <MenuItem value={false}>No</MenuItem>
                   <MenuItem value={true}>Yes</MenuItem>
@@ -380,10 +387,9 @@ const ProductUploadForm = () => {
                   fullWidth
                   variant="outlined"
                   onClick={addImage}
-                  startIcon={<AddIcon />}
                   sx={{ height: "56px" }}
                 >
-                  Add
+                  + Add
                 </Button>
               </Grid>
             </Grid>
@@ -407,9 +413,9 @@ const ProductUploadForm = () => {
                       </TableCell>
                       <TableCell>{image.sortOrder}</TableCell>
                       <TableCell>
-                        <IconButton onClick={() => removeImage(image.id)}>
-                          <DeleteIcon />
-                        </IconButton>
+                        <Button size="small" color="error" onClick={() => removeImage(image.id)}>
+                          Delete
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -438,7 +444,7 @@ const ProductUploadForm = () => {
                 label="File URL"
                 value={version.fileUrl}
                 onChange={(e) => setVersion({ ...version, fileUrl: e.target.value })}
-                placeholder="URL to the downloadable file"
+                placeholder="URL to the downloadable file (or use Upload Installer first)"
                 required
               />
             </Grid>
@@ -482,7 +488,7 @@ const ProductUploadForm = () => {
               <Grid item xs={12} md={2}>
                 <TextField
                   fullWidth
-                  label="Price (VND)"
+                  label="Price ($)"
                   type="number"
                   value={tierForm.price}
                   onChange={(e) => setTierForm({ ...tierForm, price: e.target.value })}
@@ -511,10 +517,9 @@ const ProductUploadForm = () => {
                   fullWidth
                   variant="outlined"
                   onClick={addLicenseTier}
-                  startIcon={<AddIcon />}
                   sx={{ height: "56px" }}
                 >
-                  Add
+                  + Add
                 </Button>
               </Grid>
             </Grid>
@@ -546,13 +551,13 @@ const ProductUploadForm = () => {
                     <TableRow key={tier.id}>
                       <TableCell>{tier.tierName}</TableCell>
                       <TableCell>{tier.tierCode}</TableCell>
-                      <TableCell>{parseInt(tier.price).toLocaleString()}đ</TableCell>
+                      <TableCell>${tier.price}</TableCell>
                       <TableCell>{tier.maxDevices}</TableCell>
                       <TableCell>{tier.durationDays} days</TableCell>
                       <TableCell>
-                        <IconButton onClick={() => removeLicenseTier(tier.id)}>
-                          <DeleteIcon />
-                        </IconButton>
+                        <Button size="small" color="error" onClick={() => removeLicenseTier(tier.id)}>
+                          Delete
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -571,7 +576,6 @@ const ProductUploadForm = () => {
             <Alert severity="info" sx={{ mb: 3 }}>
               Please review your product information before submitting for approval.
             </Alert>
-            
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2">Product Name:</Typography>
@@ -579,7 +583,7 @@ const ProductUploadForm = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2">Base Price:</Typography>
-                <Typography>{parseInt(productData.basePrice).toLocaleString()}đ</Typography>
+                <Typography>${productData.basePrice}</Typography>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle2">Description:</Typography>
@@ -630,27 +634,16 @@ const ProductUploadForm = () => {
           {renderStepContent(activeStep)}
 
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-            <Button
-              disabled={activeStep === 0}
-              onClick={handleBack}
-            >
+            <Button disabled={activeStep === 0} onClick={handleBack}>
               Back
             </Button>
             <Box>
               {activeStep === steps.length - 1 ? (
-                <Button
-                  variant="contained"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                >
+                <Button variant="contained" onClick={handleSubmit} disabled={loading}>
                   {loading ? <CircularProgress size={24} /> : "Submit Product"}
                 </Button>
               ) : (
-                <Button
-                  variant="contained"
-                  onClick={handleNext}
-                  disabled={loading}
-                >
+                <Button variant="contained" onClick={handleNext} disabled={loading}>
                   Next
                 </Button>
               )}

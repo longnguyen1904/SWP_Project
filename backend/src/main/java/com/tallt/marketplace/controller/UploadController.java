@@ -83,6 +83,38 @@ public class UploadController {
         return ResponseEntity.ok(ApiResponse.success("Upload tài liệu thành công", Map.of("url", url)));
     }
 
+    /**
+     * Upload file cài đặt phần mềm (exe, zip, msi, ...) cho Product Version.
+     * POST /api/upload/installer
+     * @return URL file trên Cloudinary (vendor gửi URL này vào CreateVersionRequest.fileUrl).
+     */
+    @PostMapping("/installer")
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadInstaller(
+            @RequestParam("file") MultipartFile file) {
+        validateInstallerFile(file);
+        String url = cloudinaryService.uploadFile(file, "marketplace/installers");
+        return ResponseEntity.ok(ApiResponse.success("Upload file cài đặt thành công", Map.of("url", url)));
+    }
+
+    private void validateInstallerFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new com.tallt.marketplace.exception.AppException("File không được để trống");
+        }
+        if (file.getSize() > 500 * 1024 * 1024) {
+            throw new com.tallt.marketplace.exception.AppException("File cài đặt không được vượt quá 500MB");
+        }
+        String name = file.getOriginalFilename();
+        if (name == null || name.isBlank()) {
+            throw new com.tallt.marketplace.exception.AppException("Tên file không hợp lệ");
+        }
+        String lower = name.toLowerCase();
+        if (!lower.endsWith(".exe") && !lower.endsWith(".zip") && !lower.endsWith(".msi")
+                && !lower.endsWith(".dmg") && !lower.endsWith(".pkg") && !lower.endsWith(".jar")) {
+            throw new com.tallt.marketplace.exception.AppException(
+                    "Chỉ chấp nhận file cài đặt: exe, zip, msi, dmg, pkg, jar");
+        }
+    }
+
     private void validateImageFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new com.tallt.marketplace.exception.AppException("File không được để trống");

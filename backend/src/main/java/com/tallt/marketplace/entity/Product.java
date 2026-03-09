@@ -47,6 +47,9 @@ public class Product {
     @Column(name = "TrialDurationDays")
     private Integer trialDurationDays = 7;
 
+    @Column(name = "GuideDocumentUrl", length = 500)
+    private String guideDocumentUrl;
+
     public Boolean getIsApproved() {
         return this.status == ProductStatus.APPROVED;
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Card,
@@ -9,7 +10,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,10 +20,10 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-// Using text buttons instead of icons to avoid @mui/icons-material dependency
 import { vendorAPI } from "../../services/api";
 
 const ProductManagement = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,24 +48,26 @@ const ProductManagement = () => {
     setError("");
 
     try {
-      const response = await vendorAPI.getVendorProducts();
-      // Ensure products is always an array
-      const data = response.data;
-      setProducts(Array.isArray(data) ? data : (data?.products || []));
+      const response = await vendorAPI.getVendorProducts({});
+      const data = response.data?.data ?? response.data;
+      const content = data?.content ?? data?.products ?? (Array.isArray(data) ? data : []);
+      setProducts(Array.isArray(content) ? content : []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch products");
-      setProducts([]); // Ensure products is array on error
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const getProductId = (product) => product?.productId ?? product?.id;
+
   const handleEditClick = (product) => {
     setSelectedProduct(product);
     setEditFormData({
-      productName: product.name || product.productName,
+      productName: product.productName ?? product.name,
       description: product.description,
-      basePrice: product.price || product.basePrice,
+      basePrice: product.basePrice ?? product.price,
       status: product.status,
     });
     setEditDialogOpen(true);
@@ -77,11 +79,13 @@ const ProductManagement = () => {
   };
 
   const handleEditSubmit = async () => {
+    if (!selectedProduct) return;
     setLoading(true);
     setError("");
 
     try {
-      await vendorAPI.updateProduct(selectedProduct.id, {
+      const pid = getProductId(selectedProduct);
+      await vendorAPI.updateProduct(pid, {
         productName: editFormData.productName,
         description: editFormData.description,
         basePrice: parseFloat(editFormData.basePrice),
@@ -98,11 +102,13 @@ const ProductManagement = () => {
   };
 
   const handleDeleteConfirm = async () => {
+    if (!selectedProduct) return;
     setLoading(true);
     setError("");
 
     try {
-      await vendorAPI.deleteProduct(selectedProduct.id);
+      const pid = getProductId(selectedProduct);
+      await vendorAPI.deleteProduct(pid);
       setSuccess("Product deleted successfully!");
       setDeleteDialogOpen(false);
       fetchProducts();
@@ -139,7 +145,7 @@ const ProductManagement = () => {
       case "DRAFT":
         return "Draft";
       default:
-        return status;
+        return status ?? "";
     }
   };
 
@@ -207,8 +213,8 @@ const ProductManagement = () => {
       <DialogTitle>Delete Product</DialogTitle>
       <DialogContent>
         <Typography>
-          Are you sure you want to delete "{selectedProduct?.name || selectedProduct?.productName}"? 
-          This action cannot be undone.
+          Are you sure you want to delete &quot;{selectedProduct?.productName ?? selectedProduct?.name}&quot;? This
+          action cannot be undone.
         </Typography>
       </DialogContent>
       <DialogActions>
@@ -228,6 +234,8 @@ const ProductManagement = () => {
     );
   }
 
+  const uploadPath = "/Page/Vendor/ProductUpload";
+
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto", p: 3 }}>
       <Card>
@@ -235,17 +243,10 @@ const ProductManagement = () => {
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
             <Typography variant="h4">Product Management</Typography>
             <Box>
-              <Button
-                variant="outlined"
-                onClick={fetchProducts}
-                sx={{ mr: 2 }}
-              >
+              <Button variant="outlined" onClick={fetchProducts} sx={{ mr: 2 }}>
                 Refresh
               </Button>
-              <Button
-                variant="contained"
-                href="/vendor/products/upload"
-              >
+              <Button variant="contained" onClick={() => navigate(uploadPath)}>
                 Add Product
               </Button>
             </Box>
@@ -263,7 +264,7 @@ const ProductManagement = () => {
             </Alert>
           )}
 
-          {(!products || products.length === 0) ? (
+          {!products || products.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 No products found
@@ -271,95 +272,96 @@ const ProductManagement = () => {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Start by uploading your first product to the marketplace
               </Typography>
-              <Button
-                variant="contained"
-                href="/vendor/products/upload"
-              >
+              <Button variant="contained" onClick={() => navigate(uploadPath)}>
                 Upload Your First Product
               </Button>
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {Array.isArray(products) && products.map((product) => (
-                <Grid item xs={12} md={6} lg={4} key={product.id}>
-                  <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
-                        <Typography variant="h6" component="h3" gutterBottom>
-                          {product.name || product.productName}
-                        </Typography>
-                        <Chip
-                          label={getStatusLabel(product.status)}
-                          color={getStatusColor(product.status)}
-                          size="small"
-                        />
-                      </Box>
-                      
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {product.description?.length > 100
-                          ? `${product.description.substring(0, 100)}...`
-                          : product.description}
-                      </Typography>
-
-                      <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
-                        ${product.price || product.basePrice}
-                      </Typography>
-
-                      {product.tags && product.tags.length > 0 && (
-                        <Box sx={{ mb: 2 }}>
-                          {product.tags.slice(0, 3).map((tag) => (
-                            <Chip
-                              key={tag}
-                              label={tag}
-                              size="small"
-                              variant="outlined"
-                              sx={{ mr: 0.5, mb: 0.5 }}
-                            />
-                          ))}
-                          {product.tags.length > 3 && (
-                            <Chip
-                              label={`+${product.tags.length - 3} more`}
-                              size="small"
-                              variant="outlined"
-                            />
-                          )}
+              {products.map((product) => {
+                const pid = getProductId(product);
+                const name = product.productName ?? product.name;
+                const price = product.basePrice ?? product.price;
+                return (
+                  <Grid item xs={12} md={6} lg={4} key={pid}>
+                    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            mb: 2,
+                          }}
+                        >
+                          <Typography variant="h6" component="h3" gutterBottom>
+                            {name}
+                          </Typography>
+                          <Chip
+                            label={getStatusLabel(product.status)}
+                            color={getStatusColor(product.status)}
+                            size="small"
+                          />
                         </Box>
-                      )}
 
-                      <Typography variant="caption" color="text.secondary">
-                        Created: {new Date(product.createdAt).toLocaleDateString()}
-                      </Typography>
-                    </CardContent>
-                    
-                    <Box sx={{ p: 2, pt: 0 }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <Button
-                          size="small"
-                          onClick={() => window.open(`/products/${product.id}`, "_blank")}
-                          title="View Product"
-                        >
-                          View
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => handleEditClick(product)}
-                          title="Edit Product"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => handleDeleteClick(product)}
-                          title="Delete Product"
-                          color="error"
-                        >
-                          Delete
-                        </Button>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                          {product.description?.length > 100
+                            ? `${product.description.substring(0, 100)}...`
+                            : product.description}
+                        </Typography>
+
+                        <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
+                          ${price}
+                        </Typography>
+
+                        {product.tags && product.tags.length > 0 && (
+                          <Box sx={{ mb: 2 }}>
+                            {product.tags.slice(0, 3).map((tag) => (
+                              <Chip
+                                key={tag}
+                                label={tag}
+                                size="small"
+                                variant="outlined"
+                                sx={{ mr: 0.5, mb: 0.5 }}
+                              />
+                            ))}
+                            {product.tags.length > 3 && (
+                              <Chip label={`+${product.tags.length - 3} more`} size="small" variant="outlined" />
+                            )}
+                          </Box>
+                        )}
+
+                        <Typography variant="caption" color="text.secondary">
+                          Created: {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : "—"}
+                        </Typography>
+                      </CardContent>
+
+                      <Box sx={{ p: 2, pt: 0 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                          <Button
+                            size="small"
+                            onClick={() => navigate(`/products/${pid}`)}
+                            title="View Product"
+                          >
+                            View
+                          </Button>
+                          <Button size="small" onClick={() => handleEditClick(product)} title="Edit Product">
+                            Edit
+                          </Button>
+                          <Button
+                            size="small"
+                            onClick={() => handleDeleteClick(product)}
+                            title="Delete Product"
+                            color="error"
+                          >
+                            Delete
+                          </Button>
+                        </Box>
                       </Box>
-                    </Box>
-                  </Card>
-                </Grid>
-              ))}
+                    </Card>
+                  </Grid>
+                );
+              })}
             </Grid>
           )}
         </CardContent>

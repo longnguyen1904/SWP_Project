@@ -7,7 +7,5 @@ export const OAuthConfig = {
 export const APIConfig = {
   baseURL: "http://localhost:8081",
   timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 };

@@ -1,7 +1,6 @@
+import React from "react";
 import ProductManagement from "../Component/Vendor/ProductManagement";
 
-const ProductManagementPage = () => {
+export default function ProductManagementPage() {
   return <ProductManagement />;
-};
-
-export default ProductManagementPage;
+}
