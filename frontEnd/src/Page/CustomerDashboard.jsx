@@ -39,20 +39,34 @@ export default function CustomerDashboard() {
             </NavLink>
           </li>
 
-          <li className="nav-item mb-2">
+       
+
+           <li className="nav-item mb-2">
             <NavLink 
-              to="/Page/Customer/Profile" 
+              to="/Page/Customer/CustomerTicketManagement" 
               className={({ isActive }) => 
                 `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
                   isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
                 }`
               }
             >
-              <i className="bi bi-person-gear me-3"></i>
-              Hồ sơ cá nhân
+              <i className="bi bi-bag-check me-3"></i>
+              CustomerTicketManagement
             </NavLink>
           </li>
-          
+                    <li className="nav-item mb-2">
+            <NavLink 
+              to="/Page/Customer/CreateSupportTicket" 
+              className={({ isActive }) => 
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
+                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+                }`
+              }
+            >
+              <i className="bi bi-bag-check me-3"></i>
+              CreateSupportTicket
+            </NavLink>
+          </li>
           <li className="nav-item mb-2">
             <NavLink 
               to="/Page/Customer/Profile" 

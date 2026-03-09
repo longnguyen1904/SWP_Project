@@ -102,7 +102,7 @@ export default function Navbar() {
                   <>
                     <Link to="/Page/Vendor" id="router-link">Vendor Dashboard</Link>
                     <Link to="/Page/Vendor/ProductUpload" id="router-link">Upload Product</Link>
-                    <Link to="/Page/Vendor/MyProducts" id="router-link">My Products</Link>
+                   
                   </>
                 )}
                 {role === "ADMIN" && (

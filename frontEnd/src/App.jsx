@@ -19,6 +19,9 @@ import ProductDetail from "./Page/ProductDetail";
 import VendorRegistration from "./Page/VendorRegistration";
 import ProductUpload from "./Page/ProductUpload";
 import ProductManagement from "./Page/ProductManagement";
+import CreateSupportTicketWizard from "./Page/CreateSupportTicketWizard";
+import VendorTicketManagement from "./Page/VendorTicketManagement";
+import CustomerTicketManagement from "./Page/CustomerTicketManagement";
 
 export default function App() {
   return (
@@ -35,6 +38,8 @@ export default function App() {
           <Route index element={<Navigate to="PurchasedProducts" replace />} />
           <Route path="PurchasedProducts" element={<PurchasedProducts />} />
           <Route path="Profile" element={<ProfilePage />} />
+          <Route path="CustomerTicketManagement" element={<CustomerTicketManagement/>}/>
+          <Route path="CreateSupportTicket" element={<CreateSupportTicketWizard />} />
         </Route>
 
 
@@ -43,6 +48,7 @@ export default function App() {
           <Route path="RevenueDashboard" element={<RevenueDashboard />} />
           <Route path="ProductUpload" element={<ProductUpload />} />
           <Route path="MyProducts" element={<ProductManagement />} />
+          <Route path="VendorTicketManagement" element={<VendorTicketManagement/>}/>
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />
