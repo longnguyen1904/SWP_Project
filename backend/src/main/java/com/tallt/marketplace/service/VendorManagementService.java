@@ -25,17 +25,14 @@ public class VendorManagementService {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
 
-    // ==============================
+
     // GET BY ID
-    // ==============================
     public Vendor getVendorById(Integer id) {
         return vendorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
     }
 
-    // ==============================
     // GET WITH FILTER + PAGINATION
-    // ==============================
     public Page<Vendor> getVendors(
             int page,
             int size,
@@ -62,9 +59,8 @@ public class VendorManagementService {
         return vendorRepository.findAll(pageable);
     }
 
-    // ==============================
+
     // APPROVE / REJECT VENDOR
-    // ==============================
     @Transactional
     public Vendor updateVendorStatus(Integer id, VendorStatus status) {
 
