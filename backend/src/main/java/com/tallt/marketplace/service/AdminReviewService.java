@@ -3,6 +3,7 @@ package com.tallt.marketplace.service;
 import com.tallt.marketplace.dto.AdminProductReviewDTO;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.entity.ProductVersion;
+import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.ProductVersionRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ public class AdminReviewService {
                         try {
                                 statusEnum = Product.ProductStatus.valueOf(status.toUpperCase());
                         } catch (IllegalArgumentException e) {
-                                throw new RuntimeException("Invalid status value: " + status);
+                                throw new AppException("Invalid status value: " + status);
                         }
                 }
 
@@ -107,15 +108,15 @@ public class AdminReviewService {
         public String reviewProduct(Integer productId) {
 
                 Product product = productRepository.findById(productId)
-                                .orElseThrow(() -> new RuntimeException("Product not found"));
+                                .orElseThrow(() -> new AppException("Product not found"));
 
                 ProductVersion latestVersion = versionRepository
                                 .findTopByProduct_ProductIDOrderByCreatedAtDesc(productId)
-                                .orElseThrow(() -> new RuntimeException("No version uploaded"));
+                                .orElseThrow(() -> new AppException("No version uploaded"));
 
                 if (latestVersion.getFileUrl() == null
                                 || latestVersion.getFileUrl().isBlank()) {
-                        throw new RuntimeException("Download URL is empty");
+                        throw new AppException("Download URL is empty");
                 }
 
                 boolean isMalicious = virusTotalService.isUrlMalicious(latestVersion.getFileUrl());

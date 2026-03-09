@@ -1,286 +1,185 @@
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Slider,
-  Button,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-} from "@mui/material";
 import { customerAPI } from "../../services/api";
+import { unwrapList } from "../../services/apiHelpers";
+import { PRICE_MAX } from "../../services/theme";
 
-const FilterPanel = ({ filters, onFiltersChange, onClearFilters }) => {
+const FilterPanel = ({ filters, onApplyFilters, onClearFilters }) => {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
-  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(true);
+
+  const [pendingFilters, setPendingFilters] = useState(filters);
 
   useEffect(() => {
-    const load = async () => {
-      setLoadingOptions(true);
+    setPendingFilters(filters);
+  }, [filters]);
+
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      setIsLoadingOptions(true);
       try {
         const [catRes, tagRes] = await Promise.all([
           customerAPI.getCategories(),
           customerAPI.getTags(),
         ]);
-        const unwrap = (res) => {
-          const d = res?.data;
-          if (Array.isArray(d)) return d;
-          if (d && Array.isArray(d.data)) return d.data;
-          if (d && Array.isArray(d.content)) return d.content;
-          return [];
-        };
-        setCategories(unwrap(catRes));
-        setTags(unwrap(tagRes));
-      } catch (e) {
-        console.error("Failed to load filter options", e);
+        setCategories(unwrapList(catRes));
+        setTags(unwrapList(tagRes));
+      } catch (err) {
+        console.error("Failed to load filter options", err);
       } finally {
-        setLoadingOptions(false);
+        setIsLoadingOptions(false);
       }
     };
-    load();
+    loadFilterOptions();
   }, []);
 
-  const handlePriceRangeChange = (event, newValue) => {
-    onFiltersChange({
-      ...filters,
-      priceRange: { min: newValue[0], max: newValue[1] },
-    });
+  const toggleCategory = (categoryId) => {
+    const current = Array.isArray(pendingFilters.categoryIds) ? pendingFilters.categoryIds : [];
+    const updated = current.includes(categoryId)
+      ? current.filter((id) => id !== categoryId)
+      : [...current, categoryId];
+    setPendingFilters({ ...pendingFilters, categoryIds: updated });
   };
 
-  const handleCategoryChange = (event) => {
-    const value = event.target.value;
-    const ids = typeof value === "string" ? [] : [...(value || [])];
-    onFiltersChange({
-      ...filters,
-      categoryIds: ids.map((v) => Number(v)),
-    });
+  const toggleTag = (tagName) => {
+    const current = Array.isArray(pendingFilters.tags) ? pendingFilters.tags : [];
+    const updated = current.includes(tagName)
+      ? current.filter((t) => t !== tagName)
+      : [...current, tagName];
+    setPendingFilters({ ...pendingFilters, tags: updated });
   };
 
-  const handleTagChange = (event) => {
-    const value = event.target.value;
-    const list = typeof value === "string" ? [] : [...(value || [])];
-    onFiltersChange({
-      ...filters,
-      tags: list,
-    });
+  const handleMinPriceChange = (e) => {
+    const raw = e.target.value;
+    const min = raw === "" ? "" : Number(raw);
+    setPendingFilters({ ...pendingFilters, priceRange: { ...pendingFilters.priceRange, min } });
   };
 
-  const handleClearAll = () => {
-    onClearFilters();
+  const handleMaxPriceChange = (e) => {
+    const raw = e.target.value;
+    const max = raw === "" ? "" : Number(raw);
+    setPendingFilters({ ...pendingFilters, priceRange: { ...pendingFilters.priceRange, max } });
   };
 
-  const getActiveFiltersCount = () => {
-    let count = 0;
-    const priceMax = 1000000;
-    if (filters.priceRange?.min > 0 || (filters.priceRange?.max != null && filters.priceRange.max < priceMax)) count++;
-    if (Array.isArray(filters.categoryIds) && filters.categoryIds.length > 0) count++;
-    if (Array.isArray(filters.tags) && filters.tags.length > 0) count++;
-    return count;
+  const handleApply = () => {
+    const finalFilters = {
+      ...pendingFilters,
+      priceRange: {
+        min: pendingFilters.priceRange?.min === "" ? 0 : (Number(pendingFilters.priceRange?.min) || 0),
+        max: pendingFilters.priceRange?.max === "" ? PRICE_MAX : (Number(pendingFilters.priceRange?.max) || PRICE_MAX),
+      },
+    };
+    setPendingFilters(finalFilters);
+    onApplyFilters(finalFilters);
   };
 
-  const panelSx = {
-    position: "sticky",
-    top: 24,
-    bgcolor: "rgba(22, 27, 34, 0.95)",
-    border: "1px solid rgba(99, 102, 106, 0.4)",
-    borderRadius: 2,
-    boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-    overflow: "hidden",
-    "& .MuiAccordion-root": {
-      bgcolor: "transparent",
-      "&:before": { display: "none" },
-      borderBottom: "1px solid rgba(99, 102, 106, 0.25)",
-    },
-    "& .MuiAccordionSummary-root": { color: "#e6edf3" },
-    "& .MuiAccordionDetails-root": { pt: 0 },
-    "& .MuiFormControl-root .MuiOutlinedInput-root": {
-      bgcolor: "rgba(13, 17, 23, 0.8)",
-      border: "1px solid rgba(99, 102, 106, 0.4)",
-      color: "#e6edf3",
-      "& fieldset": { border: "none" },
-      "&:hover": { borderColor: "rgba(248, 97, 21, 0.5)" },
-      "&.Mui-focused": { borderColor: "rgb(248, 97, 21)" },
-    },
-    "& .MuiInputLabel-root": { color: "#8b949e" },
-    "& .MuiInputLabel-root.Mui-focused": { color: "rgb(248, 97, 21)" },
-    "& .MuiSlider-thumb": { color: "rgb(248, 97, 21)" },
-    "& .MuiSlider-rail": { opacity: 0.4 },
-    "& .MuiSlider-track": { color: "rgb(248, 97, 21)" },
-    "& .MuiSlider-markLabel": { color: "#c9d1d9" },
-  };
+  const pendingCount = (() => {
+    let c = 0;
+    if (pendingFilters.priceRange?.min > 0 || (pendingFilters.priceRange?.max != null && pendingFilters.priceRange.max < PRICE_MAX)) c++;
+    if (pendingFilters.categoryIds?.length > 0) c++;
+    if (pendingFilters.tags?.length > 0) c++;
+    return c;
+  })();
+
+  const hasChanges = JSON.stringify(pendingFilters) !== JSON.stringify(filters);
 
   return (
-    <Card sx={panelSx}>
-      <CardContent sx={{ py: 2, "&:last-child": { pb: 2 } }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-          <Typography variant="h6" sx={{ color: "#e6edf3", fontWeight: 600 }}>
-            Filters
-          </Typography>
-          {getActiveFiltersCount() > 0 && (
-            <Chip
-              label={`${getActiveFiltersCount()} active`}
-              size="small"
-              sx={{
-                bgcolor: "rgba(248, 97, 21, 0.2)",
-                color: "rgb(248, 97, 21)",
-                border: "1px solid rgba(248, 97, 21, 0.5)",
-              }}
-            />
+    <div className="filter-panel">
+      <div className="filter-panel__header">
+        <h3 className="filter-panel__title">Filters</h3>
+        {pendingCount > 0 && (
+          <span className="filter-panel__badge">{pendingCount} selected</span>
+        )}
+      </div>
+
+      <details open className="filter-section">
+        <summary>Category</summary>
+        <div className="filter-section__body">
+          {isLoadingOptions && <p className="filter-loading">Loading...</p>}
+          {!isLoadingOptions && categories.length === 0 && (
+            <p className="filter-loading">No categories</p>
           )}
-        </Box>
+          {categories.map((c) => {
+            const id = c.categoryID ?? c.id;
+            return (
+              <label key={id} className="filter-checkbox">
+                <input
+                  type="checkbox"
+                  checked={Array.isArray(pendingFilters.categoryIds) && pendingFilters.categoryIds.includes(id)}
+                  onChange={() => toggleCategory(id)}
+                />
+                {c.categoryName ?? c.name}
+              </label>
+            );
+          })}
+        </div>
+      </details>
 
-        <Accordion defaultExpanded disableGutters>
-          <AccordionSummary expandIcon={<Typography sx={{ color: "#8b949e", fontSize: "0.75rem" }}>▼</Typography>}>
-            <Typography variant="subtitle1" sx={{ color: "#e6edf3", fontWeight: 500 }}>
-              Category
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <FormControl fullWidth size="small">
-              <InputLabel>Category</InputLabel>
-              <Select
-                multiple
-                value={Array.isArray(filters.categoryIds) ? filters.categoryIds : []}
-                onChange={handleCategoryChange}
-                label="Category"
-                disabled={loadingOptions}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      bgcolor: "#161b22",
-                      border: "1px solid rgba(99, 102, 106, 0.4)",
-                      "& .MuiMenuItem-root": { color: "#e6edf3" },
-                      "& .MuiMenuItem-root.Mui-selected": { bgcolor: "rgba(248, 97, 21, 0.2)" },
-                    },
-                  },
-                }}
-                renderValue={(selected) =>
-                  selected.length === 0
-                    ? " "
-                    : selected
-                        .map((id) => categories.find((c) => (c.categoryID ?? c.id) === id))
-                        .filter(Boolean)
-                        .map((c) => c.categoryName ?? c.name)
-                        .join(", ")
-                }
-              >
-                {loadingOptions && <MenuItem disabled>Loading...</MenuItem>}
-                {!loadingOptions && categories.length === 0 && (
-                  <MenuItem disabled>No categories in database</MenuItem>
-                )}
-                {categories.map((c) => (
-                  <MenuItem key={c.categoryID ?? c.id} value={c.categoryID ?? c.id}>
-                    {c.categoryName ?? c.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </AccordionDetails>
-        </Accordion>
+      <details open className="filter-section">
+        <summary>Tags</summary>
+        <div className="filter-section__body">
+          {isLoadingOptions && <p className="filter-loading">Loading...</p>}
+          {!isLoadingOptions && tags.length === 0 && (
+            <p className="filter-loading">No tags</p>
+          )}
+          {tags.map((t) => {
+            const name = t.tagName ?? t.name;
+            return (
+              <label key={t.tagID ?? t.id} className="filter-checkbox">
+                <input
+                  type="checkbox"
+                  checked={Array.isArray(pendingFilters.tags) && pendingFilters.tags.includes(name)}
+                  onChange={() => toggleTag(name)}
+                />
+                {name}
+              </label>
+            );
+          })}
+        </div>
+      </details>
 
-        <Accordion defaultExpanded disableGutters>
-          <AccordionSummary expandIcon={<Typography sx={{ color: "#8b949e", fontSize: "0.75rem" }}>▼</Typography>}>
-            <Typography variant="subtitle1" sx={{ color: "#e6edf3", fontWeight: 500 }}>
-              Tags
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <FormControl fullWidth size="small">
-              <InputLabel>Tags</InputLabel>
-              <Select
-                multiple
-                value={Array.isArray(filters.tags) ? filters.tags : []}
-                onChange={handleTagChange}
-                label="Tags"
-                disabled={loadingOptions}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      bgcolor: "#161b22",
-                      border: "1px solid rgba(99, 102, 106, 0.4)",
-                      "& .MuiMenuItem-root": { color: "#e6edf3" },
-                      "& .MuiMenuItem-root.Mui-selected": { bgcolor: "rgba(248, 97, 21, 0.2)" },
-                    },
-                  },
-                }}
-                renderValue={(selected) =>
-                  selected.length === 0 ? " " : selected.join(", ")
-                }
-              >
-                {loadingOptions && <MenuItem disabled>Loading...</MenuItem>}
-                {!loadingOptions && tags.length === 0 && (
-                  <MenuItem disabled>No tags in database</MenuItem>
-                )}
-                {tags.map((t) => (
-                  <MenuItem key={t.tagID ?? t.id} value={t.tagName ?? t.name}>
-                    {t.tagName ?? t.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </AccordionDetails>
-        </Accordion>
+      <details open className="filter-section">
+        <summary>Price Range</summary>
+        <div className="filter-section__body">
+          <div className="filter-price">
+            <input
+              className="filter-price__input"
+              type="number"
+              min={0}
+              max={PRICE_MAX}
+              value={pendingFilters.priceRange?.min ?? 0}
+              onChange={handleMinPriceChange}
+              placeholder="Min ₫"
+            />
+            <span className="filter-price__sep">—</span>
+            <input
+              className="filter-price__input"
+              type="number"
+              min={0}
+              max={PRICE_MAX}
+              value={pendingFilters.priceRange?.max ?? PRICE_MAX}
+              onChange={handleMaxPriceChange}
+              placeholder="Max ₫"
+            />
+          </div>
+        </div>
+      </details>
 
-        <Accordion defaultExpanded disableGutters>
-          <AccordionSummary expandIcon={<Typography sx={{ color: "#8b949e", fontSize: "0.75rem" }}>▼</Typography>}>
-            <Typography variant="subtitle1" sx={{ color: "#e6edf3", fontWeight: 500 }}>
-              Price Range
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ px: 1 }}>
-              <Typography variant="body2" gutterBottom sx={{ color: "#8b949e" }}>
-                {(filters.priceRange?.min ?? 0).toLocaleString("vi-VN")} - {(filters.priceRange?.max ?? 1000000).toLocaleString("vi-VN")} ₫
-              </Typography>
-              <Slider
-                value={[filters.priceRange?.min ?? 0, filters.priceRange?.max ?? 1000000]}
-                onChange={handlePriceRangeChange}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(v) => `${v.toLocaleString("vi-VN")} ₫`}
-                min={0}
-                max={1000000}
-                step={25000}
-                marks={[
-                  { value: 0, label: "0 ₫" },
-                  { value: 250000, label: "250k ₫" },
-                  { value: 500000, label: "500k ₫" },
-                  { value: 1000000, label: "1 tr+ ₫" },
-                ]}
-              />
-            </Box>
-          </AccordionDetails>
-        </Accordion>
+      <button
+        className={`filter-panel__apply-btn ${hasChanges ? "filter-panel__apply-btn--active" : ""}`}
+        onClick={handleApply}
+      >
+        Filter
+      </button>
 
-        <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid rgba(99, 102, 106, 0.3)" }}>
-          <Button
-            variant="outlined"
-            onClick={handleClearAll}
-            fullWidth
-            disabled={getActiveFiltersCount() === 0}
-            sx={{
-              color: "#8b949e",
-              borderColor: "rgba(99, 102, 106, 0.5)",
-              "&:hover": {
-                borderColor: "rgb(248, 97, 21)",
-                color: "rgb(248, 97, 21)",
-                bgcolor: "rgba(248, 97, 21, 0.08)",
-              },
-              "&.Mui-disabled": { borderColor: "rgba(99, 102, 106, 0.3)", color: "#6e7681" },
-            }}
-          >
-            Clear All Filters
-          </Button>
-        </Box>
-      </CardContent>
-    </Card>
+      <button
+        className="filter-panel__clear-btn"
+        onClick={onClearFilters}
+        disabled={pendingCount === 0}
+      >
+        Clear All Filters
+      </button>
+    </div>
   );
 };
 

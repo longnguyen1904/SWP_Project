@@ -16,5 +16,10 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     boolean existsByProduct_ProductIDAndUser_UserIDAndPaymentStatusIgnoreCaseNot(
             Integer productID, Integer userID, String paymentStatus);
 
-    List<Order> findByUser_UserID(Integer userID);
+    /** Kiểm tra user đã có đơn hàng COMPLETED cho sản phẩm (dùng cho checkout). */
+    boolean existsByProduct_ProductIDAndUser_UserIDAndPaymentStatusIgnoreCase(
+            Integer productID, Integer userID, String paymentStatus);
+
+    List<Order> findByUser_UserID(Integer userID);   
 }
+    

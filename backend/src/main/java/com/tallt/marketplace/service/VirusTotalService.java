@@ -1,15 +1,13 @@
 package com.tallt.marketplace.service;
 
-
+import com.tallt.marketplace.exception.AppException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
-
-import java.io.File;
 import java.util.Map;
 
 
@@ -26,10 +24,16 @@ public class VirusTotalService {
 
 
     public boolean isUrlMalicious(String urlToScan) {
-
-
-        String analysisId = submitUrl(urlToScan);
-
+        String analysisId;
+        try {
+            analysisId = submitUrl(urlToScan);
+        } catch (RestClientResponseException e) {
+            String detail = e.getResponseBodyAsString();
+            if (detail != null && detail.contains("canonicalize")) {
+                throw new AppException("VirusTotal không chấp nhận URL (Unable to canonicalize url). Vui lòng dùng URL công khai hợp lệ (http/https).");
+            }
+            throw new AppException("VirusTotal không chấp nhận URL hoặc lỗi quét. Mã: " + e.getStatusCode());
+        }
 
         try {
             Thread.sleep(10000); // đợi VirusTotal phân tích
@@ -37,8 +41,11 @@ public class VirusTotalService {
             Thread.currentThread().interrupt();
         }
 
-
-        return checkResultOnce(analysisId);
+        try {
+            return checkResultOnce(analysisId);
+        } catch (RestClientResponseException e) {
+            throw new AppException("VirusTotal không trả về kết quả quét. Mã: " + e.getStatusCode());
+        }
     }
 
 
@@ -64,15 +71,14 @@ public class VirusTotalService {
 
 
         if (response.getBody() == null)
-            throw new RuntimeException("VirusTotal response is null");
-
+            throw new AppException("VirusTotal không trả về dữ liệu.");
 
         Map<String, Object> bodyMap = response.getBody();
         Map<String, Object> data = (Map<String, Object>) bodyMap.get("data");
 
 
         if (data == null || data.get("id") == null)
-            throw new RuntimeException("Cannot get analysis ID from VirusTotal");
+            throw new AppException("VirusTotal không trả về ID phân tích.");
 
 
         return data.get("id").toString();
@@ -98,13 +104,16 @@ public class VirusTotalService {
 
 
         if (response.getBody() == null)
-            throw new RuntimeException("VirusTotal analysis response is null");
-
+            throw new AppException("VirusTotal không trả về kết quả phân tích.");
 
         Map<String, Object> bodyMap = response.getBody();
         Map<String, Object> data = (Map<String, Object>) bodyMap.get("data");
+        if (data == null)
+            throw new AppException("VirusTotal thiếu dữ liệu phân tích.");
         Map<String, Object> attributes = (Map<String, Object>) data.get("attributes");
-        Map<String, Object> stats = (Map<String, Object>) attributes.get("stats");
+        Map<String, Object> stats = attributes != null ? (Map<String, Object>) attributes.get("stats") : null;
+        if (stats == null)
+            throw new AppException("VirusTotal thiếu thống kê quét.");
 
 
         Number malicious = (Number) stats.get("malicious");
