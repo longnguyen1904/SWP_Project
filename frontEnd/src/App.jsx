@@ -19,6 +19,7 @@ import ProductDetail from "./Page/ProductDetail";
 import VendorRegistration from "./Page/VendorRegistration";
 import ProductUpload from "./Page/ProductUpload";
 import ProductManagement from "./Page/ProductManagement";
+import PaymentResult from "./Page/PaymentResult";
 
 export default function App() {
   return (
@@ -30,7 +31,6 @@ export default function App() {
         <Route path="/Page/About" element={<About />} />
         <Route path="/Page/Event" element={<Event />} />
         <Route path="/Page/Tradition" element={<Tradition />} />
-
 
         <Route path="/Page/Customer" element={<CustomerDashboard />}>
           <Route index element={<Navigate to="PurchasedProducts" replace />} />
@@ -52,12 +52,14 @@ export default function App() {
           <Route path="AdminVendorManagement" element={<AdminVendorManagement />} />
           <Route path="AdminReview" element={<AdminReview />} />
         </Route>
+         
 
 
         <Route path="/Page/PurchasedProducts" element={<PurchasedProducts />} />
 
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
+        <Route path="/payment-result" element={<PaymentResult />} />
         <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
       </Routes>
 

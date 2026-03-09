@@ -96,6 +96,7 @@ export const customerAPI = {
   deleteProductReview: (reviewId) => api.delete(`/api/reviews/${reviewId}`),
   getCategories: () => api.get("/api/categories"),
   getTags: () => api.get("/api/tags"),
+  createCheckout: (data) => api.post("/api/checkout/create", data),
 };
 
 export const uploadAPI = {

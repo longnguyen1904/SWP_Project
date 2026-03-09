@@ -25,7 +25,7 @@ public class CreateLicenseTierRequest {
     @Min(value = 1, message = "Số ngày sử dụng phải >= 1")
     private Integer durationDays;
 
-    private String content;
+    private String content;           
 
     @NotBlank(message = "Mã tier không được để trống")
     private String tierCode;
