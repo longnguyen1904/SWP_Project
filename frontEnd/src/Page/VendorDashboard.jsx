@@ -40,18 +40,6 @@ export default function VendorDashboard() {
 
                     <li className="nav-item mb-2">
                         <NavLink
-                            to="/Page/Vendor/ProductUpload"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-cloud-upload me-3"></i>
-                            Upload Product
-                        </NavLink>
-                    </li>
-                    <li className="nav-item mb-2">
-                        <NavLink
                             to="/Page/Vendor/VendorTicketManagement"
                             className={({ isActive }) =>
                                 `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'

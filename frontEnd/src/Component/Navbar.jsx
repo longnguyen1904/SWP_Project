@@ -94,8 +94,9 @@ export default function Navbar() {
                 <Link to="/Page/ProfilePage" id="router-link">ProfileChange</Link>
                 {role === "CUSTOMER" && (
                   <>
+                  <Link to="/Page/VendorRegistration" id="router-link">Become a Vendor</Link>
                     <Link to="/Page/Customer" id="router-link">CustomerDashboard</Link>
-                    <Link to="/Page/VendorRegistration" id="router-link">Become a Vendor</Link>
+                    
                   </>
                 )}
                 {role === "VENDOR" && (

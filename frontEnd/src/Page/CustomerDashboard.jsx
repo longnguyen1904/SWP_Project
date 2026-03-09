@@ -67,19 +67,7 @@ export default function CustomerDashboard() {
               CreateSupportTicket
             </NavLink>
           </li>
-          <li className="nav-item mb-2">
-            <NavLink 
-              to="/Page/Customer/Profile" 
-              className={({ isActive }) => 
-                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
-                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
-                }`
-              }
-            >
-              <i className="bi bi-person-gear me-3"></i>
-              Hồ sơ cá nhân
-            </NavLink>
-          </li>
+
         </ul>
 
         <hr className="border-secondary opacity-50" />
