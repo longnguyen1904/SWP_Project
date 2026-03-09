@@ -1,11 +1,12 @@
 package com.tallt.marketplace.repository;
 
-import com.tallt.marketplace.entity.Order;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.tallt.marketplace.entity.Order;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
