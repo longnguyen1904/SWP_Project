@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { orderAPI } from "../services/orderApi.js";
 
-
 function PurchasedProducts() {
 
   const [orders, setOrders] = useState([]);
@@ -12,14 +11,7 @@ function PurchasedProducts() {
 
       try {
 
-        const user = getUserInfo();
-
-        if (!user) {
-          console.error("User not logged in");
-          return;
-        }
-
-        const data = await orderAPI.getUserOrders(user.userID);
+        const data = await orderAPI.getUserOrders();
 
         setOrders(data);
 
@@ -34,7 +26,7 @@ function PurchasedProducts() {
   }, []);
 
   const totalPrice = orders.reduce(
-    (sum, order) => sum + (order.totalAmount || 0),
+    (sum, order) => sum + Number(order.totalAmount || 0),
     0
   );
 
