@@ -49,7 +49,7 @@ public class VirusTotalService {
     }
 
 
-    // 1️⃣ Gửi URL lên VirusTotal
+    // Gửi URL lên VirusTotal
     private String submitUrl(String urlToScan) {
 
 
@@ -85,7 +85,7 @@ public class VirusTotalService {
     }
 
 
-    // 2️⃣ Kiểm tra kết quả
+    // Kiểm tra kết quả
     private boolean checkResultOnce(String analysisId) {
 
 

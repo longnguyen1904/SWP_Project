@@ -1,4 +1,4 @@
-spring:
+﻿spring:
   application:
     name: marketplace
   servlet:
@@ -6,9 +6,9 @@ spring:
       max-file-size: 500MB
       max-request-size: 500MB
   datasource:
-    url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3307/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: 123456
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,11 +17,9 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-
+        dialect: org.hibernate.dialect.MySQLDialect         
 server:
   port: 8081
-
 virustotal:
   api-key: fbeee19f2a7b45408e220ff4a07384ff9041af712a50f4fe6eb38b32b3c250b7
 
