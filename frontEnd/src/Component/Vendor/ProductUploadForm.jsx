@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Card,
@@ -24,8 +24,15 @@ import {
   TableHead,
   TableRow,
   Paper,
+  LinearProgress,
+  IconButton,
 } from "@mui/material";
-import { vendorAPI, customerAPI } from "../../services/api";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import ImageIcon from "@mui/icons-material/Image";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { vendorAPI, customerAPI, uploadAPI } from "../../services/api";
 
 const ProductUploadForm = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -34,6 +41,16 @@ const ProductUploadForm = () => {
   const [success, setSuccess] = useState("");
   const [categories, setCategories] = useState([]);
   const [productId, setProductId] = useState(null);
+
+  // Upload states
+  const [imageUploading, setImageUploading] = useState(false);
+  const [installerUploading, setInstallerUploading] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedInstallerFile, setSelectedInstallerFile] = useState(null);
+
+  const imageInputRef = useRef(null);
+  const installerInputRef = useRef(null);
 
   const [productData, setProductData] = useState({
     productName: "",
@@ -239,10 +256,137 @@ const ProductUploadForm = () => {
     }
   };
 
+  // ==================== IMAGE UPLOAD (local → Cloudinary) ====================
+
+  const handleImageFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("File phải là ảnh (jpg, png, gif, webp)");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Ảnh không được vượt quá 10MB");
+      return;
+    }
+    setSelectedImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setError("");
+  };
+
+  const handleImageUploadToCloud = async () => {
+    if (!selectedImageFile) return;
+    setImageUploading(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", selectedImageFile);
+      const response = await uploadAPI.uploadImage(fd);
+      const url = response.data?.data?.url || response.data?.url;
+      if (url) {
+        setImageUpload((prev) => ({ ...prev, imageUrl: url }));
+        setSuccess("Upload ảnh thành công!");
+        setTimeout(() => setSuccess(""), 3000);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Upload ảnh thất bại. Vui lòng thử lại.");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleClearImageFile = () => {
+    setSelectedImageFile(null);
+    setImagePreview(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  };
+
+  // ==================== INSTALLER UPLOAD (local → Cloudinary) ====================
+
+  const handleInstallerFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const name = file.name.toLowerCase();
+    const validExts = [".exe", ".zip", ".msi", ".dmg", ".pkg", ".jar"];
+    if (!validExts.some((ext) => name.endsWith(ext))) {
+      setError("Chỉ chấp nhận file: exe, zip, msi, dmg, pkg, jar");
+      return;
+    }
+    if (file.size > 500 * 1024 * 1024) {
+      setError("File cài đặt không được vượt quá 500MB");
+      return;
+    }
+    setSelectedInstallerFile(file);
+    setError("");
+  };
+
+  const handleInstallerUploadToCloud = async () => {
+    if (!selectedInstallerFile) return;
+    setInstallerUploading(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", selectedInstallerFile);
+      const response = await uploadAPI.uploadInstaller(fd);
+      const url = response.data?.data?.url || response.data?.url;
+      if (url) {
+        setVersion((prev) => ({ ...prev, fileUrl: url }));
+        setSuccess("Upload file cài đặt thành công!");
+        setTimeout(() => setSuccess(""), 3000);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Upload file thất bại. Vui lòng thử lại.");
+    } finally {
+      setInstallerUploading(false);
+    }
+  };
+
+  const handleClearInstallerFile = () => {
+    setSelectedInstallerFile(null);
+    setVersion((prev) => ({ ...prev, fileUrl: "" }));
+    if (installerInputRef.current) installerInputRef.current.value = "";
+  };
+
+  // ==================== HELPERS ====================
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
+  const dropZoneStyle = {
+    border: "2px dashed",
+    borderColor: "grey.400",
+    borderRadius: 2,
+    p: 3,
+    textAlign: "center",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+  };
+
+  const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
+
+  const handleImageDrop = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const file = e.dataTransfer.files[0];
+    if (file) handleImageFileSelect({ target: { files: [file] } });
+  };
+
+  const handleInstallerDrop = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const file = e.dataTransfer.files[0];
+    if (file) handleInstallerFileSelect({ target: { files: [file] } });
+  };
+
+  // ==================== ORIGINAL HELPERS ====================
+
   const addImage = () => {
     if (imageUpload.imageUrl) {
       setImages([...images, { ...imageUpload, id: Date.now() }]);
       setImageUpload({ imageUrl: "", isPrimary: false, sortOrder: images.length });
+      handleClearImageFile();
     }
   };
 
@@ -349,8 +493,90 @@ const ProductUploadForm = () => {
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
-              Product Images
+              🖼️ Upload Ảnh Sản Phẩm
             </Typography>
+
+            {/* Upload ảnh từ local */}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageFileSelect}
+              style={{ display: "none" }}
+            />
+
+            {!selectedImageFile && !imageUpload.imageUrl && (
+              <Box
+                sx={{ ...dropZoneStyle, mb: 2 }}
+                onClick={() => imageInputRef.current?.click()}
+                onDragOver={handleDragOver}
+                onDrop={handleImageDrop}
+              >
+                <ImageIcon sx={{ fontSize: 48, color: "grey.500", mb: 1 }} />
+                <Typography variant="body1" color="text.secondary">
+                  Kéo thả ảnh vào đây hoặc <strong>click để chọn ảnh từ máy</strong>
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Hỗ trợ: jpg, png, gif, webp — Tối đa 10MB
+                </Typography>
+              </Box>
+            )}
+
+            {selectedImageFile && !imageUpload.imageUrl && (
+              <Paper sx={{ p: 2, mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
+                {imagePreview && (
+                  <Box
+                    component="img"
+                    src={imagePreview}
+                    alt="Preview"
+                    sx={{ width: 80, height: 80, objectFit: "cover", borderRadius: 1 }}
+                  />
+                )}
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1">{selectedImageFile.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatFileSize(selectedImageFile.size)}
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={imageUploading ? <CircularProgress size={18} color="inherit" /> : <CloudUploadIcon />}
+                  onClick={handleImageUploadToCloud}
+                  disabled={imageUploading}
+                >
+                  {imageUploading ? "Đang upload..." : "Upload lên Cloudinary"}
+                </Button>
+                <IconButton onClick={handleClearImageFile} disabled={imageUploading}>
+                  <DeleteIcon />
+                </IconButton>
+              </Paper>
+            )}
+
+            {imageUpload.imageUrl && (
+              <Paper sx={{ p: 2, mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
+                <CheckCircleIcon color="success" sx={{ fontSize: 40 }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" color="success.main" fontWeight="bold">
+                    ✅ Ảnh đã upload thành công!
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-all" }}>
+                    {imageUpload.imageUrl}
+                  </Typography>
+                </Box>
+                <IconButton onClick={() => { setImageUpload((prev) => ({ ...prev, imageUrl: "" })); handleClearImageFile(); }} color="error">
+                  <DeleteIcon />
+                </IconButton>
+              </Paper>
+            )}
+
+            {imageUploading && <LinearProgress color="secondary" sx={{ mb: 2 }} />}
+
+            {/* Hoặc dán URL trực tiếp */}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, mt: 1 }}>
+              Hoặc dán URL ảnh trực tiếp:
+            </Typography>
+
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={12} md={4}>
                 <TextField
@@ -358,6 +584,7 @@ const ProductUploadForm = () => {
                   label="Image URL"
                   value={imageUpload.imageUrl}
                   onChange={(e) => setImageUpload({ ...imageUpload, imageUrl: e.target.value })}
+                  placeholder="URL được tự động điền sau khi upload"
                 />
               </Grid>
               <Grid item xs={12} md={2}>
@@ -388,6 +615,7 @@ const ProductUploadForm = () => {
                   variant="outlined"
                   onClick={addImage}
                   sx={{ height: "56px" }}
+                  disabled={!imageUpload.imageUrl}
                 >
                   + Add
                 </Button>
@@ -398,6 +626,7 @@ const ProductUploadForm = () => {
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell>Preview</TableCell>
                     <TableCell>Image URL</TableCell>
                     <TableCell>Primary</TableCell>
                     <TableCell>Sort Order</TableCell>
@@ -407,7 +636,17 @@ const ProductUploadForm = () => {
                 <TableBody>
                   {images.map((image) => (
                     <TableRow key={image.id}>
-                      <TableCell>{image.imageUrl}</TableCell>
+                      <TableCell>
+                        <Box
+                          component="img"
+                          src={image.imageUrl}
+                          alt="thumb"
+                          sx={{ width: 50, height: 50, objectFit: "cover", borderRadius: 1 }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 200, wordBreak: "break-all" }}>
+                        {image.imageUrl}
+                      </TableCell>
                       <TableCell>
                         <Chip label={image.isPrimary ? "Yes" : "No"} size="small" />
                       </TableCell>
@@ -429,6 +668,11 @@ const ProductUploadForm = () => {
         return (
           <Grid container spacing={3}>
             <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                📦 Upload File Cài Đặt (zip, exe, msi, ...)
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Version Number"
@@ -438,16 +682,92 @@ const ProductUploadForm = () => {
                 required
               />
             </Grid>
+
+            {/* Upload file cài đặt từ local */}
             <Grid item xs={12}>
+              <input
+                ref={installerInputRef}
+                type="file"
+                accept=".exe,.zip,.msi,.dmg,.pkg,.jar"
+                onChange={handleInstallerFileSelect}
+                style={{ display: "none" }}
+              />
+
+              {!selectedInstallerFile && !version.fileUrl && (
+                <Box
+                  sx={dropZoneStyle}
+                  onClick={() => installerInputRef.current?.click()}
+                  onDragOver={handleDragOver}
+                  onDrop={handleInstallerDrop}
+                >
+                  <InsertDriveFileIcon sx={{ fontSize: 48, color: "grey.500", mb: 1 }} />
+                  <Typography variant="body1" color="text.secondary">
+                    Kéo thả file vào đây hoặc <strong>click để chọn file từ máy</strong>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Hỗ trợ: exe, zip, msi, dmg, pkg, jar — Tối đa 500MB
+                  </Typography>
+                </Box>
+              )}
+
+              {selectedInstallerFile && !version.fileUrl && (
+                <Paper sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }}>
+                  <InsertDriveFileIcon color="primary" sx={{ fontSize: 40 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body1">{selectedInstallerFile.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatFileSize(selectedInstallerFile.size)}
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    startIcon={installerUploading ? <CircularProgress size={18} color="inherit" /> : <CloudUploadIcon />}
+                    onClick={handleInstallerUploadToCloud}
+                    disabled={installerUploading}
+                  >
+                    {installerUploading ? "Đang upload..." : "Upload lên Cloudinary"}
+                  </Button>
+                  <IconButton onClick={handleClearInstallerFile} disabled={installerUploading}>
+                    <DeleteIcon />
+                  </IconButton>
+                </Paper>
+              )}
+
+              {version.fileUrl && (
+                <Paper sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }}>
+                  <CheckCircleIcon color="success" sx={{ fontSize: 40 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body1" color="success.main" fontWeight="bold">
+                      ✅ File đã upload thành công!
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-all" }}>
+                      {version.fileUrl}
+                    </Typography>
+                  </Box>
+                  <IconButton onClick={handleClearInstallerFile} color="error">
+                    <DeleteIcon />
+                  </IconButton>
+                </Paper>
+              )}
+
+              {installerUploading && <LinearProgress sx={{ mt: 1 }} />}
+            </Grid>
+
+            {/* Hoặc dán URL trực tiếp */}
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Hoặc dán URL file trực tiếp:
+              </Typography>
               <TextField
                 fullWidth
                 label="File URL"
                 value={version.fileUrl}
                 onChange={(e) => setVersion({ ...version, fileUrl: e.target.value })}
-                placeholder="URL to the downloadable file (or use Upload Installer first)"
+                placeholder="URL được tự động điền sau khi upload"
                 required
               />
             </Grid>
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
