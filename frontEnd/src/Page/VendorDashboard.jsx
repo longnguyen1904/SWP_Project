@@ -82,18 +82,6 @@ export default function VendorDashboard() {
                         <span className="position-absolute top-50 start-0 translate-middle-y ps-3 text-white-50">
                             <i className="bi bi-search"></i>
                         </span>
-                        <input
-                            className="form-control ps-5 border-0 text-white shadow-none custom-placeholder"
-                            type="search"
-                            placeholder="Tìm kiếm nhanh..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{
-                                backgroundColor: "rgba(255, 255, 255, 0.12)", // Tăng độ sáng nền một chút
-                                borderRadius: "12px",
-                                color: "white" // Chữ người dùng nhập
-                            }}
-                        />
 
                         {/* Thêm thẻ style này ngay trong component nếu bạn không muốn mở file CSS */}
                         <style>
