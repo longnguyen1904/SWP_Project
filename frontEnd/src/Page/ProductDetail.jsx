@@ -93,7 +93,13 @@ const ProductDetail = () => {
         <span className="breadcrumbs__separator">/</span>
         {categoryName && (
           <>
-            <Link to={categoryId != null ? `/marketplace?category=${categoryId}` : "/marketplace"}>
+            <Link
+              to={
+                categoryId != null
+                  ? `/marketplace?category=${categoryId}`
+                  : "/marketplace"
+              }
+            >
               {categoryName}
             </Link>
             <span className="breadcrumbs__separator">/</span>
@@ -103,7 +109,10 @@ const ProductDetail = () => {
       </nav>
 
       <div className="product-detail__top">
-        <ProductImageGallery images={product.images} productName={product.name} />
+        <ProductImageGallery
+          images={product.images}
+          productName={product.name}
+        />
         <ProductInfoSection
           product={product}
           showBuyButton={showBuyButton}

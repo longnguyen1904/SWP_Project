@@ -1,54 +1,43 @@
-import { useState } from "react";
-import "../Style/FilterList.css" ; 
-
+import { useState, useEffect } from "react";
+import "../Style/FilterList.css";
 
 const FILTERS = ["All", "Fruit", "Vegetable", "Drink"];
-
-const ITEMS = [
-  { id: 1, name: "Apple", type: "Fruit" },
-  { id: 2, name: "Banana", type: "Fruit" },
-  { id: 3, name: "Carrot", type: "Vegetable" },
-  { id: 4, name: "Broccoli", type: "Vegetable" },
-  { id: 5, name: "Coca Cola", type: "Drink" },
-  { id: 6, name: "Orange Juice", type: "Drink" },
-  { id: 7, name: "Mango Juice", type: "Drink" },
-  { id: 8, name: "Melon Juice", type: "Drink" },
-  { id: 9, name: "potato Juice", type: "fruit" },
-  { id: 10, name: "sđasd Juice", type: "Drink" },
-  { id: 11, name: "áđasá Juice", type: "fruit" },
-  { id: 12, name: "fgdag Juice", type: "Drink" },
-  { id: 13, name: "ưqewqew Juice", type: "fruit" },
-  { id: 14, name: "zxcsv Juice", type: "fruit" },
-  { id: 15, name: "jjrtetqe Juice", type: "Drink" },
-
-  
-  
-];
 
 export default function FilterList() {
   const [open, setOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchName, setSearchName] = useState("");
-
-  // 🔥 FILTER THEO TYPE + NAME
-  const filteredItems = ITEMS
-    .filter(item => {
-      if (selectedFilter === "All") return true;
-      return item.type === selectedFilter;
-    })
-    .filter(item =>
-      item.name.toLowerCase().includes(searchName.toLowerCase())
-    );
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  
 
   function handleSelect(filter) {
     setSelectedFilter(filter);
     setOpen(false);
   }
 
+  const [products, setProducts] = useState([]);
+  useEffect(() => {
+    fetch("http://localhost:8081/api/products")
+      .then(res => res.json())
+      .then(data => setProducts(data.data.content));
+  }, []);
+
+
+
+  function openProductDetail(product) {
+    setSelectedProduct(product);
+  }
+
+  function closeProductDetail() {
+    setSelectedProduct(null);
+  }
   return (
 
     <section className="filter-container">
-      
+      <div>
+        <h2>Product List</h2>
+      </div>
+
       <div className="searching">
         <div className="dropdown">
           <div className="dropdown-header" onClick={() => setOpen(!open)}>
@@ -81,10 +70,54 @@ export default function FilterList() {
       </div>
 
       <ul className="item-list">
-        {filteredItems.map(item => (
-          <li key={item.id}>{item.name}</li>
-        ))}
+        {products
+          .filter(product => {
+            if (selectedFilter === "All") return true;
+            return product.categoryName === selectedFilter;
+          })
+          .filter(product =>
+            product.productName
+              .toLowerCase()
+              .includes(searchName.toLowerCase())
+          )
+          .map(product => (
+            <li key={product.productId}>
+              <h3>{product.productName}</h3>
+              <p>Price: ${product.basePrice}</p>
+              <button onClick={() => openProductDetail(product)}>
+                Buy
+              </button>
+            </li>
+          ))}
       </ul>
-    </section>
-  );
+      {selectedProduct && (
+        <div className="product-modal-overlay">
+
+          <div className="product-modal">
+
+            <button className="close-btn" onClick={closeProductDetail}>
+              ✕
+            </button>
+
+            <h2>Product Detail</h2>
+
+            <div className="product-detail">
+
+              <p><b>Name:</b> {selectedProduct.productName}</p>
+
+              <p><b>Category:</b> {selectedProduct.categoryName}</p>
+
+              <p><b>Price:</b> ${selectedProduct.basePrice}</p>
+
+            </div>
+
+            <button className="checkout-btn">
+              Checkout
+            </button>
+
+          </div>
+
+        </div>
+      )}
+    </section>);
 }

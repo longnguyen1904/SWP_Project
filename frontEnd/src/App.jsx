@@ -32,7 +32,6 @@ export default function App() {
         <Route path="/Page/Event" element={<Event />} />
         <Route path="/Page/Tradition" element={<Tradition />} />
 
-
         <Route path="/Page/Customer" element={<CustomerDashboard />}>
           <Route index element={<Navigate to="PurchasedProducts" replace />} />
           <Route path="PurchasedProducts" element={<PurchasedProducts />} />
@@ -53,6 +52,7 @@ export default function App() {
           <Route path="AdminVendorManagement" element={<AdminVendorManagement />} />
           <Route path="AdminReview" element={<AdminReview />} />
         </Route>
+         
 
 
         <Route path="/Page/PurchasedProducts" element={<PurchasedProducts />} />
