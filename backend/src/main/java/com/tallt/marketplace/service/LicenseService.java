@@ -2,12 +2,17 @@ package com.tallt.marketplace.service;
 
 import java.time.LocalDateTime;
 
+import org.springframework.stereotype.Service;
+
 import com.tallt.marketplace.controller.LicenseKeyGenerator;
 import com.tallt.marketplace.entity.License;
 import com.tallt.marketplace.entity.Order;
 import com.tallt.marketplace.repository.LicenseRepository;
 import com.tallt.marketplace.repository.OrderRepository;
+
+import jakarta.transaction.Transactional;
     
+@Service
 public class LicenseService {
      private final LicenseRepository licenseRepository;
     private final OrderRepository orderRepository;
@@ -17,7 +22,7 @@ public class LicenseService {
         this.licenseRepository = licenseRepository;
         this.orderRepository = orderRepository;
     }
-
+    @Transactional
     public License createLicenseForOrder(Integer orderId) {
 
         Order order = orderRepository.findById(orderId)

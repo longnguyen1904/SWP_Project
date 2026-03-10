@@ -103,20 +103,14 @@ function PurchasedProducts() {
           </tbody>
 
           <tfoot>
-            <tr style={{
-              background: "rgba(255,255,255,0.1)",
-              fontWeight: "bold"
-            }}>
-              <td colSpan="4" style={tdStyle}>Total</td>
-
-              <td style={tdStyle}>${totalPrice}</td>
-
-              <td colSpan="2"></td>
+            <tr style={{ background: "rgba(255,255,255,0.1)", fontWeight: "bold" }}>
+              <td colSpan="3" style={tdStyle}>Total</td> {/* Sửa từ 4 thành 3 */}
+              <td style={tdStyle}>${totalPrice}</td> {/* Giờ số tiền sẽ nằm dưới cột Price */}
+              <td colSpan="3"></td>
             </tr>
           </tfoot>
 
         </table>
-
       )}
 
     </div>
