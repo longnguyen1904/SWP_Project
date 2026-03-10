@@ -99,19 +99,16 @@ const FilterPanel = ({ filters, onApplyFilters, onClearFilters }) => {
           {!isLoadingOptions && categories.length === 0 && (
             <p className="filter-loading">No categories</p>
           )}
-          {categories.map((c) => {
-            const id = c.categoryID ?? c.id;
-            return (
-              <label key={id} className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={Array.isArray(pendingFilters.categoryIds) && pendingFilters.categoryIds.includes(id)}
-                  onChange={() => toggleCategory(id)}
-                />
-                {c.categoryName ?? c.name}
-              </label>
-            );
-          })}
+          {categories.map((c) => (
+            <label key={c.categoryID} className="filter-checkbox">
+              <input
+                type="checkbox"
+                checked={Array.isArray(pendingFilters.categoryIds) && pendingFilters.categoryIds.includes(c.categoryID)}
+                onChange={() => toggleCategory(c.categoryID)}
+              />
+              {c.categoryName}
+            </label>
+          ))}
         </div>
       </details>
 
@@ -122,19 +119,16 @@ const FilterPanel = ({ filters, onApplyFilters, onClearFilters }) => {
           {!isLoadingOptions && tags.length === 0 && (
             <p className="filter-loading">No tags</p>
           )}
-          {tags.map((t) => {
-            const name = t.tagName ?? t.name;
-            return (
-              <label key={t.tagID ?? t.id} className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={Array.isArray(pendingFilters.tags) && pendingFilters.tags.includes(name)}
-                  onChange={() => toggleTag(name)}
-                />
-                {name}
-              </label>
-            );
-          })}
+          {tags.map((t) => (
+            <label key={t.tagID} className="filter-checkbox">
+              <input
+                type="checkbox"
+                checked={Array.isArray(pendingFilters.tags) && pendingFilters.tags.includes(t.tagName)}
+                onChange={() => toggleTag(t.tagName)}
+              />
+              {t.tagName}
+            </label>
+          ))}
         </div>
       </details>
 

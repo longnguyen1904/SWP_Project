@@ -2,16 +2,11 @@ import React from "react";
 import { formatPrice, getProductImageUrl } from "../../services/formatters";
 
 const ProductCard = ({ product, onViewDetails }) => {
-  const id = product.productId ?? product.id;
-  const name = product.productName ?? product.name;
-  const description = product.description;
-  const basePrice = product.basePrice ?? product.price;
-  const categoryName = product.categoryName ?? product.category;
-  const tags = product.tags ?? [];
+  const { productId, productName, description, basePrice, categoryName, tags = [] } = product;
 
   const handleClick = (e) => {
     e?.stopPropagation?.();
-    if (id != null && onViewDetails) onViewDetails(id);
+    if (productId != null && onViewDetails) onViewDetails(productId);
   };
 
   return (
@@ -19,10 +14,10 @@ const ProductCard = ({ product, onViewDetails }) => {
       <img
         className="product-card__image"
         src={getProductImageUrl(product)}
-        alt={name}
+        alt={productName}
       />
       <div className="product-card__body">
-        <h3 className="product-card__name">{name || "—"}</h3>
+        <h3 className="product-card__name">{productName || "—"}</h3>
         <p className="product-card__desc">{description || "—"}</p>
 
         <div className="product-card__tags">
@@ -32,7 +27,7 @@ const ProductCard = ({ product, onViewDetails }) => {
         <div className="product-card__tags">
           {tags.slice(0, 3).map((tag) => (
             <span key={tag} className="chip chip--accent">
-              {typeof tag === "string" ? tag : tag?.name ?? tag}
+              {tag}
             </span>
           ))}
           {tags.length > 3 && (
