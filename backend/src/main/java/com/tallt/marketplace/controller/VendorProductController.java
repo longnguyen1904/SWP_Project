@@ -161,8 +161,10 @@ public class VendorProductController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Vendor vendor = vendorService.getVendorByUserId(userId);
+        System.out.println("Hello World");
         PageResponse<ProductResponse> result = productService.getVendorProducts(vendor.getVendorID(), search, null, status, page, size, sortBy, sortDir);
         return ResponseEntity.ok(ApiResponse.success(result));
+        
     }
 
     /**

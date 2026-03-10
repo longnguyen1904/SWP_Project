@@ -101,11 +101,11 @@ export const customerAPI = {
 
 export const uploadAPI = {
   uploadImage: (formData) =>
-    api.post("/api/upload/image", formData, { headers: { "Content-Type": "multipart/form-data" } }),
+    api.post("/api/upload/image", formData, { headers: { "Content-Type": "multipart/form-data" }, timeout: 300000 }),
   uploadDocument: (formData) =>
-    api.post("/api/upload/document", formData, { headers: { "Content-Type": "multipart/form-data" } }),
+    api.post("/api/upload/document", formData, { headers: { "Content-Type": "multipart/form-data" }, timeout: 300000 }),
   uploadInstaller: (formData) =>
-    api.post("/api/upload/installer", formData, { headers: { "Content-Type": "multipart/form-data" } }),
+    api.post("/api/upload/installer", formData, { headers: { "Content-Type": "multipart/form-data" }, timeout: 300000 }),
 };
 
 export default api;
