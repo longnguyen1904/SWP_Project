@@ -1,10 +1,14 @@
-spring:
+﻿spring:
   application:
     name: marketplace
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
   datasource:
-    url: jdbc:mysql://localhost:3307/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://127.0.0.1:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: 123456
+    password: root
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,18 +17,16 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-
+        dialect: org.hibernate.dialect.MySQLDialect         
 server:
   port: 8081
-
 virustotal:
   api-key: fbeee19f2a7b45408e220ff4a07384ff9041af712a50f4fe6eb38b32b3c250b7
 
 cloudinary:
-  cloud_name: ${CLOUDINARY_CLOUD_NAME:dwfxvobn3}
-  api_key: ${CLOUDINARY_API_KEY:223312713834276}
-  api_secret: ${CLOUDINARY_API_SECRET:yG5aXxOkoLXNX2736_2KwJuYpu0}
+  cloud_name: ${CLOUDINARY_CLOUD_NAME:dk1911sqa}
+  api_key: ${CLOUDINARY_API_KEY:461427875698879}
+  api_secret: ${CLOUDINARY_API_SECRET:UQuOUmhoApo-hy2qauyBDKY9ujQ}
 
 vnpay:
   tmn-code: 1A1WQ9ZN

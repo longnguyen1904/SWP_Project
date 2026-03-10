@@ -48,6 +48,7 @@ public class VendorService {
     @Transactional
     public VendorRegisterResponse registerVendor(Integer userId, VendorRegisterRequest request) {
         // 1. Kiểm tra User tồn tại
+        System.out.println("Hello World");
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User không tồn tại"));
 
