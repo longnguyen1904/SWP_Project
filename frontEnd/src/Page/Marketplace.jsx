@@ -4,7 +4,10 @@ import SearchBar from "../Component/Customer/SearchBar";
 import FilterPanel from "../Component/Customer/FilterPanel";
 import ProductGrid from "../Component/Customer/ProductGrid";
 import { customerAPI } from "../services/api";
-import { normalizePageResponse, getApiErrorMessage } from "../services/apiHelpers";
+import {
+  normalizePageResponse,
+  getApiErrorMessage,
+} from "../services/apiHelpers";
 import { PRICE_MAX } from "../services/theme";
 import "../Style/Marketplace.css";
 
@@ -19,7 +22,6 @@ const DEFAULT_FILTERS = {
 };
 
 const PAGE_SIZE = 10;
-
 
 const Marketplace = () => {
   const navigate = useNavigate();
@@ -37,7 +39,10 @@ const Marketplace = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pagination, setPagination] = useState({
-    currentPage: 1, totalPages: 0, totalItems: 0, limit: PAGE_SIZE,
+    currentPage: 1,
+    totalPages: 0,
+    totalItems: 0,
+    limit: PAGE_SIZE,
   });
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -55,10 +60,15 @@ const Marketplace = () => {
     fetchProducts("", 1, initialFilters);
   }, []);
 
-  useEffect(() => { setShowFilters(!isMobile); }, [isMobile]);
+  useEffect(() => {
+    setShowFilters(!isMobile);
+  }, [isMobile]);
 
-
-  const fetchProducts = async (query = searchQuery, page = 1, filtersOverride = null) => {
+  const fetchProducts = async (
+    query = searchQuery,
+    page = 1,
+    filtersOverride = null,
+  ) => {
     const activeFilters = filtersOverride ?? filters;
     setLoading(true);
     setError("");
@@ -71,16 +81,26 @@ const Marketplace = () => {
         sortBy: activeFilters.sortBy || "createdAt",
         sortDir: activeFilters.sortDir || "desc",
       };
-      if (activeFilters.priceRange.min > 0) requestParams.minPrice = activeFilters.priceRange.min;
-      if (activeFilters.priceRange.max < PRICE_MAX) requestParams.maxPrice = activeFilters.priceRange.max;
-      if (activeFilters.categoryIds.length > 0) requestParams.categoryIds = activeFilters.categoryIds;
-      if (activeFilters.tags.length > 0) requestParams.tags = activeFilters.tags;
+      if (activeFilters.priceRange.min > 0)
+        requestParams.minPrice = activeFilters.priceRange.min;
+      if (activeFilters.priceRange.max < PRICE_MAX)
+        requestParams.maxPrice = activeFilters.priceRange.max;
+      if (activeFilters.categoryIds.length > 0)
+        requestParams.categoryIds = activeFilters.categoryIds;
+      if (activeFilters.tags.length > 0)
+        requestParams.tags = activeFilters.tags;
 
       const response = await customerAPI.getProducts(requestParams);
-      const { content, totalElements, totalPages, currentPage } = normalizePageResponse(response);
+      const { content, totalElements, totalPages, currentPage } =
+        normalizePageResponse(response);
 
       setProducts(content);
-      setPagination({ currentPage, totalPages, totalItems: totalElements, limit: PAGE_SIZE });
+      setPagination({
+        currentPage,
+        totalPages,
+        totalItems: totalElements,
+        limit: PAGE_SIZE,
+      });
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to load products"));
       setProducts([]);
@@ -108,23 +128,34 @@ const Marketplace = () => {
 
   const handleSortChange = (sortValue) => {
     const [sortBy, sortDir] = (sortValue || "createdAt_desc").split("_");
-    const nf = { ...filters, sortBy: sortBy || "createdAt", sortDir: sortDir || "desc" };
+    const nf = {
+      ...filters,
+      sortBy: sortBy || "createdAt",
+      sortDir: sortDir || "desc",
+    };
     setFilters(nf);
     fetchProducts(searchQuery, 1, nf);
   };
 
-  const handleViewDetails = (productId) => { navigate(`/products/${productId}`); };
+  const handleViewDetails = (productId) => {
+    navigate(`/products/${productId}`);
+  };
 
   return (
     <div className="marketplace">
       <div className="marketplace__header">
         <h1 className="marketplace__title">Software Marketplace</h1>
-        <p className="marketplace__subtitle">Discover the perfect software for your needs</p>
+        <p className="marketplace__subtitle">
+          Discover the perfect software for your needs
+        </p>
         <div className="marketplace__search-wrapper">
           <SearchBar onSearch={handleSearch} />
         </div>
         {isMobile && (
-          <button className="marketplace__filter-toggle" onClick={() => setShowFilters((p) => !p)}>
+          <button
+            className="marketplace__filter-toggle"
+            onClick={() => setShowFilters((p) => !p)}
+          >
             {showFilters ? "Hide Filters" : "Show Filters"}
           </button>
         )}
@@ -135,7 +166,11 @@ const Marketplace = () => {
       <div className="marketplace__body">
         {(showFilters || !isMobile) && (
           <div className="marketplace__sidebar">
-            <FilterPanel filters={filters} onApplyFilters={handleApplyFilters} onClearFilters={handleClearFilters} />
+            <FilterPanel
+              filters={filters}
+              onApplyFilters={handleApplyFilters}
+              onClearFilters={handleClearFilters}
+            />
           </div>
         )}
         <div className="marketplace__content">
