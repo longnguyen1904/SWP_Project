@@ -20,6 +20,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     boolean existsByProduct_ProductIDAndUser_UserIDAndPaymentStatusIgnoreCase(
             Integer productID, Integer userID, String paymentStatus);
 
-    List<Order> findByUser_UserID(Integer userID);   
+    List<Order> findByUser_UserID(Integer userID);
+
+    void deleteByProduct_ProductID(Integer productId);
 }
     
