@@ -55,6 +55,7 @@ export const vendorAPI = {
   createLicenseTier: (productId, tierData) =>
     api.post(`/api/vendor/products/${productId}/license-tiers`, tierData),
   submitProduct: (productId) => api.post(`/api/vendor/products/${productId}/submit`),
+  saveDraft: (productId, data) => api.put(`/api/vendor/products/${productId}/draft`, data),
   getDailyRevenue: (params) => api.get("/api/vendor/revenue/daily", { params }),
   exportRevenueCSV: (params) =>
     api.get("/api/vendor/revenue/export", { params, responseType: "blob" }),

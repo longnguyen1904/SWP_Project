@@ -55,6 +55,7 @@ const ProductUpload = () => {
     hasTrial: false,
     trialDurationDays: 7,
     tags: [],
+    guideDocumentUrl: "",
     versionNumber: "1.0.0",
     fileUrl: "",
     releaseNotes: "",
@@ -265,6 +266,7 @@ const ProductUpload = () => {
         hasTrial: formData.hasTrial,
         trialDurationDays: formData.trialDurationDays,
         tags: formData.tags,
+        guideDocumentUrl: formData.guideDocumentUrl || null,
       };
 
       const productResponse = await vendorAPI.createProduct(productData);
@@ -420,6 +422,16 @@ const ProductUpload = () => {
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleTagAdd())}
                 helperText="Press Enter to add tags"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Guide Document URL"
+                value={formData.guideDocumentUrl}
+                onChange={handleInputChange("guideDocumentUrl")}
+                placeholder="https://example.com/guide.pdf"
+                helperText="Link tài liệu hướng dẫn sử dụng sản phẩm (PDF, doc...) — Tùy chọn"
               />
             </Grid>
           </Grid>
@@ -741,6 +753,9 @@ const ProductUpload = () => {
                 </Typography>
                 <Typography variant="body2" gutterBottom>
                   <strong>Image URL:</strong> {formData.imageUrl || "Chưa upload"}
+                </Typography>
+                <Typography variant="body2" gutterBottom>
+                  <strong>Guide Document:</strong> {formData.guideDocumentUrl || "Không có"}
                 </Typography>
                 {(imagePreview || formData.imageUrl) && (
                   <Box sx={{ mt: 1 }}>

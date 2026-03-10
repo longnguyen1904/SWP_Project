@@ -31,7 +31,6 @@ const VendorRegistration = () => {
     companyName: "",
     description: "",
     taxCode: "",
-    citizenId: "",
     identificationDoc: "",
   });
 
@@ -46,6 +45,25 @@ const VendorRegistration = () => {
   };
 
   const handleNext = () => {
+    setError("");
+    // Validate current step
+    if (activeStep === 0) {
+      if (formData.type === "COMPANY" && !formData.companyName.trim()) {
+        setError("Tên công ty không được để trống khi loại vendor là COMPANY");
+        return;
+      }
+    } else if (activeStep === 1) {
+      if (!formData.taxCode.trim()) {
+        setError("Tax Code / Citizen ID không được để trống");
+        return;
+      }
+    } else if (activeStep === 2) {
+      if (!formData.identificationDoc.trim()) {
+        setError("Link tài liệu xác thực không được để trống");
+        return;
+      }
+    }
+
     if (activeStep === steps.length - 1) {
       handleSubmit();
     } else {
@@ -119,23 +137,13 @@ const VendorRegistration = () => {
       case 1:
         return (
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Tax Code"
+                label="Tax Code / Citizen ID"
                 value={formData.taxCode}
                 onChange={handleInputChange("taxCode")}
-                placeholder="Business tax identification number"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Citizen ID / CCCD"
-                value={formData.citizenId}
-                onChange={handleInputChange("citizenId")}
-                required
-                placeholder="National identification number"
+                placeholder="Tax code or citizen identification number"
               />
             </Grid>
           </Grid>
