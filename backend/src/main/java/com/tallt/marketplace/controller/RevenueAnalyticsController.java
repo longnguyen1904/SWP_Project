@@ -1,6 +1,5 @@
 package com.tallt.marketplace.controller;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -27,87 +26,112 @@ public class RevenueAnalyticsController {
 
     private final RevenueAnalyticsService revenueService;
 
-    /**
-     * 🔢 Tổng doanh thu
-     */
     @GetMapping("/summary")
-    public ResponseEntity<?> getTotalRevenue(
+    public ResponseEntity<?> getDashboardSummary(
             @RequestHeader(value = "Authorization", required = false) String token,
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
-    ) {
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Integer productId) {
         try {
             int vendorId = revenueService.getVendorIdFromToken(token);
-            BigDecimal totalRevenue = revenueService.getTotalRevenueByVendor(vendorId, startDate, endDate);
-            return ResponseEntity.ok(totalRevenue);
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(revenueService.getDashboardSummary(vendorId, startDate, endDate, productId));
+        } catch (Exception e) { 
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); 
         }
     }
 
-    /**
-     * 📈 Doanh thu theo ngày (chart)
-     */
-    @GetMapping("/daily")
+ @GetMapping("/daily")
     public ResponseEntity<?> getDailyRevenue(
             @RequestHeader(value = "Authorization", required = false) String token,
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
-    ) {
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Integer productId) { // Thêm dòng này
         try {
             int vendorId = revenueService.getVendorIdFromToken(token);
-            return ResponseEntity.ok(revenueService.getDailyRevenue(vendorId, startDate, endDate));
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+            // Truyền thêm productId vào service
+            return ResponseEntity.ok(revenueService.getDailyRevenue(vendorId, startDate, endDate, productId));
+        } catch (Exception e) { 
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); 
         }
     }
 
-    /**
-     * 🏆 Top sản phẩm bán chạy
-     */
     @GetMapping("/top-products")
     public ResponseEntity<?> getTopProducts(
             @RequestHeader(value = "Authorization", required = false) String token,
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
-    ) {
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         try {
             int vendorId = revenueService.getVendorIdFromToken(token);
             return ResponseEntity.ok(revenueService.getTopProducts(vendorId, startDate, endDate));
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) { 
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); 
         }
     }
 
-    /**
-     * 📥 Export CSV doanh thu theo ngày
-     */
-    @GetMapping("/export")
-    public ResponseEntity<?> exportRevenueCSV(
+    @GetMapping("/rating-distribution")
+    public ResponseEntity<?> getRatingDistribution(
             @RequestHeader(value = "Authorization", required = false) String token,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
-    ) {
+            @RequestParam(required = false) Integer productId) {
         try {
             int vendorId = revenueService.getVendorIdFromToken(token);
-            List<Map<String, Object>> data = revenueService.getDailyRevenue(vendorId, startDate, endDate);
+            return ResponseEntity.ok(revenueService.getRatingDistribution(vendorId, productId));
+        } catch (Exception e) { 
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); 
+        }
+    }
+
+    @GetMapping("/recent-reviews")
+    public ResponseEntity<?> getRecentReviews(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestParam(required = false) Integer productId) {
+        try {
+            int vendorId = revenueService.getVendorIdFromToken(token);
+            return ResponseEntity.ok(revenueService.getRecentReviews(vendorId, productId));
+        } catch (Exception e) { 
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); 
+        }
+    }
+
+    // 🔥 API MỚI BỔ SUNG CHO TICKET STATUS
+    @GetMapping("/ticket-status")
+    public ResponseEntity<?> getTicketStatusDistribution(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Integer productId) {
+        try {
+            int vendorId = revenueService.getVendorIdFromToken(token);
+            return ResponseEntity.ok(revenueService.getTicketStatusDistribution(vendorId, startDate, endDate, productId));
+        } catch (Exception e) { 
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); 
+        }
+    }
+
+   @GetMapping("/export")
+    public ResponseEntity<?> exportRevenueCSV(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Integer productId) { // Thêm dòng này
+        try {
+            int vendorId = revenueService.getVendorIdFromToken(token);
+            // Truyền thêm productId vào service
+            List<Map<String, Object>> data = revenueService.getDailyRevenue(vendorId, startDate, endDate, productId);
 
             StringBuilder csv = new StringBuilder();
             csv.append("Date,Revenue\n");
-
             for (Map<String, Object> row : data) {
                 csv.append(row.get("date")).append(",").append(row.get("revenue")).append("\n");
             }
-
             byte[] csvBytes = csv.toString().getBytes();
 
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=revenue.csv")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=revenue_report.csv")
                     .header(HttpHeaders.CONTENT_TYPE, "text/csv")
                     .body(csvBytes);
 
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) { 
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); 
         }
     }
 }

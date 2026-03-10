@@ -33,7 +33,7 @@ const CreateSupportTicketWizard = () => {
   const token = localStorage.getItem('accessToken');
 
   // ==========================================
-  // FETCH PRODUCTS VÀ LỌC TRÙNG (DEDUPLICATION)
+  // FETCH PRODUCTS VÀ KHÔNG LỌC TRÙNG NỮA
   // ==========================================
   const fetchProducts = async () => {
     setLoading(true);
@@ -41,9 +41,6 @@ const CreateSupportTicketWizard = () => {
     try {
       const data = await orderAPI.getUserOrders();
       const extractedProducts = [];
-      
-      // TẠO BỘ LỌC GHI NHỚ SẢN PHẨM ĐÃ THÊM
-      const seenProducts = new Set();
 
       data.forEach(order => {
         const status = String(order.paymentStatus || order.status || '').toUpperCase();
@@ -51,27 +48,27 @@ const CreateSupportTicketWizard = () => {
         if (status === 'PAID' || status === 'COMPLETED' || status === 'SUCCESS') {
           const p = order.product || {};
           
-          // Tạo khóa duy nhất để nhận diện sản phẩm (Dùng ID hoặc Tên làm mỏ neo)
-          const uniqueKey = p.productId || p.id || p.productName || p.name;
+          // Lấy ngày mua (Tuỳ thuộc vào backend trả về trường nào, ví dụ orderDate, createdAt, date...)
+          const rawDate = order.orderDate || order.createdAt || order.date || order.paymentDate;
+          const purchaseDate = rawDate ? new Date(rawDate).toLocaleDateString('vi-VN') : 'Không rõ ngày';
 
-          // NẾU SẢN PHẨM CHƯA TỒN TẠI TRONG SET -> MỚI ĐƯỢC THÊM VÀO
-          if (uniqueKey && !seenProducts.has(uniqueKey)) {
-            seenProducts.add(uniqueKey); // Đánh dấu là đã gặp
-
-            extractedProducts.push({
-              orderId: order.orderID || order.orderId || order.id,
-              vendorId: p.vendor?.vendorId || p.vendor?.vendorID || p.vendor?.id || p.vendor?.userID || p.vendorId || p.vendorID || order.vendorId || order.vendorID, 
-              productId: p.productId || p.id,
-              productName: p.productName || p.name || 'Sản phẩm',
-              vendorName: p.vendor?.shopName || p.vendor?.name || p.vendorName || 'Shop',
-              productImage: p.imageUrl || p.image || p.thumbnail || 'https://via.placeholder.com/64',
-              categoryName: p.category?.categoryName || p.category?.name || p.categoryName || 'Phần mềm',
-              paymentStatus: status,
-              _rawData: p 
-            });
-          }
+          extractedProducts.push({
+            orderId: order.orderID || order.orderId || order.id,
+            vendorId: p.vendor?.vendorId || p.vendor?.vendorID || p.vendor?.id || p.vendor?.userID || p.vendorId || p.vendorID || order.vendorId || order.vendorID, 
+            productId: p.productId || p.id,
+            productName: p.productName || p.name || 'Sản phẩm',
+            vendorName: p.vendor?.shopName || p.vendor?.name || p.vendorName || 'Shop',
+            productImage: p.imageUrl || p.image || p.thumbnail || 'https://via.placeholder.com/64',
+            categoryName: p.category?.categoryName || p.category?.name || p.categoryName || 'Phần mềm',
+            paymentStatus: status,
+            purchaseDate: purchaseDate, // <-- Lưu thêm ngày mua
+            _rawData: p 
+          });
         }
       });
+
+      // Sắp xếp đơn hàng mới nhất lên đầu
+      extractedProducts.sort((a, b) => b.orderId - a.orderId);
 
       setProducts(extractedProducts);
     } catch (err) {
@@ -110,13 +107,12 @@ const CreateSupportTicketWizard = () => {
   // ==========================================
   const handleNextToStep2 = () => {
     if (!selectedProduct) {
-      setError('Vui lòng chọn một sản phẩm để tiếp tục.');
+      setError('Vui lòng chọn một sản phẩm (đơn hàng) để tiếp tục.');
       return;
     }
     
     // CHẶN ĐỨNG NẾU KHÔNG TÌM THẤY VENDOR ID
     if (!selectedProduct.vendorId) {
-       console.log("Dữ liệu sản phẩm bị lỗi thiếu Vendor:", selectedProduct._rawData);
        setError('Sản phẩm này bị thiếu dữ liệu mã Shop (Vendor ID) từ hệ thống. Vui lòng chọn sản phẩm khác hoặc báo lại cho Admin!');
        return; 
     }
@@ -182,6 +178,10 @@ const CreateSupportTicketWizard = () => {
       }
       if (selectedProduct.orderId) {
         formData.append('orderId', selectedProduct.orderId);
+      }
+      // Gửi kèm productId phòng trường hợp API của bạn vẫn cần
+      if (selectedProduct.productId) {
+        formData.append('productId', selectedProduct.productId);
       }
       
       formData.append('subject', finalSubject);
@@ -303,8 +303,8 @@ const CreateSupportTicketWizard = () => {
           {/* ================= STEP 1 ================= */}
           {step === 1 && (
              <div className="fade-in">
-             <h4 className="fw-bold mb-2 text-white">Chọn sản phẩm cần hỗ trợ</h4>
-             <p className="small mb-4" style={{ color: '#a1a1aa' }}>Lựa chọn sản phẩm hoặc phần mềm bạn đang gặp vấn đề.</p>
+             <h4 className="fw-bold mb-2 text-white">Chọn đơn hàng cần hỗ trợ</h4>
+             <p className="small mb-4" style={{ color: '#a1a1aa' }}>Vui lòng chọn chính xác đơn hàng phần mềm mà bạn đang gặp vấn đề.</p>
              
              {loading ? (
                <div className="text-center py-5">
@@ -339,7 +339,7 @@ const CreateSupportTicketWizard = () => {
 
                  <div className="row g-3" style={{ maxHeight: '450px', overflowY: 'auto', overflowX: 'hidden', paddingRight: '5px' }}>
                    {filteredProducts.map((p, idx) => {
-                     const isSelected = selectedProduct?.orderId === p.orderId && selectedProduct?.productId === p.productId;
+                     const isSelected = selectedProduct?.orderId === p.orderId;
                      return (
                        <div className="col-md-6" key={`${p.orderId}-${idx}`}>
                          <div 
@@ -351,12 +351,17 @@ const CreateSupportTicketWizard = () => {
                              <div className="flex-shrink-0">
                                <img src={p.productImage || 'https://via.placeholder.com/64'} alt="Img" className="rounded" style={{ width: '60px', height: '60px', objectFit: 'cover', border: `1px solid rgba(82, 82, 91, 0.5)` }} />
                              </div>
-                             <div style={{ overflow: 'hidden' }}>
+                             <div style={{ overflow: 'hidden', width: '100%' }}>
                                <h6 className="mb-1 fw-bold text-white text-truncate">{p.productName}</h6>
                                <div className="small mb-1 text-truncate" style={{ color: '#a1a1aa' }}>Shop: <span className="text-light">{p.vendorName}</span></div>
-                               <div className="d-flex justify-content-between align-items-center mt-2">
+                               
+                               {/* NỔI BẬT MÃ ĐƠN & NGÀY MUA ĐỂ DỄ PHÂN BIỆT */}
+                               <div className="d-flex justify-content-between align-items-end mt-2">
                                  <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#d4d4d8', fontWeight: 'normal' }}>{getProductCategory(p)}</span>
-                                 <span style={{ fontSize: '0.75rem', color: '#71717a' }}>#{p.orderId}</span>
+                                 <div className="text-end">
+                                   <div style={{ fontSize: '0.8rem', color: isSelected ? themeColor : '#10b981', fontWeight: 'bold' }}>Mã đơn: #{p.orderId}</div>
+                                   <div style={{ fontSize: '0.75rem', color: '#71717a' }}>Ngày mua: {p.purchaseDate}</div>
+                                 </div>
                                </div>
                              </div>
                            </div>
@@ -451,7 +456,7 @@ const CreateSupportTicketWizard = () => {
                     <img src={selectedProduct?.productImage || 'https://via.placeholder.com/48'} alt="Product" className="rounded me-3" style={{ width: '48px', height: '48px', objectFit: 'cover' }} />
                     <div>
                       <h6 className="mb-0 text-white fw-bold">{selectedProduct?.productName}</h6>
-                      <small style={{ color: '#a1a1aa' }}>Shop: {selectedProduct?.vendorName} | Order ID: #{selectedProduct?.orderId}</small>
+                      <small style={{ color: '#a1a1aa' }}>Shop: {selectedProduct?.vendorName} | Mã đơn: <strong className="text-light">#{selectedProduct?.orderId}</strong> | Ngày mua: {selectedProduct?.purchaseDate}</small>
                     </div>
                   </div>
                 </div>
@@ -514,8 +519,8 @@ const CreateSupportTicketWizard = () => {
         ::-webkit-scrollbar-thumb { background: #52525b; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #f97316; }
         input::placeholder, textarea::placeholder {
-          color: rgba(255, 255, 255, 0.7) !important; /* Trắng hơi mờ một chút cho đỡ chói */
-          opacity: 1; /* Firefox cần cái này */
+          color: rgba(255, 255, 255, 0.7) !important;
+          opacity: 1; 
         }
       `}} />
     </div>

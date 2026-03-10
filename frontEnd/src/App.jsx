@@ -23,6 +23,7 @@ import CreateSupportTicketWizard from "./Page/CreateSupportTicketWizard";
 import VendorTicketManagement from "./Page/VendorTicketManagement";
 import CustomerTicketManagement from "./Page/CustomerTicketManagement";
 import PaymentResult from "./Page/PaymentResult";
+import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="ProductUpload" element={<ProductUpload />} />
           <Route path="MyProducts" element={<ProductManagement />} />
           <Route path="VendorTicketManagement" element={<VendorTicketManagement/>}/>
+          <Route path="QualityAnalyticsDashboard" element={<QualityAnalyticsDashboard/>}/>
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />

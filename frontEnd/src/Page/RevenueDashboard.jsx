@@ -19,13 +19,21 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcEleme
 export default function RevenueDashboard() {
   const [data, setData] = useState([]); 
   const [topProducts, setTopProducts] = useState([]); 
-  const [totalRevenue, setTotalRevenue] = useState(0); 
+  const [vendorProducts, setVendorProducts] = useState([]); 
+  
+  // Đã bỏ conversionRate
+  const [summary, setSummary] = useState({
+    totalRevenue: 0,
+    dailyAverage: 0,
+    totalOrders: 0
+  });
 
   const today = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState("2026-01-01");
   const [endDate, setEndDate] = useState(today); 
   const [activeRange, setActiveRange] = useState("custom"); 
   
+  const [selectedProductId, setSelectedProductId] = useState("");
   const [isTableExpanded, setIsTableExpanded] = useState(false);
   
   const userStr = localStorage.getItem('user');
@@ -45,10 +53,30 @@ export default function RevenueDashboard() {
     setEndDate(endStr);
     setActiveRange(label);
     
-    loadRevenue(startStr, endStr);
+    loadRevenue(startStr, endStr, selectedProductId);
   };
 
-  const loadRevenue = async (sDate = startDate, eDate = endDate) => {
+  const handleProductChange = (e) => {
+    const pId = e.target.value;
+    setSelectedProductId(pId);
+    loadRevenue(startDate, endDate, pId);
+  };
+
+  const loadVendorProducts = async () => {
+    if (role !== "VENDOR" && role !== "ADMIN") return;
+    try {
+      const config = { 
+        params: { startDate: "2000-01-01", endDate: today }, 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      };
+      const res = await axios.get("http://localhost:8081/api/vendor/revenue/top-products", config);
+      setVendorProducts(res.data || []);
+    } catch (err) {
+      console.error("Lỗi tải danh sách sản phẩm:", err);
+    }
+  };
+
+  const loadRevenue = async (sDate = startDate, eDate = endDate, pId = selectedProductId) => {
     if (role !== "VENDOR" && role !== "ADMIN") return;
 
     try {
@@ -57,23 +85,37 @@ export default function RevenueDashboard() {
         headers: { 'Authorization': `Bearer ${token}` }
       };
 
+      if (pId) {
+        config.params.productId = pId;
+      }
+
       const [dailyRes, topProductsRes, summaryRes] = await Promise.all([
         axios.get("http://localhost:8081/api/vendor/revenue/daily", config),
         axios.get("http://localhost:8081/api/vendor/revenue/top-products", config),
         axios.get("http://localhost:8081/api/vendor/revenue/summary", config)
       ]);
 
-      setData(dailyRes.data);
-      setTopProducts(topProductsRes.data);
-      setTotalRevenue(summaryRes.data || 0);
+      setData(dailyRes.data || []);
+      setTopProducts(topProductsRes.data || []);
+      
+      const backendSummary = summaryRes.data || {};
+      setSummary({
+        totalRevenue: backendSummary.totalRevenue || 0,
+        dailyAverage: backendSummary.dailyAverage || 0,
+        totalOrders: backendSummary.totalOrders || 0
+      });
+
     } catch (err) {
       console.error("Lỗi khi tải dữ liệu từ Backend:", err);
     }
   };
 
   const downloadCSV = () => {
+    const params = { startDate, endDate };
+    if (selectedProductId) params.productId = selectedProductId;
+
     axios.get("http://localhost:8081/api/vendor/revenue/export", {
-      params: { startDate, endDate },
+      params,
       headers: { 'Authorization': `Bearer ${token}` },
       responseType: "blob"
     }).then(res => {
@@ -87,7 +129,10 @@ export default function RevenueDashboard() {
     }).catch(err => console.error("Lỗi khi xuất CSV:", err));
   };
 
-  useEffect(() => { loadRevenue(); }, []);
+  useEffect(() => { 
+    loadVendorProducts();
+    loadRevenue(); 
+  }, []);
 
   if (role !== "VENDOR" && role !== "ADMIN") {
     return (
@@ -104,54 +149,51 @@ export default function RevenueDashboard() {
     );
   }
 
-  const avgRevenue = data.length > 0 ? (totalRevenue / data.length).toFixed(2) : 0;
+  const selectedProductName = selectedProductId 
+    ? vendorProducts.find(p => String(p.productId || p.id) === String(selectedProductId))?.productName || "Sản phẩm"
+    : "";
 
-  // ==========================================
-  // 1. CẤU HÌNH BIỂU ĐỒ ĐƯỜNG MƯỢT (APPLE STYLE)
-  // ==========================================
   const lineChartData = {
     labels: data.map(d => d.date),
     datasets: [{
       label: "Doanh thu",
       data: data.map(d => d.revenue),
-      borderColor: "#f97316", // Cam TALLT
-      borderWidth: 3, // Nét đậm mượt
+      borderColor: "#f97316", 
+      borderWidth: 3, 
       backgroundColor: (context) => {
         const ctx = context.chart.ctx;
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400); // Tạo gradient dọc
-        gradient.addColorStop(0, "rgba(249, 115, 22, 0.5)"); // Trên cùng mờ 50%
-        gradient.addColorStop(1, "rgba(249, 115, 22, 0.0)"); // Dưới cùng trong suốt 100%
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400); 
+        gradient.addColorStop(0, "rgba(249, 115, 22, 0.5)"); 
+        gradient.addColorStop(1, "rgba(249, 115, 22, 0.0)"); 
         return gradient;
       },
       fill: true,
-      tension: 0.4, // Độ uốn cong mượt
-      pointRadius: 0, // Ẩn các chấm tròn
-      pointHoverRadius: 6, // Chỉ hiện chấm to khi di chuột vào
+      tension: 0.4, 
+      pointRadius: 0, 
+      pointHoverRadius: 6, 
       pointBackgroundColor: "#f97316",
       pointBorderColor: "#ffffff",
       pointBorderWidth: 2,
     }]
   };
 
-  // ==========================================
-  // 2. CẤU HÌNH BIỂU ĐỒ TRÒN CÓ BO GÓC 
-  // ==========================================
   const doughnutChartData = {
     labels: topProducts.map(p => p.productName || p.name || 'Sản phẩm ẩn'), 
     datasets: [{
       data: topProducts.map(p => p.revenue || p.total || p.amount || 0),
       backgroundColor: ["#f97316", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#facc15", "#14b8a6"],
-      borderColor: "#18181b", // Trùng với nền xám trung tính để tạo "vết cắt"
-      borderWidth: 4, // Khoảng cách giữa các lát cắt
-      borderRadius: 8, // Bo tròn đầu các lát cắt cực đẹp
-      hoverOffset: 8 // Phóng to mượt mà khi hover
+      borderColor: "#18181b", 
+      borderWidth: 4, 
+      borderRadius: 8, 
+      hoverOffset: 8 
     }]
   };
 
   const s = {
     bg: { minHeight: "100vh", backgroundColor: "transparent", color: "#f4f4f5", padding: "40px 20px", fontFamily: 'Inter, system-ui, sans-serif' },
     card: { background: "rgba(24, 24, 27, 0.85)", backdropFilter: "blur(12px)", border: "1px solid rgba(63, 63, 70, 0.4)", borderRadius: "16px", padding: "24px", boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)" },
-    input: { background: "rgba(39, 39, 42, 0.8)", border: "1px solid rgba(82, 82, 91, 0.5)", color: "white", padding: "8px 12px", borderRadius: "6px", fontSize: "13px" },
+    input: { background: "rgba(39, 39, 42, 0.8)", border: "1px solid rgba(82, 82, 91, 0.5)", color: "white", padding: "8px 12px", borderRadius: "6px", fontSize: "13px", outline: "none" },
+    select: { background: "rgba(39, 39, 42, 0.8)", border: "1px solid rgba(82, 82, 91, 0.5)", color: "white", padding: "8px 12px", borderRadius: "6px", fontSize: "13px", outline: "none", minWidth: "200px", cursor: "pointer" },
     btnQuick: (isActive) => ({
       background: isActive ? "#f97316" : "transparent",
       color: isActive ? "white" : "#a1a1aa",
@@ -172,9 +214,24 @@ export default function RevenueDashboard() {
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         
         {/* HEADER SECTION */}
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: "32px", fontWeight: "700", margin: 0, color: "#f9fafb" }}>Báo cáo doanh thu</h1>
-          <p style={{ color: "#a1a1aa", marginTop: 4 }}>Tổng quan hoạt động kinh doanh của bạn</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <h1 style={{ fontSize: "32px", fontWeight: "700", margin: 0, color: "#f9fafb" }}>Báo cáo doanh thu</h1>
+            <p style={{ color: "#a1a1aa", marginTop: 4, margin: 0 }}>Tổng quan hoạt động kinh doanh của bạn</p>
+          </div>
+
+          {/* LỌC SẢN PHẨM Ở GÓC PHẢI HEADER */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ color: "#a1a1aa", fontSize: "14px", fontWeight: "500" }}>Sản phẩm:</span>
+            <select style={s.select} value={selectedProductId} onChange={handleProductChange}>
+              <option value=""> Tất cả sản phẩm</option>
+              {vendorProducts.map(p => (
+                <option key={p.productId || p.id} value={p.productId || p.id}>
+                  {p.productName || p.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* TOOLBAR */}
@@ -197,58 +254,69 @@ export default function RevenueDashboard() {
           </div>
         </div>
 
-        {/* STATS GRID */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, marginBottom: 24 }}>
+        {/* STATS GRID - FORMAT LẠI THÀNH 3 CỘT */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 24 }}>
           <div style={s.card}>
             <p style={{ color: "#a1a1aa", fontSize: "14px", margin: 0, fontWeight: "500" }}>Tổng doanh thu</p>
-            <h2 style={{ fontSize: "32px", margin: "8px 0 0 0", color: "#10b981" }}>${Number(totalRevenue).toLocaleString()}</h2>
-            <div style={{ marginTop: 8, fontSize: "13px", color: "#71717a" }}>{data.length} ngày phát sinh</div>
+            <h2 style={{ fontSize: "32px", margin: "8px 0 0 0", color: "#10b981" }}>
+              {Number(summary.totalRevenue).toLocaleString('vi-VN')} đ
+            </h2>
+            <div style={{ marginTop: 8, fontSize: "13px", color: "#71717a" }}>Đã bao gồm thuế phí</div>
           </div>
           <div style={s.card}>
             <p style={{ color: "#a1a1aa", fontSize: "14px", margin: 0, fontWeight: "500" }}>Trung bình hàng ngày</p>
-            <h2 style={{ fontSize: "32px", margin: "8px 0 0 0", color: "#f97316" }}>${avgRevenue}</h2>
+            <h2 style={{ fontSize: "32px", margin: "8px 0 0 0", color: "#f97316" }}>
+              {Number(summary.dailyAverage).toLocaleString('vi-VN')} đ
+            </h2>
             <div style={{ marginTop: 8, fontSize: "13px", color: "#71717a" }}>Hiệu suất trung bình</div>
           </div>
           <div style={s.card}>
-            <p style={{ color: "#a1a1aa", fontSize: "14px", margin: 0, fontWeight: "500" }}>Tổng đơn hàng</p>
-            <h2 style={{ fontSize: "32px", margin: "8px 0 0 0", color: "#f59e0b" }}>0</h2>
-            <div style={{ marginTop: 8, fontSize: "13px", color: "#71717a" }}>Chưa có API Backend</div>
-          </div>
-          <div style={s.card}>
-            <p style={{ color: "#a1a1aa", fontSize: "14px", margin: 0, fontWeight: "500" }}>Tỷ lệ chuyển đổi</p>
-            <h2 style={{ fontSize: "32px", margin: "8px 0 0 0", color: "#8b5cf6" }}>0%</h2>
-            <div style={{ marginTop: 8, fontSize: "13px", color: "#71717a" }}>Chưa có API Backend</div>
+            <p style={{ color: "#a1a1aa", fontSize: "14px", margin: 0, fontWeight: "500" }}>Tổng số lượng bán</p>
+            <h2 style={{ fontSize: "32px", margin: "8px 0 0 0", color: "#f59e0b" }}>
+              {Number(summary.totalOrders).toLocaleString()}
+            </h2>
+            <div style={{ marginTop: 8, fontSize: "13px", color: "#71717a" }}>Lượt giao dịch thành công</div>
           </div>
         </div>
 
         {/* CHARTS AREA */}
-        <div style={{ display: "flex", gap: "24px", marginBottom: "24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px", marginBottom: "24px" }}>
           
-          <div style={{ ...s.card, flex: 2, height: 420 }}>
+          {/* Biểu đồ đường - Dùng gridColumn span 3 nếu có chọn SP, span 2 nếu xem tất cả */}
+          <div style={{ ...s.card, gridColumn: selectedProductId ? "span 3" : "span 2", height: 420, minWidth: 0, display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-              <h3 style={{ margin: 0, fontSize: "18px", color: "#f4f4f5" }}>Biểu đồ tăng trưởng</h3>
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#f4f4f5" }}>
+                Biểu đồ tăng trưởng {selectedProductId ? ` - ${selectedProductName}` : ""}
+              </h3>
               <span style={{ fontSize: "12px", color: "#f97316", background: "rgba(249, 115, 22, 0.15)", padding: "4px 8px", borderRadius: "6px", fontWeight: "600", border: "1px solid rgba(249, 115, 22, 0.3)" }}>
                 Live Data
               </span>
             </div>
-            <div style={{ height: 310 }}>
+            
+            <div 
+              key={selectedProductId ? "single-product" : "all-products"} 
+              style={{ flex: 1, position: "relative", width: "100%", minHeight: 0, overflow: "hidden" }}
+            >
               <Line data={lineChartData} options={lineOptions} />
             </div>
           </div>
 
-          <div style={{ ...s.card, flex: 1, height: 420 }}>
-            <div style={{ marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: "18px", color: "#f4f4f5" }}>Top Sản Phẩm</h3>
-              <p style={{ margin: 0, fontSize: "13px", color: "#a1a1aa" }}>Bán chạy theo chi tiêu</p>
+          {/* CHỈ HIỂN THỊ BIỂU ĐỒ TRÒN KHI KHÔNG CÓ SELECTED PRODUCT ID */}
+          {!selectedProductId && (
+            <div style={{ ...s.card, gridColumn: "span 1", height: 420, minWidth: 0, display: "flex", flexDirection: "column" }}>
+              <div style={{ marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: "18px", color: "#f4f4f5" }}>Top Sản Phẩm</h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "#a1a1aa" }}>Bán chạy theo doanh thu</p>
+              </div>
+              <div style={{ flex: 1, position: "relative", display: "flex", justifyContent: "center", alignItems: "center", width: "100%", minHeight: 0, overflow: "hidden" }}>
+                {topProducts.length > 0 ? (
+                  <Doughnut data={doughnutChartData} options={pieOptions} />
+                ) : (
+                  <div style={{color: '#71717a'}}>Chưa có dữ liệu sản phẩm</div>
+                )}
+              </div>
             </div>
-            <div style={{ height: 290, position: "relative", display: "flex", justifyContent: "center", alignItems: "center" }}>
-              {topProducts.length > 0 ? (
-                <Doughnut data={doughnutChartData} options={pieOptions} />
-              ) : (
-                 <div style={{color: '#71717a'}}>Chưa có dữ liệu sản phẩm</div>
-              )}
-            </div>
-          </div>
+          )}
 
         </div>
 
@@ -258,7 +326,9 @@ export default function RevenueDashboard() {
             style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: "4px 0" }}
             onClick={() => setIsTableExpanded(!isTableExpanded)}
           >
-            <div style={{ fontWeight: 600, fontSize: "16px", color: "#f4f4f5" }}>Chi tiết doanh thu theo ngày</div>
+            <div style={{ fontWeight: 600, fontSize: "16px", color: "#f4f4f5" }}>
+              {selectedProductId ? `Chi tiết doanh thu - ${selectedProductName}` : "Chi tiết doanh thu theo ngày"}
+            </div>
             <div style={{ 
               background: "rgba(39, 39, 42, 0.8)", border: "1px solid rgba(82, 82, 91, 0.5)", padding: "6px 14px", borderRadius: "20px", fontSize: "13px", color: "#f4f4f5",
               display: "flex", alignItems: "center", gap: "8px", transition: "0.3s"
@@ -287,9 +357,11 @@ export default function RevenueDashboard() {
                   {data.map((row, i) => (
                     <tr key={i} style={{ borderBottom: "1px solid rgba(63, 63, 70, 0.3)", transition: "0.2s" }} onMouseOver={e=>e.currentTarget.style.background="rgba(39, 39, 42, 0.5)"} onMouseOut={e=>e.currentTarget.style.background="transparent"}>
                       <td style={{ padding: "16px 8px", color: "#f4f4f5" }}>{row.date}</td>
-                      <td style={{ padding: "16px 8px", textAlign: "right", fontWeight: "600", color: "#10b981" }}>${Number(row.revenue).toLocaleString()}</td>
+                      <td style={{ padding: "16px 8px", textAlign: "right", fontWeight: "600", color: "#10b981" }}>
+                        {Number(row.revenue).toLocaleString('vi-VN')} đ
+                      </td>
                       <td style={{ padding: "16px 8px", textAlign: "right", color: "#a1a1aa" }}>
-                        {totalRevenue > 0 ? ((Number(row.revenue) / totalRevenue) * 100).toFixed(1) : "0.0"}%
+                        {summary.totalRevenue > 0 ? ((Number(row.revenue) / summary.totalRevenue) * 100).toFixed(1) : "0.0"}%
                       </td>
                     </tr>
                   ))}
@@ -309,13 +381,13 @@ export default function RevenueDashboard() {
   );
 }
 
-// Tùy chỉnh cực mạnh Option biểu đồ Đường
+// Tùy chỉnh Option biểu đồ Đường
 const lineOptions = {
   responsive: true,
   maintainAspectRatio: false,
   interaction: {
     mode: 'index',
-    intersect: false, // Di chuột theo chiều dọc là hiện điểm (như chứng khoán)
+    intersect: false, 
   },
   plugins: { 
     legend: { display: false },
@@ -327,9 +399,9 @@ const lineOptions = {
       padding: 12,
       borderColor: "rgba(82, 82, 91, 0.5)",
       borderWidth: 1,
-      displayColors: false, // Ẩn cái ô vuông màu nhỏ trong tooltip
+      displayColors: false, 
       callbacks: {
-        label: function(context) { return '$ ' + context.parsed.y.toLocaleString(); }
+        label: function(context) { return context.parsed.y.toLocaleString('vi-VN') + ' đ'; }
       }
     }
   },
@@ -341,14 +413,14 @@ const lineOptions = {
     y: { 
       ticks: { 
         color: "#71717a", font: { family: "Inter" },
-        callback: function(value) { return '$' + value; }
+        callback: function(value) { return value.toLocaleString('vi-VN') + ' đ'; }
       }, 
-      grid: { color: "rgba(82, 82, 91, 0.3)", drawBorder: false, borderDash: [5, 5] } // Lưới đứt đoạn cực đẹp
+      grid: { color: "rgba(82, 82, 91, 0.3)", drawBorder: false, borderDash: [5, 5] } 
     }
   }
 };
 
-// Tùy chỉnh siêu đỉnh Option biểu đồ Tròn
+// Tùy chỉnh Option biểu đồ Tròn
 const pieOptions = {
   maintainAspectRatio: false, 
   layout: { padding: 10 },
@@ -362,8 +434,18 @@ const pieOptions = {
       bodyFont: { size: 14, weight: "bold", family: "Inter" },
       padding: 12,
       borderColor: "rgba(82, 82, 91, 0.5)",
-      borderWidth: 1
+      borderWidth: 1,
+      callbacks: {
+        label: function(context) {
+          let label = context.label || '';
+          if (label) label += ': ';
+          if (context.parsed !== null) {
+            label += context.parsed.toLocaleString('vi-VN') + ' đ';
+          }
+          return label;
+        }
+      }
     }
   },
-  cutout: '80%' // Tạo độ mảnh khảnh, hiện đại cho vòng tròn
+  cutout: '80%' 
 };
