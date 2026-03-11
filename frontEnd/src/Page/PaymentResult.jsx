@@ -29,8 +29,8 @@ const PaymentResult = () => {
       <div className="payment-result__card">
         {/* Icon */}
         <div className="payment-result__icon">
-          {isSuccess ? "✅" : "❌"}
-        </div> 
+          {isSuccess ? "v" : "x"}
+        </div>
 
         {/* Title */}
         <h1 className="payment-result__title">

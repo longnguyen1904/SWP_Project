@@ -16,8 +16,8 @@ import java.util.Map;
  * Controller xử lý checkout và callback VNPay.
  *
  * Endpoints:
- * - POST /api/checkout/create   → tạo Order + trả VNPay URL
- * - GET  /api/checkout/vnpay-return → VNPay redirect callback
+ * - POST /api/checkout/create → tạo Order + trả VNPay URL
+ * - GET /api/checkout/vnpay-return → VNPay redirect callback
  */
 @RestController
 @RequestMapping("/api/checkout")
@@ -36,7 +36,7 @@ public class CheckoutController {
      * Frontend sẽ redirect browser sang URL này.
      */
     @PostMapping("/create")
-    public ResponseEntity<ApiResponse<CheckoutResponse>> createCheckout(
+    public ApiResponse<CheckoutResponse> createCheckout(
             @RequestHeader("X-User-Id") Integer userId,
             @Valid @RequestBody CheckoutRequest request,
             HttpServletRequest httpRequest) {
@@ -44,7 +44,7 @@ public class CheckoutController {
         String ipAddress = getClientIp(httpRequest);
         CheckoutResponse response = checkoutService.createCheckout(userId, request, ipAddress);
 
-        return ResponseEntity.ok(ApiResponse.success("Tạo đơn hàng thành công", response));
+        return ApiResponse.success("Tạo đơn hàng thành công", response);
     }
 
     /**
