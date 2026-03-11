@@ -29,7 +29,7 @@ const ReviewSection = ({
   const hasExistingReview =
     Array.isArray(reviews) &&
     currentUserId &&
-    reviews.some((r) => String(r.userId ?? r.userID) === String(currentUserId));
+    reviews.some((r) => String(r.userId) === String(currentUserId));
   const canCreateReview = !isAdmin && !isVendor && hasPurchased === true && !hasExistingReview;
 
   const handleSubmitReview = async () => {
@@ -86,9 +86,9 @@ const ReviewSection = ({
 
   const startEditing = (review) => {
     setActionError("");
-    setEditingReviewId(review.reviewId ?? review.id);
+    setEditingReviewId(review.reviewId);
     setEditRating(review.rating ?? 5);
-    setEditComment(review.comment ?? review.content ?? "");
+    setEditComment(review.comment ?? "");
   };
 
   const cancelEditing = () => {
@@ -142,9 +142,9 @@ const ReviewSection = ({
         </div>
       ) : (
         reviews.map((review) => {
-          const rid = review.reviewId ?? review.id;
+          const rid = review.reviewId;
           const isOwnReview =
-            currentUserId && String(review.userId ?? review.userID) === String(currentUserId);
+            currentUserId && String(review.userId) === String(currentUserId);
           const isEditing = editingReviewId === rid;
 
           return (
@@ -189,7 +189,7 @@ const ReviewSection = ({
                     <div>
                       <StarRating value={review.rating ?? 0} readOnly />
                       <p className="review-card__meta">
-                        {review.fullName ?? review.author ?? "User"} —{" "}
+                        {review.fullName ?? "User"} —{" "}
                         {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}
                       </p>
                     </div>
@@ -206,7 +206,7 @@ const ReviewSection = ({
                       </div>
                     )}
                   </div>
-                  <p className="review-card__body">{review.comment ?? review.content}</p>
+                  <p className="review-card__body">{review.comment}</p>
                 </>
               )}
             </div>
