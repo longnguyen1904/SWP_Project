@@ -11,7 +11,7 @@ import com.tallt.marketplace.service.ProductService;
 import com.tallt.marketplace.service.ProductVersionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -38,7 +38,7 @@ public class ProductController {
      * - search/filter/paging/sort
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getStorefrontProducts(
+    public ApiResponse<PageResponse<ProductResponse>> getStorefrontProducts(
             @RequestParam(required = false, name = "q") String search,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) Boolean hasTrial,
@@ -50,9 +50,8 @@ public class ProductController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         PageResponse<ProductResponse> result = productService.getStorefrontProducts(
-                search, categoryId, hasTrial, minPrice, maxPrice, tag, page, size, sortBy, sortDir
-        );
-        return ResponseEntity.ok(ApiResponse.success(result));
+                search, categoryId, hasTrial, minPrice, maxPrice, tag, page, size, sortBy, sortDir);
+        return ApiResponse.success(result);
     }
 
     /**
@@ -60,11 +59,11 @@ public class ProductController {
      * GET /api/products/{productId}
      */
     @GetMapping("/{productId}")
-    public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetail(
+    public ApiResponse<ProductDetailResponse> getProductDetail(
             @PathVariable Integer productId,
             @RequestParam(defaultValue = "6") int relatedSize) {
         ProductDetailResponse result = productService.getPublicProductDetail(productId, relatedSize);
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ApiResponse.success(result);
     }
 
     /**
@@ -72,64 +71,65 @@ public class ProductController {
      * GET /api/products/{productId}/reviews
      */
     @GetMapping("/{productId}/reviews")
-    public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> getProductReviews(
+    public ApiResponse<PageResponse<ReviewResponse>> getProductReviews(
             @PathVariable Integer productId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         PageResponse<ReviewResponse> result = productService.getProductReviews(productId, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ApiResponse.success(result);
     }
 
     /**
-     * UC12 - Gửi đánh giá sản phẩm (Customer, hoặc Vendor khi không phải sản phẩm của mình).
+     * UC12 - Gửi đánh giá sản phẩm (Customer, hoặc Vendor khi không phải sản phẩm
+     * của mình).
      */
     @PostMapping("/{productId}/reviews")
-    public ResponseEntity<ApiResponse<ReviewResponse>> createReview(
+    public ApiResponse<ReviewResponse> createReview(
             @PathVariable Integer productId,
             @RequestHeader(value = "X-User-Id", required = false) Integer userId,
             @RequestBody @Valid CreateReviewRequest request) {
         ReviewResponse result = productService.createReview(
                 productId, userId, request.getRating(), request.getComment());
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ApiResponse.success(result);
     }
 
     /**
      * Kiểm tra user hiện tại đã mua sản phẩm (có Order PaymentStatus != Pending).
      */
     @GetMapping("/{productId}/purchased")
-    public ResponseEntity<ApiResponse<Map<String, Boolean>>> checkPurchased(
+    public ApiResponse<Map<String, Boolean>> checkPurchased(
             @PathVariable Integer productId,
             @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
         boolean purchased = productService.hasPurchasedProduct(productId, userId);
-        return ResponseEntity.ok(ApiResponse.success(Map.of("purchased", purchased)));
+        return ApiResponse.success(Map.of("purchased", purchased));
     }
 
     /**
      * Customer sửa đánh giá của chính mình.
      */
     @PutMapping("/{productId}/reviews/{reviewId}")
-    public ResponseEntity<ApiResponse<ReviewResponse>> updateReview(
+    public ApiResponse<ReviewResponse> updateReview(
             @PathVariable Integer productId,
             @PathVariable Integer reviewId,
             @RequestHeader(value = "X-User-Id", required = false) Integer userId,
             @RequestBody @Valid CreateReviewRequest request) {
         ReviewResponse result = productService.updateReview(
                 reviewId, userId, request.getRating(), request.getComment());
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ApiResponse.success(result);
     }
 
     /**
      * Customer xóa đánh giá của chính mình.
      */
     @DeleteMapping("/{productId}/reviews/{reviewId}")
-    public ResponseEntity<ApiResponse<Void>> deleteReview(
+    public ApiResponse<Void> deleteReview(
             @PathVariable Integer productId,
             @PathVariable Integer reviewId,
             @RequestHeader(value = "X-User-Id", required = false) Integer userId) {
         productService.deleteReview(reviewId, userId);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ApiResponse.success(null);
     }
 
     /**
@@ -138,9 +138,9 @@ public class ProductController {
      * - Order by CreatedAt DESC, return 1 record
      */
     @GetMapping("/{productId}/versions/latest")
-    public ResponseEntity<ApiResponse<ProductVersionResponse>> getLatestVersion(
+    public ApiResponse<ProductVersionResponse> getLatestVersion(
             @PathVariable Integer productId) {
         ProductVersionResponse result = productVersionService.getLatestVersion(productId);
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ApiResponse.success(result);
     }
 }
