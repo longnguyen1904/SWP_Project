@@ -81,26 +81,7 @@ export default function CustomerDashboard() {
 
       {/* ================= MAIN AREA ================= */}
       <div className="flex-grow-1 d-flex flex-column">
-
-        {/* ========== TOPBAR (SEARCH CHỮ TRẮNG) ========== */}
-        <nav className="navbar navbar-expand px-4 py-3" style={{ backgroundColor: "rgba(0,0,0,0.4)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-          <div className="d-flex position-relative" style={{ width: "350px" }}>
-            <span className="position-absolute top-50 start-0 translate-middle-y ps-3 text-white-50">
-              <i className="bi bi-search"></i>
-            </span>
-            <input
-              className="form-control ps-5 border-0 text-white shadow-none custom-placeholder"
-              type="search"
-              placeholder="Tìm kiếm đơn hàng của bạn..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", borderRadius: "10px" }}
-            />
-          </div>
-
-
-        </nav>
-
+        
         {/* ========== CONTENT ========== */}
         <div className="container-fluid p-4 overflow-auto" style={{ flex: 1 }}>
            <div className="text-white">

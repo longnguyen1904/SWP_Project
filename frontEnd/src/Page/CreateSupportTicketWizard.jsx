@@ -35,6 +35,7 @@ const CreateSupportTicketWizard = () => {
   // ==========================================
   // FETCH PRODUCTS SỬ DỤNG orderAPI
   // ==========================================
+
   const fetchProducts = async () => {
     setLoading(true);
     setError('');
@@ -51,7 +52,7 @@ const CreateSupportTicketWizard = () => {
           extractedProducts.push({
             orderId: order.orderID || order.orderId || order.id,
             
-            // BỘ DÒ TÌM VENDOR ID SIÊU MẠNH
+            // BỘ DÒ TÌM VENDOR ID 
             vendorId: p.vendor?.vendorId || p.vendor?.vendorID || p.vendor?.id || p.vendor?.userID || p.vendorId || p.vendorID || order.vendorId || order.vendorID, 
             
             productId: p.productId || p.id,

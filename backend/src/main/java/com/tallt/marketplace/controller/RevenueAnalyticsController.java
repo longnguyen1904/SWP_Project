@@ -92,7 +92,7 @@ public class RevenueAnalyticsController {
         }
     }
 
-    // 🔥 API MỚI BỔ SUNG CHO TICKET STATUS
+    // API MỚI BỔ SUNG CHO TICKET STATUS
     @GetMapping("/ticket-status")
     public ResponseEntity<?> getTicketStatusDistribution(
             @RequestHeader(value = "Authorization", required = false) String token,
