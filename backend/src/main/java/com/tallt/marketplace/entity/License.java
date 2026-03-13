@@ -5,6 +5,8 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "Licenses")
 @Data
@@ -19,6 +21,7 @@ public class License {
 
     @OneToOne
     @JoinColumn(name = "OrderID", nullable = false, unique = true)
+    @JsonIgnoreProperties("license")
     private Order order;
 
     @ManyToOne

@@ -8,7 +8,7 @@
   datasource:
     url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: 123
+    password: root
   jpa:
     hibernate:
       ddl-auto: update
@@ -36,4 +36,4 @@ vnpay:
   api-url: https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
   version: "2.1.0"
   command: pay
-  frontend-url: http://localhost:5173
+  frontend-url: http://localhost:5173                                    
