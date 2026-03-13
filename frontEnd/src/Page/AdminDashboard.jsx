@@ -58,6 +58,22 @@ export default function AdminDashboard() {
                             Review Management
                         </NavLink>
                     </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Admin/AdminCommission"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-primary text-white shadow' : 'text-light opacity-75 hover-opacity-100'
+                                }`
+                            }
+                            style={({ isActive }) => ({
+                                color: isActive ? "#ffffff" : "#cfd8dc",
+                                fontWeight: isActive ? "600" : "400"
+                            })}
+                        >
+                            <i className="bi bi-chat-dots me-3"></i>
+                            Admin Commission
+                        </NavLink>
+                    </li>
                 </ul>
 
                 <hr className="border-secondary opacity-50" />
@@ -80,18 +96,7 @@ export default function AdminDashboard() {
                         <span className="position-absolute top-50 start-0 translate-middle-y ps-3 text-white-50">
                             <i className="bi bi-search"></i>
                         </span>
-                        <input
-                            className="form-control ps-5 border-0 text-white shadow-none custom-placeholder"
-                            type="search"
-                            placeholder="Tìm kiếm nhanh..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{
-                                backgroundColor: "rgba(255, 255, 255, 0.12)", // Tăng độ sáng nền một chút
-                                borderRadius: "12px",
-                                color: "white" // Chữ người dùng nhập
-                            }}
-                        />
+                        
 
                         {/* Thêm thẻ style này ngay trong component nếu bạn không muốn mở file CSS */}
                         <style>

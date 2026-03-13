@@ -13,9 +13,6 @@
 
         Page<ProductVersion> findByProduct_ProductID(Integer productId, Pageable pageable);
 
-        /**
-         * Lấy phiên bản mới nhất theo thời gian tạo
-         */
         Optional<ProductVersion> findTopByProduct_ProductIDOrderByCreatedAtDesc(Integer productId);
 
         long countByProduct_ProductID(Integer productId);

@@ -22,7 +22,8 @@ import ProductManagement from "./Page/ProductManagement";
 import CreateSupportTicketWizard from "./Page/CreateSupportTicketWizard";
 import VendorTicketManagement from "./Page/VendorTicketManagement";
 import CustomerTicketManagement from "./Page/CustomerTicketManagement";
-import PaymentResult from "./Page/PaymentResult";
+import PaymentResult from "./Page/PaymentResult.jsx" ; 
+import AdminCommission from "./Page/AdminCommision.jsx";
 
 export default function App() {
   return (
@@ -57,6 +58,8 @@ export default function App() {
           <Route index element={<Navigate to="AdminVendorManagement" replace />} />
           <Route path="AdminVendorManagement" element={<AdminVendorManagement />} />
           <Route path="AdminReview" element={<AdminReview />} />
+          <Route path="AdminCommission" element={<AdminCommission />} />
+          
         </Route>
          
 
@@ -65,8 +68,8 @@ export default function App() {
 
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
-        <Route path="/payment-result" element={<PaymentResult />} />
-        <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
+        <Route path="/payment-result" element={<PaymentResult/>} />
+        <Route path="/Page/VendorRegistration" element={<VendorRegistration/>} />
       </Routes>
 
     </div>

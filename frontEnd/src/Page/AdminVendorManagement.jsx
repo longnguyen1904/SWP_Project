@@ -39,7 +39,7 @@ function AdminVendorManagement() {
     }
   };
 
-  //FETCH
+  // FETCH
   const fetchVendors = async (customPage = page) => {
     setLoading(true);
     setMessage("");
@@ -97,7 +97,7 @@ function AdminVendorManagement() {
     fetchVendors(0);
   };
 
-  //UPDATE STATUS 
+  //UPDATE STATUS
   const handleUpdateStatus = async (vendorID, newStatus) => {
     try {
       const res = await fetch(
@@ -231,7 +231,6 @@ function AdminVendorManagement() {
                     <td style={tdStyle}>{vendor.user?.fullName || "N/A"}</td>
                     <td style={tdStyle}>{vendor.type}</td>
                     <td style={tdStyle}>{vendor.user?.userID}</td>
-
                     <td style={tdStyle}>
                       <span style={{
                         padding: "4px 10px",

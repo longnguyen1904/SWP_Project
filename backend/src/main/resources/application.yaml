@@ -17,7 +17,7 @@
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect         
+        dialect: org.hibernate.dialect.MySQLDialect
 server:
   port: 8081
 virustotal:
@@ -36,4 +36,4 @@ vnpay:
   api-url: https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
   version: "2.1.0"
   command: pay
-  frontend-url: http://localhost:5173
+  frontend-url: http://localhost:5173                                    
