@@ -19,6 +19,9 @@ public class LicenseTier {
 
     @Column(name = "TierName")
     private String tierName;
+    
+    @OneToOne(mappedBy = "LicenseID")
+    private License license ; 
 
     @Column(name = "Price")
     private BigDecimal price;
@@ -33,5 +36,5 @@ public class LicenseTier {
     private String content;
 
     @Column(name = "TierCode")
-    private String tierCode;
+    private String tierCode;  
 }

@@ -32,7 +32,7 @@ public class License {
     @JoinColumn(name = "ProductID", nullable = false)
     private Product product;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "TierID", nullable = false)
     private LicenseTier tier;
 
