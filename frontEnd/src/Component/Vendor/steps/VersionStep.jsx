@@ -29,7 +29,7 @@ const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
         const validExts = [".exe", ".zip", ".msi", ".dmg", ".pkg", ".jar"];
         if (!validExts.some((ext) => file.name.toLowerCase().endsWith(ext))) { setError("Chỉ chấp nhận: exe, zip, msi, dmg, pkg, jar"); return; }
         if (file.size > 500 * 1024 * 1024) { setError("File không được vượt quá 500MB"); return; }
-        setSelectedFile(file); setError("");
+        setSelectedFile(file); setError(""); setVersion((prev) => ({ ...prev, saved: false }));
     };
 
     const handleUploadToCloud = async () => {
@@ -40,13 +40,13 @@ const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
             fd.append("file", selectedFile);
             const response = await uploadAPI.uploadInstaller(fd);
             const url = response.data?.data?.url || response.data?.url;
-            if (url) { setVersion((prev) => ({ ...prev, fileUrl: url })); setSuccess("Upload file thành công!"); setTimeout(() => setSuccess(""), 3000); }
+            if (url) { setVersion((prev) => ({ ...prev, fileUrl: url, saved: false })); setSuccess("Upload file thành công!"); setTimeout(() => setSuccess(""), 3000); }
         } catch (err) { setError(err.response?.data?.message || "Upload thất bại."); }
         finally { setUploading(false); }
     };
 
     const clearFile = () => {
-        setSelectedFile(null); setVersion((prev) => ({ ...prev, fileUrl: "" }));
+        setSelectedFile(null); setVersion((prev) => ({ ...prev, fileUrl: "", saved: false }));
         if (installerInputRef.current) installerInputRef.current.value = "";
     };
 
@@ -101,7 +101,7 @@ const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
             </Grid>
             <Grid item xs={12}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Hoặc dán URL trực tiếp:</Typography>
-                <TextField fullWidth label="File URL" value={version.fileUrl} onChange={(e) => setVersion({ ...version, fileUrl: e.target.value })} placeholder="URL tự động điền sau upload" required />
+                <TextField fullWidth label="File URL" value={version.fileUrl} onChange={(e) => setVersion({ ...version, fileUrl: e.target.value, saved: false })} placeholder="URL tự động điền sau upload" required />
             </Grid>
             <Grid item xs={12}>
                 <TextField fullWidth label="Release Notes" multiline rows={4} value={version.releaseNotes} onChange={(e) => setVersion({ ...version, releaseNotes: e.target.value })} placeholder="What's new in this version?" />
