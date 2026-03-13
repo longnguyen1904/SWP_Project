@@ -16,4 +16,6 @@
         Optional<ProductVersion> findTopByProduct_ProductIDOrderByCreatedAtDesc(Integer productId);
 
         long countByProduct_ProductID(Integer productId);
+
+        void deleteByProduct_ProductID(Integer productId);
     }

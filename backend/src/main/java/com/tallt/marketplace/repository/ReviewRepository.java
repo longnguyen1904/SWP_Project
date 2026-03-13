@@ -19,4 +19,6 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     Double getAverageRating(@Param("productId") Integer productId);
 
     boolean existsByProduct_ProductIDAndUser_UserID(Integer productID, Integer userID);
+
+    void deleteByProduct_ProductID(Integer productId);
 }

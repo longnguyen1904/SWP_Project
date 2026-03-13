@@ -168,7 +168,7 @@ public class VendorProductController {
     }
 
     /**
-     * Lấy chi tiết sản phẩm của Vendor
+     * Lấy chi tiết sản phẩm của Vendor (mọi status)
      * GET /api/vendor/products/{productId}
      */
     @GetMapping("/products/{productId}")
@@ -176,7 +176,7 @@ public class VendorProductController {
             @RequestHeader("X-User-Id") Integer userId,
             @PathVariable Integer productId) {
         Vendor vendor = vendorService.getVendorByUserId(userId);
-        ProductDetailResponse result = productService.getPublicProductDetail(productId, 6);
+        ProductDetailResponse result = productService.getVendorProductDetail(vendor.getVendorID(), productId, 6);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -205,6 +205,20 @@ public class VendorProductController {
         Vendor vendor = vendorService.getVendorByUserId(userId);
         productService.deleteProduct(vendor.getVendorID(), productId);
         return ResponseEntity.ok(ApiResponse.success("Xóa sản phẩm thành công"));
+    }
+
+    /**
+     * Lưu nháp sản phẩm (chỉ khi DRAFT hoặc REJECTED)
+     * PUT /api/vendor/products/{productId}/draft
+     */
+    @PutMapping("/products/{productId}/draft")
+    public ResponseEntity<ApiResponse<ProductResponse>> saveDraft(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId,
+            @Valid @RequestBody UpdateProductRequest request) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        ProductResponse result = productService.saveDraft(vendor.getVendorID(), productId, request);
+        return ResponseEntity.ok(ApiResponse.success("Lưu nháp thành công", result));
     }
 
     // ==================== PRODUCT VERSIONS ====================
