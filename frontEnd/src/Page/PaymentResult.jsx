@@ -5,7 +5,6 @@
 import React from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import "../Style/Payment.css";
-import axios from "axios";
 
 const PaymentResult = () => {
   const [searchParams] = useSearchParams();
@@ -13,17 +12,6 @@ const PaymentResult = () => {
   const orderId = searchParams.get("orderId");
 
   const isSuccess = status === "success";
-  useEffect(() => {
-
-  if (isSuccess && orderId) {
-
-    axios.post(`http://localhost:8081/api/payment/success/${orderId}`)
-      .then(() => console.log("License created"))
-      .catch(err => console.error(err));
-
-  }
-
-}, [isSuccess, orderId]);
   return (
     <div className="payment-result">
       <div className="payment-result__card">

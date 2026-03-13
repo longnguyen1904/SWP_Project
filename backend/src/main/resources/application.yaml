@@ -1,6 +1,14 @@
 ﻿spring:
   application:
     name: marketplace
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: dinhlam728@gmail.com # ← Thay bằng Gmail của bạn
+    password: mmyg umdr pqak vinb # ← Thay bằng App Password 16 ký tự
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
   servlet:
     multipart:
       max-file-size: 500MB
