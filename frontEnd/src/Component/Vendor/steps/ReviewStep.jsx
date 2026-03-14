@@ -1,40 +1,20 @@
-import React from "react";
-import { Box, Typography, Grid, Alert } from "@mui/material";
+import "../../../Style/Vendor.css";
 
 const ReviewStep = ({ productData, images, version, licenseTiers }) => (
-    <Box>
-        <Typography variant="h6" gutterBottom>Review & Submit</Typography>
-        <Alert severity="info" sx={{ mb: 3 }}>
-            Please review your product information before submitting for approval.
-        </Alert>
-        <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2">Product Name:</Typography>
-                <Typography>{productData.productName}</Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2">Base Price:</Typography>
-                <Typography>${productData.basePrice}</Typography>
-            </Grid>
-            <Grid item xs={12}>
-                <Typography variant="subtitle2">Description:</Typography>
-                <Typography>{productData.description}</Typography>
-            </Grid>
-            <Grid item xs={12} md={4}>
-                <Typography variant="subtitle2">Guide Document:</Typography>
-                <Typography>{productData.guideDocumentUrl || "Không có"}</Typography>
-            </Grid>
-            <Grid item xs={12} md={4}>
-                <Typography variant="subtitle2">Images: {images.length}</Typography>
-            </Grid>
-            <Grid item xs={12} md={4}>
-                <Typography variant="subtitle2">Version: {version.versionNumber}</Typography>
-            </Grid>
-            <Grid item xs={12}>
-                <Typography variant="subtitle2">License Tiers: {licenseTiers.length}</Typography>
-            </Grid>
-        </Grid>
-    </Box>
+    <div>
+        <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 16 }}>Review & Submit</h3>
+        <div className="alert alert-info mb-16">Please review your product information before submitting for approval.</div>
+
+        <div className="info-section">
+            <div className="info-row"><span className="info-label">Product Name</span><span className="info-value">{productData.productName}</span></div>
+            <div className="info-row"><span className="info-label">Base Price</span><span className="info-value">${productData.basePrice}</span></div>
+            <div className="info-row"><span className="info-label">Description</span><span className="info-value">{productData.description}</span></div>
+            <div className="info-row"><span className="info-label">Guide Document</span><span className="info-value">{productData.guideDocumentUrl || "Không có"}</span></div>
+            <div className="info-row"><span className="info-label">Images</span><span className="info-value">{images.length}</span></div>
+            <div className="info-row"><span className="info-label">Version</span><span className="info-value">{version.versionNumber}</span></div>
+            <div className="info-row"><span className="info-label">License Tiers</span><span className="info-value">{licenseTiers.length}</span></div>
+        </div>
+    </div>
 );
 
 export default ReviewStep;

@@ -1,21 +1,11 @@
-import React, { useRef, useState } from "react";
-import { Grid, TextField, Typography, Box, Paper, Button, IconButton, LinearProgress, CircularProgress } from "@mui/material";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import DeleteIcon from "@mui/icons-material/Delete";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useRef, useState } from "react";
 import { uploadAPI } from "../../../services/api";
+import "../../../Style/Vendor.css";
 
 const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-};
-
-const dropZoneStyle = {
-    border: "2px dashed", borderColor: "grey.400", borderRadius: 2, p: 3,
-    textAlign: "center", cursor: "pointer", transition: "all 0.2s ease",
-    "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
 };
 
 const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
@@ -29,7 +19,7 @@ const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
         const validExts = [".exe", ".zip", ".msi", ".dmg", ".pkg", ".jar"];
         if (!validExts.some((ext) => file.name.toLowerCase().endsWith(ext))) { setError("Chỉ chấp nhận: exe, zip, msi, dmg, pkg, jar"); return; }
         if (file.size > 500 * 1024 * 1024) { setError("File không được vượt quá 500MB"); return; }
-        setSelectedFile(file); setError("");
+        setSelectedFile(file); setError(""); setVersion((prev) => ({ ...prev, saved: false }));
     };
 
     const handleUploadToCloud = async () => {
@@ -40,73 +30,78 @@ const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
             fd.append("file", selectedFile);
             const response = await uploadAPI.uploadInstaller(fd);
             const url = response.data?.data?.url || response.data?.url;
-            if (url) { setVersion((prev) => ({ ...prev, fileUrl: url })); setSuccess("Upload file thành công!"); setTimeout(() => setSuccess(""), 3000); }
+            if (url) { setVersion((prev) => ({ ...prev, fileUrl: url, saved: false })); setSuccess("Upload file thành công!"); setTimeout(() => setSuccess(""), 3000); }
         } catch (err) { setError(err.response?.data?.message || "Upload thất bại."); }
         finally { setUploading(false); }
     };
 
     const clearFile = () => {
-        setSelectedFile(null); setVersion((prev) => ({ ...prev, fileUrl: "" }));
+        setSelectedFile(null); setVersion((prev) => ({ ...prev, fileUrl: "", saved: false }));
         if (installerInputRef.current) installerInputRef.current.value = "";
     };
 
-    const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
-    const handleDrop = (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleFileSelect({ target: { files: [f] } }); };
-
     return (
-        <Grid container spacing={3}>
-            <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>📦 Upload File Cài Đặt</Typography>
-            </Grid>
-            <Grid item xs={12}>
-                <TextField fullWidth label="Version Number" value={version.versionNumber} onChange={(e) => setVersion({ ...version, versionNumber: e.target.value })} placeholder="e.g., 1.0.0" required />
-            </Grid>
-            <Grid item xs={12}>
-                <input ref={installerInputRef} type="file" accept=".exe,.zip,.msi,.dmg,.pkg,.jar" onChange={handleFileSelect} style={{ display: "none" }} />
+        <div>
+            <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 16 }}>📦 Upload File Cài Đặt</h3>
 
-                {!selectedFile && !version.fileUrl && (
-                    <Box sx={dropZoneStyle} onClick={() => installerInputRef.current?.click()} onDragOver={handleDragOver} onDrop={handleDrop}>
-                        <InsertDriveFileIcon sx={{ fontSize: 48, color: "grey.500", mb: 1 }} />
-                        <Typography variant="body1" color="text.secondary">Kéo thả file vào đây hoặc <strong>click để chọn</strong></Typography>
-                        <Typography variant="caption" color="text.secondary">exe, zip, msi, dmg, pkg, jar — Tối đa 500MB</Typography>
-                    </Box>
-                )}
+            <div className="form-group">
+                <label className="form-label">Version Number *</label>
+                <input className="form-input" value={version.versionNumber}
+                    onChange={(e) => setVersion({ ...version, versionNumber: e.target.value })} placeholder="e.g., 1.0.0" required />
+            </div>
 
-                {selectedFile && !version.fileUrl && (
-                    <Paper sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }}>
-                        <InsertDriveFileIcon color="primary" sx={{ fontSize: 40 }} />
-                        <Box sx={{ flex: 1 }}>
-                            <Typography variant="body1">{selectedFile.name}</Typography>
-                            <Typography variant="caption" color="text.secondary">{formatFileSize(selectedFile.size)}</Typography>
-                        </Box>
-                        <Button variant="contained" startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <CloudUploadIcon />} onClick={handleUploadToCloud} disabled={uploading}>
-                            {uploading ? "Đang upload..." : "Upload lên Cloudinary"}
-                        </Button>
-                        <IconButton onClick={clearFile} disabled={uploading}><DeleteIcon /></IconButton>
-                    </Paper>
-                )}
+            <input ref={installerInputRef} type="file" accept=".exe,.zip,.msi,.dmg,.pkg,.jar" onChange={handleFileSelect} style={{ display: "none" }} />
 
-                {version.fileUrl && (
-                    <Paper sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }}>
-                        <CheckCircleIcon color="success" sx={{ fontSize: 40 }} />
-                        <Box sx={{ flex: 1 }}>
-                            <Typography variant="body1" color="success.main" fontWeight="bold">✅ File đã upload!</Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-all" }}>{version.fileUrl}</Typography>
-                        </Box>
-                        <IconButton onClick={clearFile} color="error"><DeleteIcon /></IconButton>
-                    </Paper>
-                )}
+            {!selectedFile && !version.fileUrl && (
+                <div className="drop-zone mb-16"
+                    onClick={() => installerInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleFileSelect({ target: { files: [f] } }); }}>
+                    <div className="drop-zone-icon">📂</div>
+                    <div className="drop-zone-text">Kéo thả file vào đây hoặc <strong>click để chọn</strong></div>
+                    <div className="drop-zone-hint">exe, zip, msi, dmg, pkg, jar — Tối đa 500MB</div>
+                </div>
+            )}
 
-                {uploading && <LinearProgress sx={{ mt: 1 }} />}
-            </Grid>
-            <Grid item xs={12}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Hoặc dán URL trực tiếp:</Typography>
-                <TextField fullWidth label="File URL" value={version.fileUrl} onChange={(e) => setVersion({ ...version, fileUrl: e.target.value })} placeholder="URL tự động điền sau upload" required />
-            </Grid>
-            <Grid item xs={12}>
-                <TextField fullWidth label="Release Notes" multiline rows={4} value={version.releaseNotes} onChange={(e) => setVersion({ ...version, releaseNotes: e.target.value })} placeholder="What's new in this version?" />
-            </Grid>
-        </Grid>
+            {selectedFile && !version.fileUrl && (
+                <div className="file-preview mb-16">
+                    <span style={{ fontSize: 24 }}>📎</span>
+                    <div className="file-preview-info">
+                        <div className="file-preview-name">{selectedFile.name}</div>
+                        <div className="file-preview-size">{formatFileSize(selectedFile.size)}</div>
+                    </div>
+                    <button className="btn btn-primary btn-sm" onClick={handleUploadToCloud} disabled={uploading}>
+                        {uploading ? <><span className="spinner" /> Đang upload...</> : "⬆ Upload"}
+                    </button>
+                    <button className="btn-icon danger" onClick={clearFile} disabled={uploading}>🗑️</button>
+                </div>
+            )}
+
+            {version.fileUrl && (
+                <div className="file-preview success mb-16">
+                    <span style={{ fontSize: 24 }}>✅</span>
+                    <div className="file-preview-info">
+                        <div className="file-preview-name">File đã upload!</div>
+                        <div className="file-preview-size word-break">{version.fileUrl}</div>
+                    </div>
+                    <button className="btn-icon danger" onClick={clearFile}>🗑️</button>
+                </div>
+            )}
+
+            {uploading && <div className="progress-bar mb-16"><div className="progress-bar-fill" /></div>}
+
+            <div className="form-group">
+                <span className="form-hint mb-8" style={{ display: "block" }}>Hoặc dán URL trực tiếp:</span>
+                <input className="form-input" placeholder="URL tự động điền sau upload" value={version.fileUrl}
+                    onChange={(e) => setVersion({ ...version, fileUrl: e.target.value, saved: false })} required />
+            </div>
+
+            <div className="form-group">
+                <label className="form-label">Release Notes</label>
+                <textarea className="form-textarea" rows={4} value={version.releaseNotes}
+                    onChange={(e) => setVersion({ ...version, releaseNotes: e.target.value })} placeholder="What's new in this version?" />
+            </div>
+        </div>
     );
 };
 

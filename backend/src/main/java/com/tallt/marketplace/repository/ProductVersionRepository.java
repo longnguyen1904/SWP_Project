@@ -18,4 +18,8 @@
         long countByProduct_ProductID(Integer productId);
 
         void deleteByProduct_ProductID(Integer productId);
+
+        boolean existsByProduct_ProductIDAndVersionNumber(Integer productId, String versionNumber);
+
+        boolean existsByProduct_ProductIDAndVersionNumberAndVersionIDNot(Integer productId, String versionNumber, Integer versionId);
     }

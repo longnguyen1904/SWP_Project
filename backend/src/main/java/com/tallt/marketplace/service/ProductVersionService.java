@@ -3,6 +3,7 @@ package com.tallt.marketplace.service;
 import com.tallt.marketplace.dto.PageResponse;
 import com.tallt.marketplace.dto.product.ProductVersionRequest;
 import com.tallt.marketplace.dto.product.ProductVersionResponse;
+import com.tallt.marketplace.dto.product.UpdateVersionRequest;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.entity.ProductVersion;
 import com.tallt.marketplace.exception.AppException;
@@ -19,10 +20,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class ProductVersionService {
+
+    private static final Pattern SEMVER_PATTERN = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
 
     @Autowired
     private ProductVersionRepository productVersionRepository;
@@ -42,11 +46,21 @@ public class ProductVersionService {
     /**
      * Tạo phiên bản mới cho sản phẩm
      * - Kiểm tra sản phẩm tồn tại & Vendor là chủ sở hữu
+     * - Validate semver format
+     * - Kiểm tra trùng version number
      * - Insert vào ProductVersions
      */
     @Transactional
     public ProductVersionResponse createVersion(Integer vendorId, Integer productId, ProductVersionRequest request) {
         Product product = validateProductOwnership(vendorId, productId);
+
+        // Validate semantic version format
+        validateSemver(request.getVersionNumber());
+
+        // Check duplicate version number
+        if (productVersionRepository.existsByProduct_ProductIDAndVersionNumber(productId, request.getVersionNumber())) {
+            throw new AppException("Phiên bản " + request.getVersionNumber() + " đã tồn tại cho sản phẩm này");
+        }
 
         ProductVersion version = new ProductVersion();
         version.setProduct(product);
@@ -57,6 +71,63 @@ public class ProductVersionService {
 
         // UC13: Gửi email thông báo cho tất cả buyer
         notifyBuyersOfNewVersion(product, version);
+
+        return toResponse(version);
+    }
+
+    /**
+     * Cập nhật phiên bản sản phẩm
+     */
+    @Transactional
+    public ProductVersionResponse updateVersion(Integer vendorId, Integer productId,
+                                                 Integer versionId, UpdateVersionRequest request) {
+        Product product = validateProductOwnership(vendorId, productId);
+
+        ProductVersion version = productVersionRepository.findById(versionId)
+                .orElseThrow(() -> new AppException("Phiên bản không tồn tại"));
+
+        if (!version.getProduct().getProductID().equals(productId)) {
+            throw new AppException("Phiên bản không thuộc sản phẩm này");
+        }
+
+        // Update version number if provided
+        if (request.getVersionNumber() != null && !request.getVersionNumber().isBlank()) {
+            validateSemver(request.getVersionNumber());
+
+            // Check duplicate (exclude current version)
+            if (productVersionRepository.existsByProduct_ProductIDAndVersionNumberAndVersionIDNot(
+                    productId, request.getVersionNumber(), versionId)) {
+                throw new AppException("Phiên bản " + request.getVersionNumber() + " đã tồn tại cho sản phẩm này");
+            }
+            version.setVersionNumber(request.getVersionNumber());
+        }
+
+        // Update file URL if provided
+        if (request.getFileUrl() != null && !request.getFileUrl().isBlank()) {
+            version.setFileUrl(request.getFileUrl());
+        }
+
+        // Update release notes (allow empty)
+        if (request.getReleaseNotes() != null) {
+            version.setReleaseNotes(request.getReleaseNotes());
+        }
+
+        productVersionRepository.save(version);
+        return toResponse(version);
+    }
+
+    /**
+     * Lấy chi tiết một phiên bản
+     */
+    public ProductVersionResponse getVersionById(Integer vendorId, Integer productId, Integer versionId) {
+        validateProductOwnership(vendorId, productId);
+
+        ProductVersion version = productVersionRepository.findById(versionId)
+                .orElseThrow(() -> new AppException("Phiên bản không tồn tại"));
+
+        if (!version.getProduct().getProductID().equals(productId)) {
+            throw new AppException("Phiên bản không thuộc sản phẩm này");
+        }
 
         return toResponse(version);
     }
@@ -109,6 +180,12 @@ public class ProductVersionService {
     }
 
     // ==================== HELPER METHODS ====================
+
+    private void validateSemver(String versionNumber) {
+        if (versionNumber == null || !SEMVER_PATTERN.matcher(versionNumber).matches()) {
+            throw new AppException("Số phiên bản phải theo định dạng x.y.z (ví dụ: 1.0.0)");
+        }
+    }
 
     private Product validateProductOwnership(Integer vendorId, Integer productId) {
         Product product = productRepository.findById(productId)
