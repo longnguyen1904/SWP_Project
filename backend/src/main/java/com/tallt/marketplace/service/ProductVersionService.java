@@ -6,6 +6,7 @@ import com.tallt.marketplace.dto.product.ProductVersionResponse;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.entity.ProductVersion;
 import com.tallt.marketplace.exception.AppException;
+import com.tallt.marketplace.repository.OrderRepository;
 import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.ProductVersionRepository;
 import com.tallt.marketplace.repository.VendorRepository;
@@ -32,6 +33,12 @@ public class ProductVersionService {
     @Autowired
     private VendorRepository vendorRepository;
 
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
     /**
      * Tạo phiên bản mới cho sản phẩm
      * - Kiểm tra sản phẩm tồn tại & Vendor là chủ sở hữu
@@ -47,6 +54,9 @@ public class ProductVersionService {
         version.setFileUrl(request.getFileUrl());
         version.setReleaseNotes(request.getReleaseNotes());
         productVersionRepository.save(version);
+
+        // UC13: Gửi email thông báo cho tất cả buyer
+        notifyBuyersOfNewVersion(product, version);
 
         return toResponse(version);
     }
@@ -120,5 +130,37 @@ public class ProductVersionService {
         response.setScanStatus(version.getScanStatus());
         response.setCreatedAt(version.getCreatedAt());
         return response;
+    }
+
+    /**
+     * UC13: Gửi email thông báo bản cập nhật mới cho tất cả Customer đã mua sản phẩm.
+     */
+    private void notifyBuyersOfNewVersion(Product product, ProductVersion version) {
+        try {
+            List<String> emails = orderRepository
+                    .findBuyerEmailsByProductId(product.getProductID());
+
+            if (emails.isEmpty()) return;
+
+            String subject = "Bản cập nhật mới: " + product.getProductName()
+                    + " v" + version.getVersionNumber();
+
+            String body = "Xin chào,\n\n"
+                    + "Sản phẩm '" + product.getProductName()
+                    + "' mà bạn đã mua vừa có phiên bản mới:\n\n"
+                    + "Phiên bản: " + version.getVersionNumber() + "\n"
+                    + "Ghi chú: " + (version.getReleaseNotes() != null
+                            ? version.getReleaseNotes() : "Không có")
+                    + "\n\nTruy cập hệ thống để tải bản cập nhật.\n\n"
+                    + "Trân trọng,\nTALLT Marketplace";
+
+            for (String email : emails) {
+                try {
+                    emailService.sendEmail(email, subject, body);
+                } catch (Exception ignored) {
+                }
+            }
+        } catch (Exception ignored) {
+        }
     }
 }
