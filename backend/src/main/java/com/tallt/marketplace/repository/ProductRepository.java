@@ -79,7 +79,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
         /**
          * UC12 - Related products: cùng category, đã approved, loại trừ chính nó.
          */
-        @Query("SELECT p FROM Product p WHERE p.status = 'PUBLISHED' " +
+        @Query("SELECT p FROM Product p WHERE p.status = 'APPROVED' " +
                         "AND p.category.categoryID = :categoryId " +
                         "AND p.productID <> :productId")
         Page<Product> findRelatedApproved(

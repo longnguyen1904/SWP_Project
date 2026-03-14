@@ -56,6 +56,9 @@ public class ProductService {
     private OrderRepository orderRepository;
 
     @Autowired
+    private LicenseRepository licenseRepository;
+
+    @Autowired
     private EmailService emailService;
 
     /**
@@ -187,16 +190,16 @@ public class ProductService {
 
     /**
      * Cập nhật thông tin sản phẩm
-     * - Chỉ cho update khi Product chưa Approved
-     * - Vendor phải là chủ sở hữu
+     * - DRAFT / REJECTED: cho edit, giữ nguyên status
+     * - APPROVED: cho edit, chuyển status về PENDING để Admin duyệt lại
+     * - PENDING: không cho edit
      */
     @Transactional
     public ProductResponse updateProduct(Integer vendorId, Integer productId, UpdateProductRequest request) {
         Product product = getProductAndValidateOwner(vendorId, productId);
 
-        // Chỉ cho update khi chưa Approved
-        if (product.getStatus() == Product.ProductStatus.APPROVED) {
-            throw new AppException("Không thể cập nhật sản phẩm đã được duyệt");
+        if (product.getStatus() == Product.ProductStatus.PENDING) {
+            throw new AppException("Không thể chỉnh sửa sản phẩm đang chờ duyệt");
         }
 
         if (request.getProductName() != null) {
@@ -211,15 +214,58 @@ public class ProductService {
         if (request.getGuideDocumentUrl() != null) {
             product.setGuideDocumentUrl(request.getGuideDocumentUrl().isBlank() ? null : request.getGuideDocumentUrl().trim());
         }
+
+        // Nếu sản phẩm đã APPROVED, chuyển về PENDING để Admin duyệt lại
+        if (product.getStatus() == Product.ProductStatus.APPROVED) {
+            product.setStatus(Product.ProductStatus.PENDING);
+        }
+
         productRepository.save(product);
 
         return toProductResponse(product);
     }
 
     /**
+     * Save Draft — lưu nháp sản phẩm với validation tối thiểu.
+     * Chỉ dùng khi sản phẩm ở trạng thái DRAFT hoặc REJECTED.
+     */
+    @Transactional
+    public ProductResponse saveDraft(Integer vendorId, Integer productId, UpdateProductRequest request) {
+        Product product = getProductAndValidateOwner(vendorId, productId);
+
+        if (product.getStatus() != Product.ProductStatus.DRAFT
+                && product.getStatus() != Product.ProductStatus.REJECTED) {
+            throw new AppException("Chỉ có thể lưu nháp khi sản phẩm ở trạng thái DRAFT hoặc REJECTED");
+        }
+
+        if (request.getProductName() != null) {
+            product.setProductName(request.getProductName());
+        }
+        if (request.getDescription() != null) {
+            product.setDescription(request.getDescription());
+        }
+        if (request.getBasePrice() != null) {
+            product.setBasePrice(request.getBasePrice());
+        }
+        if (request.getGuideDocumentUrl() != null) {
+            product.setGuideDocumentUrl(request.getGuideDocumentUrl().isBlank() ? null : request.getGuideDocumentUrl().trim());
+        }
+
+        // Nếu REJECTED → chuyển về DRAFT khi save draft
+        if (product.getStatus() == Product.ProductStatus.REJECTED) {
+            product.setStatus(Product.ProductStatus.DRAFT);
+            product.setRejectionNote(null);
+        }
+
+        productRepository.save(product);
+        return toProductResponse(product);
+    }
+
+    /**
      * Submit sản phẩm để Admin duyệt
-     * - Validate: có ít nhất 1 version, có ít nhất 1 license tier
-     * - Đánh dấu chờ duyệt (IsApproved=0)
+     * - Validate đầy đủ thông tin bắt buộc
+     * - Validate có ít nhất 1 version + 1 license tier
+     * - Chỉ submit khi DRAFT hoặc REJECTED
      */
     @Transactional
     public Map<String, Object> submitForApproval(Integer vendorId, Integer productId) {
@@ -231,6 +277,25 @@ public class ProductService {
 
         if (product.getStatus() == Product.ProductStatus.PENDING) {
             throw new AppException("Sản phẩm đang chờ duyệt");
+        }
+
+        // Validate thông tin bắt buộc
+        if (product.getProductName() == null || product.getProductName().isBlank()) {
+            throw new AppException("Tên sản phẩm không được để trống khi submit");
+        }
+        if (product.getBasePrice() == null || product.getBasePrice().doubleValue() <= 0) {
+            throw new AppException("Giá sản phẩm phải lớn hơn 0 khi submit");
+        }
+        if (product.getCategory() == null) {
+            throw new AppException("Danh mục sản phẩm không được để trống khi submit");
+        }
+        if (product.getDescription() == null || product.getDescription().isBlank()) {
+            throw new AppException("Mô tả sản phẩm không được để trống khi submit");
+        }
+        if (Boolean.TRUE.equals(product.getHasTrial())) {
+            if (product.getTrialDurationDays() == null || product.getTrialDurationDays() <= 0) {
+                throw new AppException("Số ngày dùng thử phải lớn hơn 0 khi bật chế độ dùng thử");
+            }
         }
 
         // Kiểm tra có ít nhất 1 version
@@ -484,6 +549,23 @@ public class ProductService {
         if (product.getStatus() != Product.ProductStatus.APPROVED) {
             throw new AppException("Sản phẩm chưa được duyệt");
         }
+
+        return buildProductDetail(product, relatedSize);
+    }
+
+    /**
+     * Vendor xem chi tiết sản phẩm của chính mình (mọi status)
+     */
+    public ProductDetailResponse getVendorProductDetail(Integer vendorId, Integer productId, int relatedSize) {
+        Product product = getProductAndValidateOwner(vendorId, productId);
+        return buildProductDetail(product, relatedSize);
+    }
+
+    /**
+     * Build product detail response (dùng chung cho public + vendor)
+     */
+    private ProductDetailResponse buildProductDetail(Product product, int relatedSize) {
+        Integer productId = product.getProductID();
 
         ProductDetailResponse response = new ProductDetailResponse();
         response.setProduct(toProductResponse(product));
@@ -757,6 +839,7 @@ public class ProductService {
      * Xóa sản phẩm
      * - Vendor phải là chủ sở hữu
      * - Chỉ xóa khi chưa Approved
+     * - Xóa tất cả bản ghi con liên quan trước khi xóa sản phẩm
      */
     @Transactional
     public void deleteProduct(Integer vendorId, Integer productId) {
@@ -766,6 +849,23 @@ public class ProductService {
             throw new AppException("Không thể xóa sản phẩm đã được duyệt");
         }
         
+        // Xóa các bản ghi con theo đúng thứ tự FK
+        // 1. License (tham chiếu Order + Product + LicenseTier)
+        licenseRepository.deleteByProduct_ProductID(productId);
+        // 2. Order (tham chiếu Product + LicenseTier)
+        orderRepository.deleteByProduct_ProductID(productId);
+        // 3. Review
+        reviewRepository.deleteByProduct_ProductID(productId);
+        // 4. ProductTag
+        productTagRepository.deleteByProductID(productId);
+        // 5. ProductImage
+        productImageRepository.deleteByProduct_ProductID(productId);
+        // 6. ProductVersion
+        productVersionRepository.deleteByProduct_ProductID(productId);
+        // 7. LicenseTier (sau khi License + Order đã xóa)
+        licenseTierRepository.deleteByProduct_ProductID(productId);
+        
+        // Cuối cùng xóa Product
         productRepository.delete(product);
     }
 }

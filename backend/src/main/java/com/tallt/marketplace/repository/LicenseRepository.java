@@ -21,4 +21,6 @@ public interface LicenseRepository extends JpaRepository<License, Integer> {
     /** Kiểm tra user có License còn hiệu lực cho sản phẩm (ExpireAt > now AND IsActive = true). */
     boolean existsByUser_UserIDAndProduct_ProductIDAndIsActiveTrueAndExpireAtAfter(
             Integer userId, Integer productId, LocalDateTime now);
+
+    void deleteByProduct_ProductID(Integer productId);
 }

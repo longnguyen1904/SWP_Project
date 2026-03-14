@@ -19,6 +19,8 @@ import ProductDetail from "./Page/ProductDetail";
 import VendorRegistration from "./Page/VendorRegistration";
 import ProductUpload from "./Page/ProductUpload";
 import ProductManagement from "./Page/ProductManagement";
+import VersionControlManager from "./Page/VersionControlManager";
+import LicenseTierConfig from "./Page/LicenseTierConfig";
 import CreateSupportTicketWizard from "./Page/CreateSupportTicketWizard";
 import VendorTicketManagement from "./Page/VendorTicketManagement";
 import CustomerTicketManagement from "./Page/CustomerTicketManagement";
@@ -50,6 +52,9 @@ export default function App() {
           <Route path="RevenueDashboard" element={<RevenueDashboard />} />
           <Route path="ProductUpload" element={<ProductUpload />} />
           <Route path="MyProducts" element={<ProductManagement />} />
+          <Route path="VersionControl" element={<VersionControlManager />} />
+          <Route path="LicenseTiers" element={<LicenseTierConfig />} />
+          <Route path="Profile" element={<ProfilePage />} />
           <Route path="VendorTicketManagement" element={<VendorTicketManagement/>}/>
         </Route>
 
