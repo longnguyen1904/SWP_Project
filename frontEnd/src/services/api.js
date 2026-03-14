@@ -110,6 +110,7 @@ export const customerAPI = {
   getCategories: () => api.get("/api/categories"),
   getTags: () => api.get("/api/tags"),
   createCheckout: (data) => api.post("/api/checkout/create", data),
+  startTrial: (productId) => api.post("/api/trials/start", { productId }),
 };
 
 export const uploadAPI = {

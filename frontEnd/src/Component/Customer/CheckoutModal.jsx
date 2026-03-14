@@ -62,7 +62,7 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
             <p className="checkout-modal__tier-name">Gói: {tierName}</p>
             <p className="checkout-modal__price">Giá: {formatPrice(price)}</p>
             <p className="checkout-modal__quantity">Số lượng: 1</p>
-            <p className="checkout-modal__delivery">Giao hàng: License Key (email)</p>
+            <p className="checkout-modal__delivery">Giao hàng: License Key</p>
           </div>
         </div>
 
