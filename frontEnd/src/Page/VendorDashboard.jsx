@@ -146,7 +146,7 @@ export default function VendorDashboard() {
                 </nav>
 
                 {/* ========== CHI TIẾT NỘI DUNG (DỮ LIỆU SẼ HIỆN Ở ĐÂY) ========== */}
-                <div className="container-fluid p-4 overflow-auto" style={{ flex: 1 }}>
+                <div className="container-fluid p-4" style={{ flex: 1, overflowY: "auto" }}>
                     <Outlet context={{ searchTerm }} />
                 </div>
 

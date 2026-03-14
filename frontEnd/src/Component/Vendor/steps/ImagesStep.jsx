@@ -1,25 +1,11 @@
-import React, { useRef, useState } from "react";
-import {
-    Box, Typography, Grid, TextField, FormControl, InputLabel, Select, MenuItem,
-    Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Chip, IconButton, LinearProgress, CircularProgress,
-} from "@mui/material";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import ImageIcon from "@mui/icons-material/Image";
-import DeleteIcon from "@mui/icons-material/Delete";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useRef, useState } from "react";
 import { uploadAPI } from "../../../services/api";
+import "../../../Style/Vendor.css";
 
 const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-};
-
-const dropZoneStyle = {
-    border: "2px dashed", borderColor: "grey.400", borderRadius: 2, p: 3,
-    textAlign: "center", cursor: "pointer", transition: "all 0.2s ease",
-    "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
 };
 
 const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, setSuccess }) => {
@@ -51,9 +37,8 @@ const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, 
                 setSuccess("Upload ảnh thành công!");
                 setTimeout(() => setSuccess(""), 3000);
             }
-        } catch (err) {
-            setError(err.response?.data?.message || "Upload ảnh thất bại.");
-        } finally { setUploading(false); }
+        } catch (err) { setError(err.response?.data?.message || "Upload ảnh thất bại."); }
+        finally { setUploading(false); }
     };
 
     const clearFile = () => {
@@ -69,92 +54,92 @@ const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, 
         }
     };
 
-    const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
-    const handleDrop = (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleFileSelect({ target: { files: [f] } }); };
-
     return (
-        <Box>
-            <Typography variant="h6" gutterBottom>🖼️ Upload Ảnh Sản Phẩm</Typography>
+        <div>
+            <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 16 }}>🖼️ Upload Ảnh Sản Phẩm</h3>
             <input ref={imageInputRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: "none" }} />
 
             {!selectedFile && !imageUpload.imageUrl && (
-                <Box sx={{ ...dropZoneStyle, mb: 2 }} onClick={() => imageInputRef.current?.click()} onDragOver={handleDragOver} onDrop={handleDrop}>
-                    <ImageIcon sx={{ fontSize: 48, color: "grey.500", mb: 1 }} />
-                    <Typography variant="body1" color="text.secondary">Kéo thả ảnh vào đây hoặc <strong>click để chọn</strong></Typography>
-                    <Typography variant="caption" color="text.secondary">jpg, png, gif, webp — Tối đa 10MB</Typography>
-                </Box>
+                <div className="drop-zone mb-16" onClick={() => imageInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleFileSelect({ target: { files: [f] } }); }}>
+                    <div className="drop-zone-icon">🖼️</div>
+                    <div className="drop-zone-text">Kéo thả ảnh vào đây hoặc <strong>click để chọn</strong></div>
+                    <div className="drop-zone-hint">jpg, png, gif, webp — Tối đa 10MB</div>
+                </div>
             )}
 
             {selectedFile && !imageUpload.imageUrl && (
-                <Paper sx={{ p: 2, mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
-                    {preview && <Box component="img" src={preview} alt="Preview" sx={{ width: 80, height: 80, objectFit: "cover", borderRadius: 1 }} />}
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="body1">{selectedFile.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">{formatFileSize(selectedFile.size)}</Typography>
-                    </Box>
-                    <Button variant="contained" color="secondary" startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <CloudUploadIcon />} onClick={handleUploadToCloud} disabled={uploading}>
-                        {uploading ? "Đang upload..." : "Upload lên Cloudinary"}
-                    </Button>
-                    <IconButton onClick={clearFile} disabled={uploading}><DeleteIcon /></IconButton>
-                </Paper>
+                <div className="file-preview mb-16">
+                    {preview && <img src={preview} alt="Preview" className="thumb-lg" />}
+                    <div className="file-preview-info">
+                        <div className="file-preview-name">{selectedFile.name}</div>
+                        <div className="file-preview-size">{formatFileSize(selectedFile.size)}</div>
+                    </div>
+                    <button className="btn btn-primary btn-sm" onClick={handleUploadToCloud} disabled={uploading}>
+                        {uploading ? <><span className="spinner" /> Đang upload...</> : "⬆ Upload"}
+                    </button>
+                    <button className="btn-icon danger" onClick={clearFile} disabled={uploading}>🗑️</button>
+                </div>
             )}
 
             {imageUpload.imageUrl && (
-                <Paper sx={{ p: 2, mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
-                    <CheckCircleIcon color="success" sx={{ fontSize: 40 }} />
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="body1" color="success.main" fontWeight="bold">✅ Ảnh đã upload!</Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-all" }}>{imageUpload.imageUrl}</Typography>
-                    </Box>
-                    <IconButton onClick={() => { setImageUpload((prev) => ({ ...prev, imageUrl: "" })); clearFile(); }} color="error"><DeleteIcon /></IconButton>
-                </Paper>
+                <div className="file-preview success mb-16">
+                    <span style={{ fontSize: 24 }}>✅</span>
+                    <div className="file-preview-info">
+                        <div className="file-preview-name">Ảnh đã upload!</div>
+                        <div className="file-preview-size word-break">{imageUpload.imageUrl}</div>
+                    </div>
+                    <button className="btn-icon danger" onClick={() => { setImageUpload((prev) => ({ ...prev, imageUrl: "" })); clearFile(); }}>🗑️</button>
+                </div>
             )}
 
-            {uploading && <LinearProgress color="secondary" sx={{ mb: 2 }} />}
+            {uploading && <div className="progress-bar mb-16"><div className="progress-bar-fill" /></div>}
 
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, mt: 1 }}>Hoặc dán URL ảnh trực tiếp:</Typography>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} md={4}>
-                    <TextField fullWidth label="Image URL" value={imageUpload.imageUrl} onChange={(e) => setImageUpload({ ...imageUpload, imageUrl: e.target.value })} placeholder="URL được tự động điền sau khi upload" />
-                </Grid>
-                <Grid item xs={12} md={2}>
-                    <FormControl fullWidth>
-                        <InputLabel>Primary</InputLabel>
-                        <Select value={imageUpload.isPrimary} label="Primary" onChange={(e) => setImageUpload({ ...imageUpload, isPrimary: e.target.value })}>
-                            <MenuItem value={false}>No</MenuItem>
-                            <MenuItem value={true}>Yes</MenuItem>
-                        </Select>
-                    </FormControl>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                    <TextField fullWidth label="Sort Order" type="number" value={imageUpload.sortOrder} onChange={(e) => setImageUpload({ ...imageUpload, sortOrder: e.target.value })} />
-                </Grid>
-                <Grid item xs={12} md={2}>
-                    <Button fullWidth variant="outlined" onClick={addImage} sx={{ height: "56px" }} disabled={!imageUpload.imageUrl}>+ Add</Button>
-                </Grid>
-            </Grid>
+            <span className="form-hint mb-8" style={{ display: "block" }}>Hoặc dán URL ảnh trực tiếp:</span>
+            <div className="form-row mb-16">
+                <div className="form-group" style={{ flex: 3 }}>
+                    <label className="form-label">Image URL</label>
+                    <input className="form-input" placeholder="https://..." value={imageUpload.imageUrl}
+                        onChange={(e) => setImageUpload({ ...imageUpload, imageUrl: e.target.value })} />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                    <label className="form-label">Ảnh chính?</label>
+                    <select className="form-select" value={imageUpload.isPrimary} onChange={(e) => setImageUpload({ ...imageUpload, isPrimary: e.target.value === "true" })}>
+                        <option value="false">Not Primary</option>
+                        <option value="true">Primary</option>
+                    </select>
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                    <label className="form-label">Thứ tự</label>
+                    <input className="form-input" type="number" placeholder="0" value={imageUpload.sortOrder}
+                        onChange={(e) => setImageUpload({ ...imageUpload, sortOrder: e.target.value })} />
+                </div>
+                <div style={{ flex: 0, paddingTop: 24 }}>
+                    <button className="btn btn-secondary" onClick={addImage} disabled={!imageUpload.imageUrl} style={{ height: 42 }}>+ Add</button>
+                </div>
+            </div>
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Preview</TableCell><TableCell>Image URL</TableCell><TableCell>Primary</TableCell><TableCell>Sort Order</TableCell><TableCell>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
+            <div className="table-wrapper">
+                <table className="vendor-table">
+                    <thead>
+                        <tr><th>Preview</th><th>Image URL</th><th>Primary</th><th>Sort</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
                         {images.map((image) => (
-                            <TableRow key={image.id}>
-                                <TableCell><Box component="img" src={image.imageUrl} alt="thumb" sx={{ width: 50, height: 50, objectFit: "cover", borderRadius: 1 }} /></TableCell>
-                                <TableCell sx={{ maxWidth: 200, wordBreak: "break-all" }}>{image.imageUrl}</TableCell>
-                                <TableCell><Chip label={image.isPrimary ? "Yes" : "No"} size="small" /></TableCell>
-                                <TableCell>{image.sortOrder}</TableCell>
-                                <TableCell><Button size="small" color="error" onClick={() => setImages((prev) => prev.filter((img) => img.id !== image.id))}>Delete</Button></TableCell>
-                            </TableRow>
+                            <tr key={image.id}>
+                                <td><img src={image.imageUrl} alt="thumb" className="thumb" /></td>
+                                <td className="word-break" style={{ maxWidth: 200 }}>{image.imageUrl}</td>
+                                <td>{image.isPrimary ? "Yes" : "No"}</td>
+                                <td>{image.sortOrder}</td>
+                                <td><button className="btn btn-danger btn-sm" onClick={() => setImages((prev) => prev.filter((img) => img.id !== image.id))}>Delete</button></td>
+                            </tr>
                         ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Box>
+                        {images.length === 0 && <tr><td colSpan="5" className="table-empty">Chưa có ảnh nào</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 };
 

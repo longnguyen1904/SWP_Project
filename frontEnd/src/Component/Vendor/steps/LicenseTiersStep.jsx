@@ -1,8 +1,4 @@
-import React from "react";
-import {
-    Box, Typography, Grid, TextField, Button, Paper,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-} from "@mui/material";
+import "../../../Style/Vendor.css";
 
 const LicenseTiersStep = ({ licenseTiers, setLicenseTiers, tierForm, setTierForm }) => {
     const addTier = () => {
@@ -13,58 +9,40 @@ const LicenseTiersStep = ({ licenseTiers, setLicenseTiers, tierForm, setTierForm
     };
 
     const removeTier = (id) => setLicenseTiers((prev) => prev.filter((t) => t.id !== id));
-
     const handleChange = (field) => (e) => setTierForm((prev) => ({ ...prev, [field]: e.target.value }));
 
     return (
-        <Box>
-            <Typography variant="h6" gutterBottom>License Tiers</Typography>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} md={3}>
-                    <TextField fullWidth label="Tier Name" value={tierForm.tierName} onChange={handleChange("tierName")} />
-                </Grid>
-                <Grid item xs={12} md={2}>
-                    <TextField fullWidth label="Tier Code" value={tierForm.tierCode} onChange={handleChange("tierCode")} />
-                </Grid>
-                <Grid item xs={12} md={2}>
-                    <TextField fullWidth label="Price ($)" type="number" value={tierForm.price} onChange={handleChange("price")} />
-                </Grid>
-                <Grid item xs={12} md={2}>
-                    <TextField fullWidth label="Max Devices" type="number" value={tierForm.maxDevices} onChange={handleChange("maxDevices")} />
-                </Grid>
-                <Grid item xs={12} md={2}>
-                    <TextField fullWidth label="Duration (days)" type="number" value={tierForm.durationDays} onChange={handleChange("durationDays")} />
-                </Grid>
-                <Grid item xs={12} md={1}>
-                    <Button fullWidth variant="outlined" onClick={addTier} sx={{ height: "56px" }}>+ Add</Button>
-                </Grid>
-            </Grid>
+        <div>
+            <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 16 }}>License Tiers</h3>
+            <div className="form-row mb-16">
+                <div className="form-group"><label className="form-label">Tên Tier</label><input className="form-input" placeholder="VD: Basic" value={tierForm.tierName} onChange={handleChange("tierName")} /></div>
+                <div className="form-group"><label className="form-label">Mã Tier</label><input className="form-input" placeholder="VD: STD" value={tierForm.tierCode} onChange={handleChange("tierCode")} /></div>
+                <div className="form-group"><label className="form-label">Giá ($)</label><input className="form-input" type="number" placeholder="0" value={tierForm.price} onChange={handleChange("price")} /></div>
+                <div className="form-group"><label className="form-label">Số thiết bị</label><input className="form-input" type="number" placeholder="1" value={tierForm.maxDevices} onChange={handleChange("maxDevices")} /></div>
+                <div className="form-group"><label className="form-label">Thời hạn (ngày)</label><input className="form-input" type="number" placeholder="365" value={tierForm.durationDays} onChange={handleChange("durationDays")} /></div>
+                <div style={{ flex: 0, paddingTop: 24 }}><button className="btn btn-secondary" onClick={addTier} style={{ height: 42 }}>+ Add</button></div>
+            </div>
 
-            <TextField fullWidth label="License Content" multiline rows={2} value={tierForm.content} onChange={handleChange("content")} sx={{ mb: 3 }} />
+            <div className="form-group mb-16">
+                <textarea className="form-textarea" rows={2} placeholder="License Content" value={tierForm.content} onChange={handleChange("content")} />
+            </div>
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Tier Name</TableCell><TableCell>Code</TableCell><TableCell>Price</TableCell>
-                            <TableCell>Devices</TableCell><TableCell>Duration</TableCell><TableCell>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
+            <div className="table-wrapper">
+                <table className="vendor-table">
+                    <thead><tr><th>Tier Name</th><th>Code</th><th>Price</th><th>Devices</th><th>Duration</th><th>Actions</th></tr></thead>
+                    <tbody>
                         {licenseTiers.map((tier) => (
-                            <TableRow key={tier.id}>
-                                <TableCell>{tier.tierName}</TableCell>
-                                <TableCell>{tier.tierCode}</TableCell>
-                                <TableCell>${tier.price}</TableCell>
-                                <TableCell>{tier.maxDevices}</TableCell>
-                                <TableCell>{tier.durationDays} days</TableCell>
-                                <TableCell><Button size="small" color="error" onClick={() => removeTier(tier.id)}>Delete</Button></TableCell>
-                            </TableRow>
+                            <tr key={tier.id}>
+                                <td>{tier.tierName}</td><td>{tier.tierCode}</td><td>${tier.price}</td>
+                                <td>{tier.maxDevices}</td><td>{tier.durationDays} days</td>
+                                <td><button className="btn btn-danger btn-sm" onClick={() => removeTier(tier.id)}>Delete</button></td>
+                            </tr>
                         ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Box>
+                        {licenseTiers.length === 0 && <tr><td colSpan="6" className="table-empty">Chưa có tier nào</td></tr>}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 };
 

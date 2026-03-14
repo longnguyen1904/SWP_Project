@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Box, Card, CardContent, Typography, Button, Alert, CircularProgress,
-  Stepper, Step, StepLabel,
-} from "@mui/material";
-import SaveIcon from "@mui/icons-material/Save";
 import { vendorAPI, customerAPI } from "../../services/api";
 import BasicInfoStep from "./steps/BasicInfoStep";
 import ImagesStep from "./steps/ImagesStep";
 import VersionStep from "./steps/VersionStep";
 import LicenseTiersStep from "./steps/LicenseTiersStep";
 import ReviewStep from "./steps/ReviewStep";
+import "../../Style/Vendor.css";
+
+const steps = ["Basic Information", "Upload Images", "Product Version", "License Tiers", "Submit"];
 
 const ProductUploadForm = () => {
   const [searchParams] = useSearchParams();
@@ -31,15 +29,11 @@ const ProductUploadForm = () => {
 
   const [images, setImages] = useState([]);
   const [imageUpload, setImageUpload] = useState({ imageUrl: "", isPrimary: false, sortOrder: 0 });
-
   const [version, setVersion] = useState({ versionNumber: "", fileUrl: "", releaseNotes: "" });
-
   const [licenseTiers, setLicenseTiers] = useState([]);
   const [tierForm, setTierForm] = useState({
     tierName: "", tierCode: "STD", price: "", maxDevices: 1, durationDays: 365, content: "",
   });
-
-  const steps = ["Basic Information", "Upload Images", "Product Version", "License Tiers", "Submit"];
 
   // ==================== LOAD CATEGORIES ====================
   useEffect(() => {
@@ -100,7 +94,6 @@ const ProductUploadForm = () => {
           })));
         }
 
-        // Determine resume step
         const hasImages = detail.images?.length > 0;
         const hasVersion = detail.latestVersion?.versionNumber;
         const hasTiers = detail.licenseTiers?.length > 0;
@@ -113,9 +106,7 @@ const ProductUploadForm = () => {
         setTimeout(() => setSuccess(""), 3000);
       } catch (err) {
         setError("Không thể tải bản nháp: " + (err.response?.data?.message || err.message));
-      } finally {
-        setInitialLoading(false);
-      }
+      } finally { setInitialLoading(false); }
     };
     loadDraft();
   }, [resumeProductId]);
@@ -130,10 +121,15 @@ const ProductUploadForm = () => {
         if (!productData.description) { setError("Description is required"); return false; }
         if (!productData.basePrice || parseFloat(productData.basePrice) <= 0) { setError("Base price must be greater than 0"); return false; }
         return true;
-      case 1: return true;
+      case 1:
+        if (images.length === 0) { setError("Vui lòng thêm ít nhất 1 ảnh sản phẩm"); return false; }
+        return true;
       case 2:
         if (!version.versionNumber) { setError("Version number is required"); return false; }
         if (!version.fileUrl) { setError("File URL is required"); return false; }
+        return true;
+      case 3:
+        if (licenseTiers.length === 0) { setError("Vui lòng thêm ít nhất 1 license tier"); return false; }
         return true;
       default: return true;
     }
@@ -151,14 +147,8 @@ const ProductUploadForm = () => {
     return id;
   };
 
-  const uploadProductImage = async (pid, imageData) => {
-    await vendorAPI.uploadProductImage(pid, imageData);
-  };
-
-  const createProductVersion = async (pid) => {
-    await vendorAPI.createProductVersion(pid, version);
-  };
-
+  const uploadProductImage = async (pid, imageData) => { await vendorAPI.uploadProductImage(pid, imageData); };
+  const createProductVersion = async (pid) => { await vendorAPI.createProductVersion(pid, version); };
   const createLicenseTier = async (pid, tier) => {
     await vendorAPI.createLicenseTier(pid, {
       tierName: tier.tierName, tierCode: tier.tierCode || "STD",
@@ -170,16 +160,13 @@ const ProductUploadForm = () => {
   // ==================== STEP NAVIGATION ====================
   const handleNext = async () => {
     if (!validateCurrentStep()) return;
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       let currentProductId = productId;
-
       switch (activeStep) {
         case 0:
-          if (!currentProductId) {
-            currentProductId = await createProduct();
-          } else {
+          if (!currentProductId) { currentProductId = await createProduct(); }
+          else {
             await vendorAPI.saveDraft(currentProductId, {
               productName: productData.productName, description: productData.description,
               basePrice: parseFloat(productData.basePrice), guideDocumentUrl: productData.guideDocumentUrl || null,
@@ -187,52 +174,35 @@ const ProductUploadForm = () => {
           }
           break;
         case 1:
-          for (const image of images.filter((img) => !img.saved)) {
-            await uploadProductImage(currentProductId, image);
-          }
+          for (const image of images.filter((img) => !img.saved)) { await uploadProductImage(currentProductId, image); }
           setImages((prev) => prev.map((img) => ({ ...img, saved: true })));
           break;
         case 2:
-          if (!version.saved) {
-            await createProductVersion(currentProductId);
-            setVersion((prev) => ({ ...prev, saved: true }));
-          }
+          if (!version.saved) { await createProductVersion(currentProductId); setVersion((prev) => ({ ...prev, saved: true })); }
           break;
         case 3:
-          for (const tier of licenseTiers.filter((t) => !t.saved)) {
-            await createLicenseTier(currentProductId, tier);
-          }
+          for (const tier of licenseTiers.filter((t) => !t.saved)) { await createLicenseTier(currentProductId, tier); }
           setLicenseTiers((prev) => prev.map((t) => ({ ...t, saved: true })));
           break;
         default: break;
       }
       setActiveStep((prev) => prev + 1);
-    } catch (err) {
-      setError(err.response?.data?.message || "Lỗi khi lưu. Vui lòng thử lại.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err.response?.data?.message || "Lỗi khi lưu. Vui lòng thử lại."); }
+    finally { setLoading(false); }
   };
 
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
   const handleSubmit = async () => {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       await vendorAPI.submitProduct(productId);
       setSuccess("Product successfully submitted for approval!");
-      setActiveStep(0);
-      setProductId(null);
+      setActiveStep(0); setProductId(null);
       setProductData({ productName: "", categoryId: "", description: "", basePrice: "", hasTrial: false, trialDurationDays: 7, guideDocumentUrl: "", tags: [] });
-      setImages([]);
-      setVersion({ versionNumber: "", fileUrl: "", releaseNotes: "" });
-      setLicenseTiers([]);
-    } catch (err) {
-      setError(err.response?.data?.message || "Submit thất bại.");
-    } finally {
-      setLoading(false);
-    }
+      setImages([]); setVersion({ versionNumber: "", fileUrl: "", releaseNotes: "" }); setLicenseTiers([]);
+    } catch (err) { setError(err.response?.data?.message || "Submit thất bại."); }
+    finally { setLoading(false); }
   };
 
   const handleSaveDraft = async () => {
@@ -252,14 +222,11 @@ const ProductUploadForm = () => {
         setSuccess("Đã lưu nháp thành công!");
       }
       setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || "Lưu nháp thất bại.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err.response?.data?.message || "Lưu nháp thất bại."); }
+    finally { setLoading(false); }
   };
 
-  // ==================== RENDER STEPS ====================
+  // ==================== RENDER ====================
   const renderStepContent = (step) => {
     switch (step) {
       case 0: return <BasicInfoStep productData={productData} setProductData={setProductData} categories={categories} />;
@@ -272,51 +239,55 @@ const ProductUploadForm = () => {
   };
 
   return (
-    <Box>
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>{success}</Alert>}
+    <div className="vendor-page">
+      {error && <div className="alert alert-error">{error}<button className="alert-close" onClick={() => setError("")}>×</button></div>}
+      {success && <div className="alert alert-success">{success}<button className="alert-close" onClick={() => setSuccess("")}>×</button></div>}
 
-      <Card>
-        <CardContent>
-          {initialLoading ? (
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 6 }}>
-              <CircularProgress size={48} sx={{ mb: 2 }} />
-              <Typography>Đang tải bản nháp...</Typography>
-            </Box>
-          ) : (
-            <>
-              <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-                {steps.map((label) => (
-                  <Step key={label}><StepLabel>{label}</StepLabel></Step>
-                ))}
-              </Stepper>
+      <div className="vendor-card">
+        {initialLoading ? (
+          <div className="loading-center"><span className="spinner spinner-lg" /> Đang tải bản nháp...</div>
+        ) : (
+          <>
+            {/* Stepper */}
+            <div className="stepper">
+              {steps.map((label, i) => (
+                <React.Fragment key={label}>
+                  <div className={`stepper-step ${i === activeStep ? "active" : i < activeStep ? "completed" : ""}`}>
+                    <span className="stepper-num">{i < activeStep ? "✓" : i + 1}</span>
+                    <span>{label}</span>
+                  </div>
+                  {i < steps.length - 1 && <div className={`stepper-line ${i < activeStep ? "active" : ""}`} />}
+                </React.Fragment>
+              ))}
+            </div>
 
-              {renderStepContent(activeStep)}
+            {/* Step Content */}
+            <div className="mb-24">{renderStepContent(activeStep)}</div>
 
-              <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-                <Button disabled={activeStep === 0} onClick={handleBack}>Back</Button>
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  {activeStep < steps.length - 1 && (
-                    <Button variant="outlined" onClick={handleSaveDraft} disabled={loading} startIcon={loading ? <CircularProgress size={18} /> : <SaveIcon />}>
-                      Save Draft
-                    </Button>
-                  )}
-                  {activeStep === steps.length - 1 ? (
-                    <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-                      {loading ? <CircularProgress size={24} /> : "Submit Product"}
-                    </Button>
-                  ) : (
-                    <Button variant="contained" onClick={handleNext} disabled={loading}>
-                      {loading ? <CircularProgress size={24} /> : "Next"}
-                    </Button>
-                  )}
-                </Box>
-              </Box>
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </Box>
+            {/* Navigation */}
+            <div className="flex-between">
+              <button className="btn btn-secondary" disabled={activeStep === 0} onClick={handleBack}>Back</button>
+              <div className="flex-gap">
+                {activeStep < steps.length - 1 && (
+                  <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={loading}>
+                    {loading ? <span className="spinner" /> : "💾"} Save Draft
+                  </button>
+                )}
+                {activeStep === steps.length - 1 ? (
+                  <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
+                    {loading ? <><span className="spinner" /> Submitting...</> : "Submit Product"}
+                  </button>
+                ) : (
+                  <button className="btn btn-primary" onClick={handleNext} disabled={loading}>
+                    {loading ? <><span className="spinner" /> Saving...</> : "Next"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 };
 

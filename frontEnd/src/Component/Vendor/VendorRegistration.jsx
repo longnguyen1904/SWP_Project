@@ -1,24 +1,8 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Alert,
-  CircularProgress,
-  Stepper,
-  Step,
-  StepLabel,
-  Paper,
-} from "@mui/material";
+import { useState } from "react";
 import { vendorAPI } from "../../services/api";
+import "../../Style/Vendor.css";
+
+const steps = ["Basic Information", "Business Details", "Documents"];
 
 const VendorRegistration = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -34,52 +18,29 @@ const VendorRegistration = () => {
     identificationDoc: "",
   });
 
-  const steps = ["Basic Information", "Business Details", "Documents"];
-
-  const handleInputChange = (field) => (event) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.value,
-    });
+  const handleChange = (field) => (e) => {
+    setFormData({ ...formData, [field]: e.target.value });
     setError("");
   };
 
   const handleNext = () => {
     setError("");
-    // Validate current step
-    if (activeStep === 0) {
-      if (formData.type === "COMPANY" && !formData.companyName.trim()) {
-        setError("Tên công ty không được để trống khi loại vendor là COMPANY");
-        return;
-      }
-    } else if (activeStep === 1) {
-      if (!formData.taxCode.trim()) {
-        setError("Tax Code / Citizen ID không được để trống");
-        return;
-      }
-    } else if (activeStep === 2) {
-      if (!formData.identificationDoc.trim()) {
-        setError("Link tài liệu xác thực không được để trống");
-        return;
-      }
+    if (activeStep === 0 && formData.type === "COMPANY" && !formData.companyName.trim()) {
+      setError("Tên công ty không được để trống khi loại vendor là COMPANY"); return;
     }
-
-    if (activeStep === steps.length - 1) {
-      handleSubmit();
-    } else {
-      setActiveStep((prevStep) => prevStep + 1);
+    if (activeStep === 1 && !formData.taxCode.trim()) {
+      setError("Tax Code / Citizen ID không được để trống"); return;
     }
+    if (activeStep === 2 && !formData.identificationDoc.trim()) {
+      setError("Link tài liệu xác thực không được để trống"); return;
+    }
+    if (activeStep === steps.length - 1) { handleSubmit(); } else { setActiveStep((s) => s + 1); }
   };
 
-  const handleBack = () => {
-    setActiveStep((prevStep) => prevStep - 1);
-  };
+  const handleBack = () => setActiveStep((s) => s - 1);
 
   const handleSubmit = async () => {
-    setLoading(true);
-    setError("");
-    setSuccess("");
-
+    setLoading(true); setError(""); setSuccess("");
     try {
       await vendorAPI.registerVendor(formData);
       setSuccess("Vendor registration submitted successfully! Please wait for admin approval.");
@@ -90,150 +51,89 @@ const VendorRegistration = () => {
     }
   };
 
-  const renderStepContent = (step) => {
-    switch (step) {
+  const renderStep = () => {
+    switch (activeStep) {
       case 0:
         return (
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Vendor Type</InputLabel>
-                <Select
-                  value={formData.type}
-                  onChange={handleInputChange("type")}
-                  label="Vendor Type"
-                >
-                  <MenuItem value="INDIVIDUAL">Individual</MenuItem>
-                  <MenuItem value="COMPANY">Company</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+          <>
+            <div className="form-group">
+              <label className="form-label">Vendor Type</label>
+              <select className="form-select" value={formData.type} onChange={handleChange("type")}>
+                <option value="INDIVIDUAL">Individual</option>
+                <option value="COMPANY">Company</option>
+              </select>
+            </div>
             {formData.type === "COMPANY" && (
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  value={formData.companyName}
-                  onChange={handleInputChange("companyName")}
-                  required
-                />
-              </Grid>
+              <div className="form-group">
+                <label className="form-label">Company Name *</label>
+                <input className="form-input" value={formData.companyName} onChange={handleChange("companyName")} placeholder="Enter company name" />
+              </div>
             )}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Description"
-                multiline
-                rows={4}
-                value={formData.description}
-                onChange={handleInputChange("description")}
-                placeholder="Tell us about your business and the products you plan to sell"
-                helperText="Optional: describe your business and what you plan to offer on the marketplace"
-              />
-            </Grid>
-          </Grid>
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <textarea className="form-textarea" rows={4} value={formData.description} onChange={handleChange("description")} placeholder="Tell us about your business and the products you plan to sell" />
+              <span className="form-hint">Optional: describe your business and what you plan to offer on the marketplace</span>
+            </div>
+          </>
         );
-
       case 1:
         return (
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Tax Code / Citizen ID"
-                value={formData.taxCode}
-                onChange={handleInputChange("taxCode")}
-                placeholder="Tax code or citizen identification number"
-              />
-            </Grid>
-          </Grid>
+          <div className="form-group">
+            <label className="form-label">Tax Code / Citizen ID *</label>
+            <input className="form-input" value={formData.taxCode} onChange={handleChange("taxCode")} placeholder="Tax code or citizen identification number" />
+          </div>
         );
-
       case 2:
         return (
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Identification Document URL"
-                value={formData.identificationDoc}
-                onChange={handleInputChange("identificationDoc")}
-                required
-                placeholder="https://example.com/identification-document.pdf"
-                helperText="Provide a link to your business license or identification document (or upload via Upload Document first)"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Alert severity="info">
-                <Typography variant="body2">
-                  Please ensure your identification documents are valid and clearly visible.
-                  This information is required for vendor verification.
-                </Typography>
-              </Alert>
-            </Grid>
-          </Grid>
+          <>
+            <div className="form-group">
+              <label className="form-label">Identification Document URL *</label>
+              <input className="form-input" value={formData.identificationDoc} onChange={handleChange("identificationDoc")} placeholder="https://example.com/identification-document.pdf" />
+              <span className="form-hint">Provide a link to your business license or identification document</span>
+            </div>
+            <div className="alert alert-info">
+              Please ensure your identification documents are valid and clearly visible. This information is required for vendor verification.
+            </div>
+          </>
         );
-
-      default:
-        return null;
+      default: return null;
     }
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: "auto", p: 3 }}>
-      <Card>
-        <CardContent>
-          <Typography variant="h4" gutterBottom align="center">
-            Vendor Registration
-          </Typography>
-          <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 4 }}>
-            Register as a vendor to start selling your products on our marketplace
-          </Typography>
+    <div className="vendor-page-narrow">
+      <div className="vendor-card">
+        <div className="text-center mb-24">
+          <h2 className="vendor-page-title">Vendor Registration</h2>
+          <p className="vendor-page-subtitle">Register as a vendor to start selling your products on our marketplace</p>
+        </div>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
+        {error && <div className="alert alert-error">{error}<button className="alert-close" onClick={() => setError("")}>×</button></div>}
+        {success && <div className="alert alert-success">{success}</div>}
 
-          {success && (
-            <Alert severity="success" sx={{ mb: 3 }}>
-              {success}
-            </Alert>
-          )}
+        <div className="stepper">
+          {steps.map((label, i) => (
+            <React.Fragment key={label}>
+              <div className={`stepper-step ${i === activeStep ? "active" : i < activeStep ? "completed" : ""}`}>
+                <span className="stepper-num">{i < activeStep ? "✓" : i + 1}</span>
+                <span>{label}</span>
+              </div>
+              {i < steps.length - 1 && <div className={`stepper-line ${i < activeStep ? "active" : ""}`} />}
+            </React.Fragment>
+          ))}
+        </div>
 
-          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
+        <div className="mb-24">{renderStep()}</div>
 
-          <Paper sx={{ p: 3, mb: 3 }}>
-            {renderStepContent(activeStep)}
-          </Paper>
-
-          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Button
-              disabled={activeStep === 0}
-              onClick={handleBack}
-              variant="outlined"
-            >
-              Back
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} /> : null}
-            >
-              {activeStep === steps.length - 1 ? "Submit Registration" : "Next"}
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
-    </Box>
+        <div className="flex-between">
+          <button className="btn btn-secondary" onClick={handleBack} disabled={activeStep === 0}>Back</button>
+          <button className="btn btn-primary" onClick={handleNext} disabled={loading}>
+            {loading && <span className="spinner" />}
+            {activeStep === steps.length - 1 ? "Submit Registration" : "Next"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
