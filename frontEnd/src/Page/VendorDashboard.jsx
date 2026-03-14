@@ -62,6 +62,42 @@ export default function VendorDashboard() {
                             My Products
                         </NavLink>
                     </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/VersionControl"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-clock-history me-3"></i>
+                            Version Control
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/LicenseTiers"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-layers me-3"></i>
+                            License Tiers
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/Profile"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-person-gear me-3"></i>
+                            Profile Settings
+                        </NavLink>
+                    </li>
                 </ul>
 
                 <hr className="border-secondary opacity-50" />

@@ -52,8 +52,20 @@ export const vendorAPI = {
     api.delete(`/api/vendor/products/${productId}/images/${imageId}`),
   createProductVersion: (productId, versionData) =>
     api.post(`/api/vendor/products/${productId}/versions`, versionData),
+  getProductVersions: (productId, params = {}) =>
+    api.get(`/api/vendor/products/${productId}/versions`, { params }),
+  getProductVersion: (productId, versionId) =>
+    api.get(`/api/vendor/products/${productId}/versions/${versionId}`),
+  updateProductVersion: (productId, versionId, data) =>
+    api.put(`/api/vendor/products/${productId}/versions/${versionId}`, data),
   createLicenseTier: (productId, tierData) =>
     api.post(`/api/vendor/products/${productId}/license-tiers`, tierData),
+  getLicenseTiers: (productId, params = {}) =>
+    api.get(`/api/vendor/products/${productId}/license-tiers`, { params }),
+  updateLicenseTier: (productId, tierId, data) =>
+    api.put(`/api/vendor/products/${productId}/license-tiers/${tierId}`, data),
+  deleteLicenseTier: (productId, tierId) =>
+    api.delete(`/api/vendor/products/${productId}/license-tiers/${tierId}`),
   submitProduct: (productId) => api.post(`/api/vendor/products/${productId}/submit`),
   saveDraft: (productId, data) => api.put(`/api/vendor/products/${productId}/draft`, data),
   getDailyRevenue: (params) => api.get("/api/vendor/revenue/daily", { params }),
@@ -107,6 +119,11 @@ export const uploadAPI = {
     api.post("/api/upload/document", formData, { headers: { "Content-Type": "multipart/form-data" }, timeout: 300000 }),
   uploadInstaller: (formData) =>
     api.post("/api/upload/installer", formData, { headers: { "Content-Type": "multipart/form-data" }, timeout: 300000 }),
+};
+
+export const profileAPI = {
+  getProfile: () => api.get("/api/users/profile"),
+  updateProfile: (data) => api.put("/api/users/profile", data),
 };
 
 export default api;
