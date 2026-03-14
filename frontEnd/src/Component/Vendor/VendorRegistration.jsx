@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { vendorAPI } from "../../services/api";
 import "../../Style/Vendor.css";
 
