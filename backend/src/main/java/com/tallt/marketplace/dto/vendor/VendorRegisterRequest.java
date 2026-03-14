@@ -20,8 +20,7 @@ public class VendorRegisterRequest {
 
     private String taxCode;
 
-    @NotBlank(message = "Số CMND/CCCD không được để trống")
-    private String citizenId;
+
 
     @NotBlank(message = "Link tài liệu xác thực không được để trống")
     private String identificationDoc;

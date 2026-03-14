@@ -39,6 +39,11 @@ public class LicenseTierService {
                                                   CreateLicenseTierRequest request) {
         Product product = validateProductOwnership(vendorId, productId);
 
+        // Check duplicate tier name
+        if (licenseTierRepository.existsByProduct_ProductIDAndTierName(productId, request.getTierName())) {
+            throw new AppException("Tier \"" + request.getTierName() + "\" đã tồn tại cho sản phẩm này");
+        }
+
         LicenseTier tier = new LicenseTier();
         tier.setProduct(product);
         tier.setTierName(request.getTierName());
@@ -68,6 +73,11 @@ public class LicenseTierService {
         }
 
         if (request.getTierName() != null) {
+            // Check duplicate tier name (exclude current tier)
+            if (licenseTierRepository.existsByProduct_ProductIDAndTierNameAndTierIDNot(
+                    tier.getProduct().getProductID(), request.getTierName(), tierId)) {
+                throw new AppException("Tier \"" + request.getTierName() + "\" đã tồn tại cho sản phẩm này");
+            }
             tier.setTierName(request.getTierName());
         }
         if (request.getPrice() != null) {
