@@ -91,8 +91,8 @@ function PurchasedProducts() {
                     border: "none",
                     borderRadius: "5px",
                     cursor: "pointer"
-                  }}>
-                    Download
+                  }} >
+                    <a href={order.fileUrl}>Download</a>
                   </button>
                 </td>
 

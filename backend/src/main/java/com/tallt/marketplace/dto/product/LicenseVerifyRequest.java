@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class LicenseVerifyRequest {
-    private String licenseKey;
-    private int productID ;
+    private Integer orderID;
+
+    private String fileUrl;
 }

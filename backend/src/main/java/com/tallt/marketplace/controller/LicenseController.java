@@ -42,18 +42,5 @@ public class LicenseController {
         }
     }
 
-     @PostMapping("/verify")   // sever của app desktop chỉ check LicenseKey  .  
-    public ResponseEntity<?> verifyLicense(@RequestBody LicenseVerifyRequest request) {
-
-        String result = licenseService.verifyLicense(
-                request.getLicenseKey(),
-                request.getProductID()
-        );
-
-        if (!result.equals("VALID")) {
-            return ResponseEntity.badRequest().body(result);
-        }
-
-        return ResponseEntity.ok(result);
-    } 
+     
 }
