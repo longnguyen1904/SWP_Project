@@ -18,4 +18,8 @@ public interface LicenseTierRepository extends JpaRepository<LicenseTier, Intege
     Optional<LicenseTier> findTopByProduct_ProductIDOrderByTierIDAsc(Integer productId);
 
     void deleteByProduct_ProductID(Integer productId);
+
+    boolean existsByProduct_ProductIDAndTierName(Integer productId, String tierName);
+
+    boolean existsByProduct_ProductIDAndTierNameAndTierIDNot(Integer productId, String tierName, Integer tierId);
 }
