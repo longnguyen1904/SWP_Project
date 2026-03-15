@@ -24,9 +24,9 @@ import LicenseTierConfig from "./Page/LicenseTierConfig";
 import CreateSupportTicketWizard from "./Page/CreateSupportTicketWizard";
 import VendorTicketManagement from "./Page/VendorTicketManagement";
 import CustomerTicketManagement from "./Page/CustomerTicketManagement";
-import PaymentResult from "./Page/PaymentResult.jsx" ; 
+import PaymentResult from "./Page/PaymentResult";
 import AdminCommission from "./Page/AdminCommision.jsx";
-
+import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
 export default function App() {
   return (
     <div className="app snow">
@@ -56,6 +56,7 @@ export default function App() {
           <Route path="LicenseTiers" element={<LicenseTierConfig />} />
           <Route path="Profile" element={<ProfilePage />} />
           <Route path="VendorTicketManagement" element={<VendorTicketManagement/>}/>
+          <Route path="QualityAnalyticsDashboard" element={<QualityAnalyticsDashboard/>}/>
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />
