@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { setToken } from "../services/localStorageService";
 import { Box, CircularProgress, Typography } from "@mui/material";
 
-
+import HomePage from "./Home";
 
 export default function Authenticate() {
   const navigate = useNavigate();

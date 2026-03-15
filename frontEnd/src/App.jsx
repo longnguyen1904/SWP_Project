@@ -67,7 +67,10 @@ export default function App() {
           
         </Route>
          
+
+
         <Route path="/Page/PurchasedProducts" element={<PurchasedProducts />} />
+
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/payment-result" element={<PaymentResult/>} />

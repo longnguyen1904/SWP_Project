@@ -1,5 +1,6 @@
 package com.tallt.marketplace.config;
 
+import com.tallt.marketplace.security.OAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,6 +12,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+
+    public SecurityConfig(OAuth2SuccessHandler oAuth2SuccessHandler) {
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -18,10 +25,21 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
-            .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF để test Postman/React
+            .csrf(AbstractHttpConfigurer::disable)
+
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll() // Tạm thời cho phép tất cả request
+                .requestMatchers(
+                        "/oauth2/**",
+                        "/login/**",
+                        "/api/auth/**"
+                ).permitAll()
+                .anyRequest().permitAll()
+            )
+
+            .oauth2Login(oauth -> oauth
+                    .successHandler(oAuth2SuccessHandler)
             );
 
         return http.build();
