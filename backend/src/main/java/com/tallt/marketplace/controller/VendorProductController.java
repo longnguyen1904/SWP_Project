@@ -168,7 +168,7 @@ public class VendorProductController {
     }
 
     /**
-     * Lấy chi tiết sản phẩm của Vendor
+     * Lấy chi tiết sản phẩm của Vendor (mọi status)
      * GET /api/vendor/products/{productId}
      */
     @GetMapping("/products/{productId}")
@@ -176,7 +176,7 @@ public class VendorProductController {
             @RequestHeader("X-User-Id") Integer userId,
             @PathVariable Integer productId) {
         Vendor vendor = vendorService.getVendorByUserId(userId);
-        ProductDetailResponse result = productService.getPublicProductDetail(productId, 6);
+        ProductDetailResponse result = productService.getVendorProductDetail(vendor.getVendorID(), productId, 6);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -205,6 +205,20 @@ public class VendorProductController {
         Vendor vendor = vendorService.getVendorByUserId(userId);
         productService.deleteProduct(vendor.getVendorID(), productId);
         return ResponseEntity.ok(ApiResponse.success("Xóa sản phẩm thành công"));
+    }
+
+    /**
+     * Lưu nháp sản phẩm (chỉ khi DRAFT hoặc REJECTED)
+     * PUT /api/vendor/products/{productId}/draft
+     */
+    @PutMapping("/products/{productId}/draft")
+    public ResponseEntity<ApiResponse<ProductResponse>> saveDraft(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId,
+            @Valid @RequestBody UpdateProductRequest request) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        ProductResponse result = productService.saveDraft(vendor.getVendorID(), productId, request);
+        return ResponseEntity.ok(ApiResponse.success("Lưu nháp thành công", result));
     }
 
     // ==================== PRODUCT VERSIONS ====================
@@ -244,6 +258,35 @@ public class VendorProductController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách phiên bản thành công", result.getContent()));
     }
 
+    /**
+     * Lấy chi tiết một phiên bản
+     * GET /api/vendor/products/{productId}/versions/{versionId}
+     */
+    @GetMapping("/products/{productId}/versions/{versionId}")
+    public ResponseEntity<ApiResponse<ProductVersionResponse>> getProductVersion(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId,
+            @PathVariable Integer versionId) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        ProductVersionResponse result = productVersionService.getVersionById(vendor.getVendorID(), productId, versionId);
+        return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết phiên bản thành công", result));
+    }
+
+    /**
+     * Cập nhật phiên bản sản phẩm
+     * PUT /api/vendor/products/{productId}/versions/{versionId}
+     */
+    @PutMapping("/products/{productId}/versions/{versionId}")
+    public ResponseEntity<ApiResponse<ProductVersionResponse>> updateProductVersion(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId,
+            @PathVariable Integer versionId,
+            @RequestBody UpdateVersionRequest request) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        ProductVersionResponse result = productVersionService.updateVersion(vendor.getVendorID(), productId, versionId, request);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật phiên bản thành công", result));
+    }
+
     // ==================== LICENSE TIERS ====================
 
     /**
@@ -269,7 +312,7 @@ public class VendorProductController {
             @RequestHeader("X-User-Id") Integer userId,
             @PathVariable Integer productId) {
         Vendor vendor = vendorService.getVendorByUserId(userId);
-        PageResponse<LicenseTierResponse> result = licenseTierService.getLicenseTiers(productId, 0, 10, "tierId", "asc");
+        PageResponse<LicenseTierResponse> result = licenseTierService.getLicenseTiers(productId, 0, 100, "tierID", "asc");
         return ResponseEntity.ok(ApiResponse.success(result.getContent()));
     }
 

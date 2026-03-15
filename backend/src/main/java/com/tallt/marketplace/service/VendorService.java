@@ -85,7 +85,7 @@ public class VendorService {
             vendor.setDescription(request.getDescription().trim());
         }
         vendor.setTaxCode(request.getTaxCode());
-        vendor.setCitizenID(request.getCitizenId());
+
         vendor.setIdentificationDoc(request.getIdentificationDoc());
         vendor.setStatus(Vendor.VendorStatus.PENDING);
         vendorRepository.save(vendor);

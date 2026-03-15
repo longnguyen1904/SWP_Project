@@ -71,19 +71,18 @@ const ProductDetail = () => {
     );
   }
 
-  const categoryName = product.categoryName ?? product.category;
-  const categoryId = product.categoryId ?? product.categoryID;
+  const categoryName = product.categoryName;
+  const categoryId = product.categoryId;
 
   return (
     <div className="product-detail">
       {paymentFailed && (
         <div className="alert alert--error payment-failed-alert">
-          <span>❌ Thanh toán không thành công. Vui lòng thử lại.</span>
+          <span>Thanh toán không thành công. Vui lòng thử lại.</span>
           <button
             className="payment-failed-alert__close"
             onClick={() => setPaymentFailed(false)}
           >
-            ✕
           </button>
         </div>
       )}

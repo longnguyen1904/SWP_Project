@@ -50,18 +50,15 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
       {product.tags?.length > 0 && (
         <div className="product-info__tags">
           <span className="product-info__tags-label">Tags:</span>
-          {product.tags.map((tag) => {
-            const tagName = typeof tag === "string" ? tag : tag?.name ?? tag;
-            return (
-              <Link
-                key={tagName}
-                className="tag-link"
-                to={`/marketplace?tag=${encodeURIComponent(tagName)}`}
-              >
-                {tagName}
-              </Link>
-            );
-          })}
+          {product.tags.map((tag) => (
+            <Link
+              key={tag}
+              className="tag-link"
+              to={`/marketplace?tag=${encodeURIComponent(tag)}`}
+            >
+              {tag}
+            </Link>
+          ))}
         </div>
       )}
 
@@ -73,11 +70,11 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
               const isSelected = index === selectedTierIndex;
               return (
                 <button
-                  key={tier.tierId ?? tier.tierID ?? index}
+                  key={tier.tierId ?? index}
                   className={`btn btn--outline ${isSelected ? "btn--selected" : ""}`}
                   onClick={() => setSelectedTierIndex(index)}
                 >
-                  {tier.tierName ?? tier.name} — {formatPrice(tier.price)}
+                  {tier.tierName} — {formatPrice(tier.price)}
                 </button>
               );
             })}

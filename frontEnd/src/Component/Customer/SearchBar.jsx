@@ -4,7 +4,7 @@ const SearchBar = ({ onSearch, placeholder = "Search software..." }) => {
   const [query, setQuery] = useState("");
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && query.trim()) {
+    if (e.key === "Enter") {
       onSearch(query.trim());
     }
   };

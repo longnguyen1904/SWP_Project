@@ -19,8 +19,8 @@ const useProductDetail = (productId) => {
     const raw = data.product ?? data;
     return {
       ...raw,
-      id: raw.productId ?? raw.id,
-      name: raw.productName ?? raw.name,
+      id: raw.productId,
+      name: raw.productName,
       averageRating: data.averageRating ?? raw.averageRating ?? 0,
       reviewCount: data.reviewCount ?? raw.reviewCount ?? 0,
       images: data.images ?? raw.images ?? [],
@@ -30,10 +30,7 @@ const useProductDetail = (productId) => {
 
   const parseReviews = (res) => {
     const payload = unwrapResponse(res) ?? res.data;
-    const content = Array.isArray(payload)
-      ? payload
-      : payload?.content ?? payload?.reviews ?? [];
-    return Array.isArray(content) ? content : [];
+    return payload?.content ?? [];
   };
 
   useEffect(() => {
@@ -87,7 +84,7 @@ const useProductDetail = (productId) => {
           const data = unwrapResponse(res) ?? res.data;
           if (data?.vendorId != null) setCurrentVendorId(data.vendorId);
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [isVendor]);
 
@@ -111,13 +108,13 @@ const useProductDetail = (productId) => {
             const purchasedData = unwrapResponse(res) ?? res.data;
             setHasPurchased(Boolean(purchasedData?.purchased));
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     } catch (_) {
     }
   };
 
-  const productVendorId = product?.vendorId ?? product?.vendorID;
+  const productVendorId = product?.vendorId;
   const isOwnProduct =
     isVendor && currentVendorId != null && String(productVendorId) === String(currentVendorId);
   const showBuyButton = !isAdmin && !isOwnProduct;

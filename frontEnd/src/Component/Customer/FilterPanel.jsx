@@ -34,7 +34,9 @@ const FilterPanel = ({ filters, onApplyFilters, onClearFilters }) => {
   }, []);
 
   const toggleCategory = (categoryId) => {
-    const current = Array.isArray(pendingFilters.categoryIds) ? pendingFilters.categoryIds : [];
+    const current = Array.isArray(pendingFilters.categoryIds)
+      ? pendingFilters.categoryIds
+      : [];
     const updated = current.includes(categoryId)
       ? current.filter((id) => id !== categoryId)
       : [...current, categoryId];
@@ -42,7 +44,9 @@ const FilterPanel = ({ filters, onApplyFilters, onClearFilters }) => {
   };
 
   const toggleTag = (tagName) => {
-    const current = Array.isArray(pendingFilters.tags) ? pendingFilters.tags : [];
+    const current = Array.isArray(pendingFilters.tags)
+      ? pendingFilters.tags
+      : [];
     const updated = current.includes(tagName)
       ? current.filter((t) => t !== tagName)
       : [...current, tagName];
@@ -52,21 +56,33 @@ const FilterPanel = ({ filters, onApplyFilters, onClearFilters }) => {
   const handleMinPriceChange = (e) => {
     const raw = e.target.value;
     const min = raw === "" ? "" : Number(raw);
-    setPendingFilters({ ...pendingFilters, priceRange: { ...pendingFilters.priceRange, min } });
+    setPendingFilters({
+      ...pendingFilters,
+      priceRange: { ...pendingFilters.priceRange, min },
+    });
   };
 
   const handleMaxPriceChange = (e) => {
     const raw = e.target.value;
     const max = raw === "" ? "" : Number(raw);
-    setPendingFilters({ ...pendingFilters, priceRange: { ...pendingFilters.priceRange, max } });
+    setPendingFilters({
+      ...pendingFilters,
+      priceRange: { ...pendingFilters.priceRange, max },
+    });
   };
 
   const handleApply = () => {
     const finalFilters = {
       ...pendingFilters,
       priceRange: {
-        min: pendingFilters.priceRange?.min === "" ? 0 : (Number(pendingFilters.priceRange?.min) || 0),
-        max: pendingFilters.priceRange?.max === "" ? PRICE_MAX : (Number(pendingFilters.priceRange?.max) || PRICE_MAX),
+        min:
+          pendingFilters.priceRange?.min === ""
+            ? 0
+            : Number(pendingFilters.priceRange?.min) || 0,
+        max:
+          pendingFilters.priceRange?.max === ""
+            ? PRICE_MAX
+            : Number(pendingFilters.priceRange?.max) || PRICE_MAX,
       },
     };
     setPendingFilters(finalFilters);
@@ -75,7 +91,12 @@ const FilterPanel = ({ filters, onApplyFilters, onClearFilters }) => {
 
   const pendingCount = (() => {
     let c = 0;
-    if (pendingFilters.priceRange?.min > 0 || (pendingFilters.priceRange?.max != null && pendingFilters.priceRange.max < PRICE_MAX)) c++;
+    if (
+      pendingFilters.priceRange?.min > 0 ||
+      (pendingFilters.priceRange?.max != null &&
+        pendingFilters.priceRange.max < PRICE_MAX)
+    )
+      c++;
     if (pendingFilters.categoryIds?.length > 0) c++;
     if (pendingFilters.tags?.length > 0) c++;
     return c;
@@ -99,19 +120,19 @@ const FilterPanel = ({ filters, onApplyFilters, onClearFilters }) => {
           {!isLoadingOptions && categories.length === 0 && (
             <p className="filter-loading">No categories</p>
           )}
-          {categories.map((c) => {
-            const id = c.categoryID ?? c.id;
-            return (
-              <label key={id} className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={Array.isArray(pendingFilters.categoryIds) && pendingFilters.categoryIds.includes(id)}
-                  onChange={() => toggleCategory(id)}
-                />
-                {c.categoryName ?? c.name}
-              </label>
-            );
-          })}
+          {categories.map((c) => (
+            <label key={c.categoryID} className="filter-checkbox">
+              <input
+                type="checkbox"
+                checked={
+                  Array.isArray(pendingFilters.categoryIds) &&
+                  pendingFilters.categoryIds.includes(c.categoryID)
+                }
+                onChange={() => toggleCategory(c.categoryID)}
+              />
+              {c.categoryName}
+            </label>
+          ))}
         </div>
       </details>
 
@@ -122,19 +143,19 @@ const FilterPanel = ({ filters, onApplyFilters, onClearFilters }) => {
           {!isLoadingOptions && tags.length === 0 && (
             <p className="filter-loading">No tags</p>
           )}
-          {tags.map((t) => {
-            const name = t.tagName ?? t.name;
-            return (
-              <label key={t.tagID ?? t.id} className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={Array.isArray(pendingFilters.tags) && pendingFilters.tags.includes(name)}
-                  onChange={() => toggleTag(name)}
-                />
-                {name}
-              </label>
-            );
-          })}
+          {tags.map((t) => (
+            <label key={t.tagID} className="filter-checkbox">
+              <input
+                type="checkbox"
+                checked={
+                  Array.isArray(pendingFilters.tags) &&
+                  pendingFilters.tags.includes(t.tagName)
+                }
+                onChange={() => toggleTag(t.tagName)}
+              />
+              {t.tagName}
+            </label>
+          ))}
         </div>
       </details>
 

@@ -12,21 +12,20 @@ const PaymentResult = () => {
   const orderId = searchParams.get("orderId");
 
   const isSuccess = status === "success";
-
   return (
     <div className="payment-result">
       <div className="payment-result__card">
         {/* Icon */}
         <div className="payment-result__icon">
-          {isSuccess ? "✅" : "❌"}
+          {isSuccess ? "v" : "x"}
         </div>
 
         {/* Title */}
         <h1 className="payment-result__title">
           {isSuccess ? "Thanh toán thành công!" : "Thanh toán thất bại"}
-        </h1>
+        </h1>                     
 
-        {/* Message */}
+        {/* Message */}                      
         <p className="payment-result__message">
           {isSuccess
             ? "Đơn hàng của bạn đã được xử lý. License Key sẽ được gửi qua email."
@@ -49,11 +48,11 @@ const PaymentResult = () => {
             <Link to="/Page/Customer/PurchasedProducts" className="btn btn--primary">
               Xem sản phẩm đã mua
             </Link>
-          )}
+          )}                
         </div>
       </div>
     </div>
   );
 };
 
-export default PaymentResult;
+export default PaymentResult;   

@@ -24,9 +24,7 @@ public class AdminReviewService {
         private final ProductVersionRepository versionRepository;
         private final VirusTotalService virusTotalService;
 
-        // =========================
-        // GET PRODUCTS FOR REVIEW
-        // =========================
+
         public Page<AdminProductReviewDTO> getAllProductsForReview(
                         String status,
                         String keyword,
@@ -34,27 +32,28 @@ public class AdminReviewService {
 
                 Page<Product> productPage;
 
-                // ===== CONVERT STATUS STRING -> ENUM =====
                 Product.ProductStatus statusEnum = null;
+
                 if (status != null && !status.isBlank()) {
                         try {
                                 statusEnum = Product.ProductStatus.valueOf(status.toUpperCase());
-                        } catch (IllegalArgumentException e) {
-                                throw new AppException("Invalid status value: " + status);
+                        } catch (Exception e) {
+                                throw new AppException("Invalid status: " + status);
                         }
                 }
 
-                // ===== FILTER LOGIC =====
+
+
                 if (statusEnum != null && keyword != null && !keyword.isBlank()) {
 
                         productPage = productRepository
                                         .findByStatusAndProductNameContainingIgnoreCase(
-                                                        statusEnum.name(), keyword, pageable);
+                                                        statusEnum, keyword, pageable);
 
                 } else if (statusEnum != null) {
 
                         productPage = productRepository
-                                        .findByStatus(statusEnum.name(), pageable);
+                                        .findByStatus(statusEnum, pageable);
 
                 } else if (keyword != null && !keyword.isBlank()) {
 
@@ -62,11 +61,14 @@ public class AdminReviewService {
                                         .findByProductNameContainingIgnoreCase(keyword, pageable);
 
                 } else {
+
                         productPage = productRepository.findAll(pageable);
+
                 }
 
-                // ===== MAP DTO =====
-                List<AdminProductReviewDTO> dtoList = productPage.getContent()
+
+                List<AdminProductReviewDTO> dtoList = productPage
+                                .getContent()
                                 .stream()
                                 .map(product -> {
 
@@ -77,7 +79,9 @@ public class AdminReviewService {
                                                                         product.getProductID());
 
                                         if (latestOpt.isPresent()) {
+
                                                 ProductVersion latest = latestOpt.get();
+
                                                 if (latest.getScanStatus() != null) {
                                                         scanStatus = latest.getScanStatus();
                                                 }
@@ -95,31 +99,35 @@ public class AdminReviewService {
                                                         scanStatus,
                                                         product.getStatus().name(),
                                                         product.getRejectionNote());
+
                                 })
                                 .toList();
 
                 return new PageImpl<>(dtoList, pageable, productPage.getTotalElements());
         }
 
-        // =========================
-        // REVIEW PRODUCT (SCAN URL)
-        // =========================
+
+
         @Transactional
         public String reviewProduct(Integer productId) {
 
-                Product product = productRepository.findById(productId)
+                Product product = productRepository
+                                .findById(productId)
                                 .orElseThrow(() -> new AppException("Product not found"));
 
                 ProductVersion latestVersion = versionRepository
                                 .findTopByProduct_ProductIDOrderByCreatedAtDesc(productId)
                                 .orElseThrow(() -> new AppException("No version uploaded"));
 
-                if (latestVersion.getFileUrl() == null
-                                || latestVersion.getFileUrl().isBlank()) {
+                if (latestVersion.getFileUrl() == null ||
+                                latestVersion.getFileUrl().isBlank()) {
+
                         throw new AppException("Download URL is empty");
                 }
 
                 boolean isMalicious = virusTotalService.isUrlMalicious(latestVersion.getFileUrl());
+
+
 
                 if (isMalicious) {
 
@@ -129,17 +137,20 @@ public class AdminReviewService {
                         product.setStatus(Product.ProductStatus.REJECTED);
                         product.setRejectionNote(
                                         "Detected malware by VirusTotal (URL Scan)");
+
                         productRepository.save(product);
 
                         return "Product rejected due to malicious download link.";
                 }
 
-                // ===== CLEAN =====
+
+
                 latestVersion.setScanStatus("CLEAN");
                 versionRepository.save(latestVersion);
 
                 product.setStatus(Product.ProductStatus.APPROVED);
                 product.setRejectionNote(null);
+
                 productRepository.save(product);
 
                 return "Product approved successfully.";

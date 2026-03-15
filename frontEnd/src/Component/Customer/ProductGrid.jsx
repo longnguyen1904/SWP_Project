@@ -98,7 +98,7 @@ const ProductGrid = ({
       <div className="product-grid__cards">
         {products.map((product) => (
           <ProductCard
-            key={product.productId ?? product.id}
+            key={product.productId}
             product={product}
             onViewDetails={onViewDetails}
           />

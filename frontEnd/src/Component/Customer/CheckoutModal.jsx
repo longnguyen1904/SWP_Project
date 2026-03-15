@@ -10,8 +10,8 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
 
   if (!product || !selectedTier) return null;
 
-  const tierId = selectedTier.tierId ?? selectedTier.tierID;
-  const tierName = selectedTier.tierName ?? selectedTier.name ?? "Standard";
+  const tierId = selectedTier.tierId;
+  const tierName = selectedTier.tierName;
   const price = selectedTier.price;
   const productId = product.id ?? product.productId;
 

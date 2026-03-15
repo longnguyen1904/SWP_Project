@@ -85,7 +85,7 @@ function AdminReview() {
       
       if (!res.ok) throw new Error(text);
 
-      // Reload lại trang hiện tại sau khi xử lý xong
+      // Reload 
       await fetchProducts(page);
 
       const isApproved = text.includes("approved");
@@ -154,7 +154,7 @@ function AdminReview() {
               style={inputStyle}
               value={keyword}
               onChange={e => setKeyword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleApplyFilter()}
+              onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
             />
             <button onClick={handleApplyFilter} style={btnSecondary}>Search</button>
             <button onClick={handleReset} style={{...btnSecondary, color: colors.error}}>Reset</button>

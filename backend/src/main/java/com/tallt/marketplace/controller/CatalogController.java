@@ -6,7 +6,7 @@ import com.tallt.marketplace.entity.Tag;
 import com.tallt.marketplace.repository.CategoryRepository;
 import com.tallt.marketplace.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,20 +30,20 @@ public class CatalogController {
     private TagRepository tagRepository;
 
     @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<List<Category>>> getCategories() {
+    public ApiResponse<List<Category>> getCategories() {
         List<Category> list = categoryRepository.findAll();
         if (list == null) {
             list = new ArrayList<>();
         }
-        return ResponseEntity.ok(ApiResponse.success(list));
+        return ApiResponse.success(list);
     }
 
     @GetMapping("/tags")
-    public ResponseEntity<ApiResponse<List<Tag>>> getTags() {
+    public ApiResponse<List<Tag>> getTags() {
         List<Tag> list = tagRepository.findAll();
         if (list == null) {
             list = new ArrayList<>();
         }
-        return ResponseEntity.ok(ApiResponse.success(list));
+        return ApiResponse.success(list);
     }
 }

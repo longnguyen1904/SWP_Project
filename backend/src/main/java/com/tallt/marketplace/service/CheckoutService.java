@@ -36,7 +36,6 @@ public class CheckoutService {
     private final LicenseRepository licenseRepository;
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
-    private final VendorRepository vendorRepository;
     private final VNPayService vnPayService;
 
     public CheckoutService(
@@ -47,7 +46,6 @@ public class CheckoutService {
             LicenseRepository licenseRepository,
             WalletRepository walletRepository,
             WalletTransactionRepository walletTransactionRepository,
-            VendorRepository vendorRepository,
             VNPayService vnPayService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
@@ -56,7 +54,6 @@ public class CheckoutService {
         this.licenseRepository = licenseRepository;
         this.walletRepository = walletRepository;
         this.walletTransactionRepository = walletTransactionRepository;
-        this.vendorRepository = vendorRepository;
         this.vnPayService = vnPayService;
     }
 
@@ -160,7 +157,7 @@ public class CheckoutService {
             orderRepository.save(order);
 
             createLicense(order);
-            creditVendorWallet(order);
+            creditAdminWallet(order);
 
             return true;
         } else {
@@ -209,21 +206,18 @@ public class CheckoutService {
     }
 
     /**
-     * Cộng tiền bán hàng vào Wallet của Vendor.
+     * Cộng tiền bán hàng vào Wallet của Admin (platform thu tiền trước).
+     * Việc tính phí sàn, thuế và chuyển tiền cho Vendor sẽ được xử lý riêng.
      */
-    private void creditVendorWallet(Order order) {
-        // Tìm Vendor owning product → lấy UserID
-        Vendor vendor = vendorRepository.findById(order.getProduct().getVendorID()).orElse(null);
-        if (vendor == null) return;
+    private void creditAdminWallet(Order order) {
+        // Tìm user Admin theo role
+        User admin = userRepository.findFirstByRole_RoleName("Admin");
+        if (admin == null) return;
 
-        Integer vendorUserId = vendor.getUser().getUserID();
-
-        if (vendorUserId == null) return;
-
-        Wallet wallet = walletRepository.findByUser_UserID(vendorUserId).orElse(null);
+        Wallet wallet = walletRepository.findByUser_UserID(admin.getUserID()).orElse(null);
         if (wallet == null) return;
 
-        // Cộng balance
+        // Cộng toàn bộ số tiền đơn hàng vào ví Admin
         wallet.setBalance(wallet.getBalance().add(order.getTotalAmount()));
         wallet.setUpdatedAt(LocalDateTime.now());
         walletRepository.save(wallet);
@@ -234,7 +228,8 @@ public class CheckoutService {
         tx.setAmount(order.getTotalAmount());
         tx.setType(WalletTransaction.TransactionType.SALE_REVENUE);
         tx.setReferenceID(order.getOrderID());
-        tx.setDescription("Revenue from Order #" + order.getOrderID());
+        tx.setDescription("Payment received for Order #" + order.getOrderID()
+                + " (Product: " + order.getProduct().getProductName() + ")");
         tx.setCreatedAt(LocalDateTime.now());
         walletTransactionRepository.save(tx);
     }

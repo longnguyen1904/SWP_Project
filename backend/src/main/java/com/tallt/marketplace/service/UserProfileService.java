@@ -5,9 +5,11 @@ import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
@@ -16,32 +18,52 @@ public class UserProfileService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     /**
      * Cập nhật thông tin cá nhân
-     * - Cập nhật fullName, password (hash)
+     * - Cập nhật fullName
+     * - Đổi mật khẩu (kiểm tra mật khẩu cũ, hash mật khẩu mới)
      */
     @Transactional
     public Map<String, Object> updateProfile(Integer userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User không tồn tại"));
 
+        // Update fullName if provided
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
             user.setFullName(request.getFullName());
         }
 
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            // TODO: Sử dụng BCryptPasswordEncoder khi có Spring Security
-            user.setPasswordHash(request.getPassword());
+        // Update password if provided
+        if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
+            // Must provide old password
+            if (request.getOldPassword() == null || request.getOldPassword().isBlank()) {
+                throw new AppException("Vui lòng nhập mật khẩu cũ");
+            }
+
+            // Verify old password
+            if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+                throw new AppException("Mật khẩu cũ không chính xác");
+            }
+
+            // Old and new must differ
+            if (request.getOldPassword().equals(request.getNewPassword())) {
+                throw new AppException("Mật khẩu mới phải khác mật khẩu cũ");
+            }
+
+            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         }
 
         userRepository.save(user);
 
-        return Map.of(
-                "userId", user.getUserID(),
-                "fullName", user.getFullName(),
-                "email", user.getEmail(),
-                "message", "Cập nhật thông tin thành công"
-        );
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("userId", user.getUserID());
+        result.put("fullName", user.getFullName());
+        result.put("email", user.getEmail());
+        result.put("message", "Cập nhật thông tin thành công");
+        return result;
     }
 
     /**
@@ -51,14 +73,14 @@ public class UserProfileService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User không tồn tại"));
 
-        return Map.of(
-                "userId", user.getUserID(),
-                "email", user.getEmail(),
-                "fullName", user.getFullName() != null ? user.getFullName() : "",
-                "username", user.getUsername() != null ? user.getUsername() : "",
-                "role", user.getRole().getRoleName(),
-                "isActive", user.getIsActive(),
-                "createdAt", user.getCreatedAt().toString()
-        );
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("userId", user.getUserID());
+        result.put("email", user.getEmail());
+        result.put("fullName", user.getFullName() != null ? user.getFullName() : "");
+        result.put("username", user.getUsername() != null ? user.getUsername() : "");
+        result.put("role", user.getRole().getRoleName());
+        result.put("isActive", user.getIsActive());
+        result.put("createdAt", user.getCreatedAt().toString());
+        return result;
     }
 }

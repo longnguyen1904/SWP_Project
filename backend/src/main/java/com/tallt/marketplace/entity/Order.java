@@ -22,6 +22,9 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "ProductID", nullable = false)
     private Product product;
+    
+    @OneToOne(mappedBy = "order")
+    private License license;
 
     @ManyToOne
     @JoinColumn(name = "TierID", nullable = false)

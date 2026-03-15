@@ -1,6 +1,14 @@
 ﻿spring:
   application:
     name: marketplace
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
   servlet:
     multipart:
       max-file-size: 500MB
@@ -17,7 +25,7 @@
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect         
+        dialect: org.hibernate.dialect.MySQLDialect
 server:
   port: 8081
 virustotal:

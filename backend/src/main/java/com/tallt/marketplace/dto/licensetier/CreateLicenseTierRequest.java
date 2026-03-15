@@ -8,7 +8,7 @@ import java.math.BigDecimal;
  * DTO tạo License Tier
  */
 @Data
-public class CreateLicenseTierRequest {
+public class CreateLicenseTierRequest {         
 
     @NotBlank(message = "Tên tier không được để trống")
     private String tierName;
@@ -29,4 +29,4 @@ public class CreateLicenseTierRequest {
 
     @NotBlank(message = "Mã tier không được để trống")
     private String tierCode;
-}
+}          

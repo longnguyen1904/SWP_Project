@@ -26,3 +26,13 @@ export const getCurrentUserId = () => {
     return localStorage.getItem("userId");
   }
 };
+
+export const normalizePageResponse = (response) => {
+  const data = unwrapResponse(response);
+  return {
+    content: data.content,
+    totalElements: data.totalElements,
+    totalPages: data.totalPages,
+    currentPage: data.page + 1,
+  };
+};
