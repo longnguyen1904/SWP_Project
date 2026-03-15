@@ -252,10 +252,10 @@ export default function TransactionLedger() {
           <div style={s.bulkBar}>
             <span style={{ fontWeight: "700" }}>{isExporting ? `⌛ Nén file (${exportProgress}%)...` : `Đã chọn ${selectedIds.length} đơn`}</span>
             <button onClick={handleBulkPDF} disabled={isExporting} style={{ background: "white", color: "#3b82f6", border: "none", padding: "10px 24px", borderRadius: "25px", fontWeight: "800", cursor: "pointer" }}>
-              📦 Tải file ZIP
+               Download ZIP File
             </button>
             <button onClick={handleBulkCSV} disabled={isExporting} style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "1px solid white", padding: "10px 24px", borderRadius: "25px", fontWeight: "800", cursor: "pointer" }}>
-              📊 Tải CSV Gộp
+               Download CSV 
             </button>
             {!isExporting && <button onClick={() => setSelectedIds([])} style={{ background: "none", border: "none", color: "white", cursor: "pointer", textDecoration: "underline" }}>Hủy</button>}
           </div>

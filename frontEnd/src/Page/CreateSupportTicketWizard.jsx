@@ -16,18 +16,18 @@ const CreateSupportTicketWizard = () => {
   // Step 2 State
   const [issueForm, setIssueForm] = useState({
     type: 'Bug',
-    priority: 'Normal', 
+    priority: 'Normal',
     title: '',
     description: '',
-    file: null 
+    file: null
   });
-  
-  const fileInputRef = useRef(null); 
+
+  const fileInputRef = useRef(null);
 
   // Step 3 State
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Success State
   const [successTicketId, setSuccessTicketId] = useState(null);
 
@@ -45,13 +45,13 @@ const CreateSupportTicketWizard = () => {
 
       data.forEach(order => {
         const status = String(order.paymentStatus || order.status || '').toUpperCase();
-        
+
         if (status === 'PAID' || status === 'COMPLETED' || status === 'SUCCESS') {
           const p = order.product || {};
-          
+
           extractedProducts.push({
             orderId: order.orderID || order.orderId || order.id,
-            vendorId: p.vendor?.vendorId || p.vendor?.vendorID || p.vendor?.id || p.vendor?.userID || p.vendorId || p.vendorID || order.vendorId || order.vendorID, 
+            vendorId: p.vendor?.vendorId || p.vendor?.vendorID || p.vendor?.id || p.vendor?.userID || p.vendorId || p.vendorID || order.vendorId || order.vendorID,
             productId: p.productId || p.id,
             productName: p.productName || p.name || 'Sản phẩm',
             vendorName: p.vendor?.shopName || p.vendor?.name || p.vendorName || 'Shop',
@@ -80,13 +80,13 @@ const CreateSupportTicketWizard = () => {
   // ==========================================
   // LOGIC LỌC SẢN PHẨM
   // ==========================================
-  const getProductCategory = (p) => p.categoryName || p.category || 'Phần mềm'; 
+  const getProductCategory = (p) => p.categoryName || p.category || 'Phần mềm';
   const defaultCategories = ['Antivirus Software', 'VPN & Network', 'Operating System', 'Design Tools', 'Khác'];
   const dynamicCategories = Array.from(new Set(products.map(getProductCategory)));
   const filterCategories = Array.from(new Set([...defaultCategories, ...dynamicCategories]));
 
   const filteredProducts = products.filter(p => {
-    const matchSearch = 
+    const matchSearch =
       (p.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(p.orderId).includes(searchTerm);
     const cat = getProductCategory(p);
@@ -100,8 +100,8 @@ const CreateSupportTicketWizard = () => {
       return;
     }
     if (!selectedProduct.vendorId) {
-       setError('Sản phẩm này bị thiếu dữ liệu mã Shop (Vendor ID) từ hệ thống. Vui lòng chọn sản phẩm khác hoặc báo lại cho Admin!');
-       return; 
+      setError('Sản phẩm này bị thiếu dữ liệu mã Shop (Vendor ID) từ hệ thống. Vui lòng chọn sản phẩm khác hoặc báo lại cho Admin!');
+      return;
     }
     setError('');
     setStep(2);
@@ -127,13 +127,13 @@ const CreateSupportTicketWizard = () => {
         setError('Kích thước ảnh không được vượt quá 5MB.');
         return;
       }
-      setIssueForm({...issueForm, file: file});
+      setIssueForm({ ...issueForm, file: file });
       setError('');
     }
   };
 
   const removeFile = () => {
-    setIssueForm({...issueForm, file: null});
+    setIssueForm({ ...issueForm, file: null });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -156,7 +156,7 @@ const CreateSupportTicketWizard = () => {
     try {
       const finalSubject = `[${issueForm.type}] ${issueForm.title}`;
       const formData = new FormData();
-      
+
       if (selectedProduct.vendorId) {
         formData.append('vendorId', selectedProduct.vendorId);
       }
@@ -182,7 +182,7 @@ const CreateSupportTicketWizard = () => {
       const pad = (s) => String(s || '0').replace(/[^0-9]/g, '').padStart(6, '0');
       setSuccessTicketId(result.ticketId ? `TCK-2026-${pad(result.ticketId)}` : `TCK-2026-${pad('0')}`);
       setStep(4);
-      
+
     } catch (err) {
       console.error("LỖI KHI GỌI API:", err);
       const errorMessage = err.response?.data?.error || err.message || 'Có lỗi xảy ra khi tạo ticket.';
@@ -195,17 +195,17 @@ const CreateSupportTicketWizard = () => {
   // ==========================================
   // THEME STYLES
   // ==========================================
-  const themeColor = '#f97316'; 
-  const cardBg = 'rgba(24, 24, 27, 0.85)'; 
-  const inputBg = 'rgba(39, 39, 42, 0.8)'; 
-  const borderColor = 'rgba(63, 63, 70, 0.4)'; 
+  const themeColor = '#f97316';
+  const cardBg = 'rgba(24, 24, 27, 0.85)';
+  const inputBg = 'rgba(39, 39, 42, 0.8)';
+  const borderColor = 'rgba(63, 63, 70, 0.4)';
   const textColor = '#f4f4f5';
   const customInputStyle = { backgroundColor: inputBg, color: '#fff', borderColor: 'rgba(82, 82, 91, 0.5)', colorScheme: 'dark' };
 
   const getPriorityColor = (priority) => {
-    if (priority === 'High') return '#ef4444'; 
-    if (priority === 'Low') return '#10b981'; 
-    return '#facc15'; 
+    if (priority === 'High') return '#ef4444';
+    if (priority === 'Low') return '#10b981';
+    return '#facc15';
   };
   const getPriorityLabel = (priority) => {
     if (priority === 'High') return '🔴 Khẩn cấp (SLA: 4h)';
@@ -238,17 +238,17 @@ const CreateSupportTicketWizard = () => {
 
   return (
     <div className="container" style={{ paddingTop: '80px', maxWidth: '850px', paddingBottom: '80px' }}>
-      
+
       {/* Progress Bar */}
       <div className="d-flex justify-content-between align-items-center mb-5 px-4 position-relative">
         <div className="position-absolute" style={{ top: '20px', left: '12%', right: '12%', height: '2px', backgroundColor: borderColor, zIndex: 0 }}></div>
         {[1, 2, 3].map((num) => (
           <div key={num} className="d-flex flex-column align-items-center position-relative" style={{ zIndex: 1 }}>
-            <div 
+            <div
               className="rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm"
-              style={{ 
-                width: '45px', height: '45px', 
-                backgroundColor: step >= num ? themeColor : '#27272a', 
+              style={{
+                width: '45px', height: '45px',
+                backgroundColor: step >= num ? themeColor : '#27272a',
                 color: step >= num ? '#fff' : '#71717a',
                 border: step >= num ? 'none' : `2px solid ${borderColor}`,
                 transition: 'all 0.3s ease'
@@ -265,7 +265,7 @@ const CreateSupportTicketWizard = () => {
 
       <div className="card border-0 shadow-lg" style={{ backgroundColor: cardBg, color: textColor, borderRadius: '16px', backdropFilter: 'blur(12px)', border: `1px solid ${borderColor}` }}>
         <div className="card-body p-4 p-md-5">
-          
+
           {error && (
             <div className="alert border-0 py-3 d-flex align-items-center mb-4" style={{ backgroundColor: 'rgba(220, 53, 69, 0.15)', color: '#ff6b6b', borderRadius: '8px' }}>
               <span className="me-2">⚠️</span> {error}
@@ -274,77 +274,77 @@ const CreateSupportTicketWizard = () => {
 
           {/* ================= STEP 1 ================= */}
           {step === 1 && (
-             <div className="fade-in">
-             <h4 className="fw-bold mb-2 text-white">Chọn sản phẩm cần hỗ trợ</h4>
-             <p className="small mb-4" style={{ color: '#a1a1aa' }}>Lựa chọn sản phẩm hoặc phần mềm bạn đang gặp vấn đề.</p>
-             
-             {loading ? (
-               <div className="text-center py-5">
-                 <div className="spinner-border" style={{ color: themeColor }} role="status"><span className="visually-hidden">Loading...</span></div>
-               </div>
-             ) : products.length === 0 ? (
-               <div className="text-center py-5 rounded" style={{ backgroundColor: 'rgba(24, 24, 27, 0.5)' }}>
-                 <p style={{ color: '#71717a' }}>Bạn chưa có sản phẩm nào hợp lệ để tạo ticket.</p>
-               </div>
-             ) : (
-               <>
-                 <div className="row g-3 mb-4 p-3 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.1)', border: `1px solid ${borderColor}` }}>
-                   <div className="col-md-7">
-                     <div className="d-flex align-items-center rounded" style={{ backgroundColor: inputBg, border: `1px solid rgba(82, 82, 91, 0.5)`, overflow: 'hidden' }}>
-                       <span className="ps-3 pe-2 text-muted">🔍</span>
-                       <input
-                         type="text"
-                         className="form-control shadow-none border-0 bg-transparent text-white py-2"
-                         placeholder="Tìm theo tên phần mềm, mã đơn..."
-                         value={searchTerm}
-                         onChange={(e) => setSearchTerm(e.target.value)}
-                       />
-                     </div>
-                   </div>
-                   <div className="col-md-5">
-                     <select className="form-select shadow-none py-2" style={customInputStyle} value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-                       <option value="">📁 Tất cả danh mục</option>
-                       {filterCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                     </select>
-                   </div>
-                 </div>
+            <div className="fade-in">
+              <h4 className="fw-bold mb-2 text-white">Chọn sản phẩm cần hỗ trợ</h4>
+              <p className="small mb-4" style={{ color: '#a1a1aa' }}>Lựa chọn sản phẩm hoặc phần mềm bạn đang gặp vấn đề.</p>
 
-                 <div className="row g-3" style={{ maxHeight: '450px', overflowY: 'auto', overflowX: 'hidden', paddingRight: '5px' }}>
-                   {filteredProducts.map((p, idx) => {
-                     const isSelected = selectedProduct?.orderId === p.orderId && selectedProduct?.productId === p.productId;
-                     return (
-                       <div className="col-md-6" key={`${p.orderId}-${idx}`}>
-                         <div 
-                           onClick={() => setSelectedProduct(p)}
-                           className="card h-100 cursor-pointer product-card-hover"
-                           style={{ cursor: 'pointer', backgroundColor: isSelected ? 'rgba(249, 115, 22, 0.15)' : inputBg, border: isSelected ? `2px solid ${themeColor}` : `1px solid rgba(82, 82, 91, 0.5)`, borderRadius: '12px', transition: 'all 0.2s ease', transform: isSelected ? 'scale(1.02)' : 'none' }}
-                         >
-                           <div className="card-body d-flex gap-3 align-items-center">
-                             <div className="flex-shrink-0">
-                               <img src={p.productImage || 'https://via.placeholder.com/64'} alt="Img" className="rounded" style={{ width: '60px', height: '60px', objectFit: 'cover', border: `1px solid rgba(82, 82, 91, 0.5)` }} />
-                             </div>
-                             <div style={{ overflow: 'hidden' }}>
-                               <h6 className="mb-1 fw-bold text-white text-truncate">{p.productName}</h6>
-                               <div className="small mb-1 text-truncate" style={{ color: '#a1a1aa' }}>Shop: <span className="text-light">{p.vendorName}</span></div>
-                               <div className="d-flex justify-content-between align-items-center mt-2">
-                                 <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#d4d4d8', fontWeight: 'normal' }}>{getProductCategory(p)}</span>
-                                 <span style={{ fontSize: '0.75rem', color: '#71717a' }}>#{p.orderId}</span>
-                               </div>
-                             </div>
-                           </div>
-                         </div>
-                       </div>
-                     )
-                   })}
-                 </div>
-               </>
-             )}
-             <div className="d-flex justify-content-end mt-5 pt-4 border-top" style={{ borderColor: `${borderColor} !important` }}>
-               <button onClick={handleNextToStep2} className="btn px-5 py-2 fw-semibold" style={{ backgroundColor: selectedProduct ? themeColor : 'rgba(63, 63, 70, 0.4)', color: selectedProduct ? '#fff' : '#a1a1aa', borderRadius: '8px' }} disabled={!selectedProduct}>
-                 Tiếp tục
-               </button>
-             </div>
-           </div>
+              {loading ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border" style={{ color: themeColor }} role="status"><span className="visually-hidden">Loading...</span></div>
+                </div>
+              ) : products.length === 0 ? (
+                <div className="text-center py-5 rounded" style={{ backgroundColor: 'rgba(24, 24, 27, 0.5)' }}>
+                  <p style={{ color: '#71717a' }}>Bạn chưa có sản phẩm nào hợp lệ để tạo ticket.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="row g-3 mb-4 p-3 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.1)', border: `1px solid ${borderColor}` }}>
+                    <div className="col-md-7">
+                      <div className="d-flex align-items-center rounded" style={{ backgroundColor: inputBg, border: `1px solid rgba(82, 82, 91, 0.5)`, overflow: 'hidden' }}>
+                        <span className="ps-3 pe-2 text-muted"></span>
+                        <input
+                          type="text"
+                          className="form-control shadow-none border-0 bg-transparent text-white py-2 custom-placeholder"
+                          placeholder="Tìm theo tên phần mềm, mã đơn..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-5">
+                      <select className="form-select shadow-none py-2" style={customInputStyle} value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+                        <option value="">📁 Tất cả danh mục</option>
+                        {filterCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="row g-3" style={{ maxHeight: '450px', overflowY: 'auto', overflowX: 'hidden', paddingRight: '5px' }}>
+                    {filteredProducts.map((p, idx) => {
+                      const isSelected = selectedProduct?.orderId === p.orderId && selectedProduct?.productId === p.productId;
+                      return (
+                        <div className="col-md-6" key={`${p.orderId}-${idx}`}>
+                          <div
+                            onClick={() => setSelectedProduct(p)}
+                            className="card h-100 cursor-pointer product-card-hover"
+                            style={{ cursor: 'pointer', backgroundColor: isSelected ? 'rgba(249, 115, 22, 0.15)' : inputBg, border: isSelected ? `2px solid ${themeColor}` : `1px solid rgba(82, 82, 91, 0.5)`, borderRadius: '12px', transition: 'all 0.2s ease', transform: isSelected ? 'scale(1.02)' : 'none' }}
+                          >
+                            <div className="card-body d-flex gap-3 align-items-center">
+                              <div className="flex-shrink-0">
+                                <img src={p.productImage || 'https://via.placeholder.com/64'} alt="Img" className="rounded" style={{ width: '60px', height: '60px', objectFit: 'cover', border: `1px solid rgba(82, 82, 91, 0.5)` }} />
+                              </div>
+                              <div style={{ overflow: 'hidden' }}>
+                                <h6 className="mb-1 fw-bold text-white text-truncate">{p.productName}</h6>
+                                <div className="small mb-1 text-truncate" style={{ color: '#a1a1aa' }}>Shop: <span className="text-light">{p.vendorName}</span></div>
+                                <div className="d-flex justify-content-between align-items-center mt-2">
+                                  <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#d4d4d8', fontWeight: 'normal' }}>{getProductCategory(p)}</span>
+                                  <span style={{ fontSize: '0.75rem', color: '#71717a' }}>#{p.orderId}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+              <div className="d-flex justify-content-end mt-5 pt-4 border-top" style={{ borderColor: `${borderColor} !important` }}>
+                <button onClick={handleNextToStep2} className="btn px-5 py-2 fw-semibold" style={{ backgroundColor: selectedProduct ? themeColor : 'rgba(63, 63, 70, 0.4)', color: selectedProduct ? '#fff' : '#a1a1aa', borderRadius: '8px' }} disabled={!selectedProduct}>
+                  Tiếp tục
+                </button>
+              </div>
+            </div>
           )}
 
           {/* ================= STEP 2 ================= */}
@@ -354,7 +354,7 @@ const CreateSupportTicketWizard = () => {
               <div className="row g-4 mb-4">
                 <div className="col-md-6">
                   <label className="form-label fw-semibold text-light">Loại vấn đề</label>
-                  <select className="form-select shadow-none py-2" style={customInputStyle} value={issueForm.type} onChange={(e) => setIssueForm({...issueForm, type: e.target.value})}>
+                  <select className="form-select shadow-none py-2" style={customInputStyle} value={issueForm.type} onChange={(e) => setIssueForm({ ...issueForm, type: e.target.value })}>
                     <option value="Bug">Lỗi phần mềm (Software Bug)</option>
                     <option value="Installation">Vấn đề cài đặt (Installation)</option>
                     <option value="License">Lỗi License Key / Kích hoạt</option>
@@ -364,7 +364,7 @@ const CreateSupportTicketWizard = () => {
                 </div>
                 <div className="col-md-6">
                   <label className="form-label fw-semibold text-light">Mức độ ảnh hưởng (Priority)</label>
-                  <select className="form-select shadow-none py-2" style={customInputStyle} value={issueForm.priority} onChange={(e) => setIssueForm({...issueForm, priority: e.target.value})}>
+                  <select className="form-select shadow-none py-2" style={customInputStyle} value={issueForm.priority} onChange={(e) => setIssueForm({ ...issueForm, priority: e.target.value })}>
                     <option value="Low">🟢 Thấp (Không ảnh hưởng tiến độ)</option>
                     <option value="Normal">🟡 Bình thường (Gặp khó khăn nhưng vẫn dùng được)</option>
                     <option value="High">🔴 Khẩn cấp (Crash ứng dụng, không thể làm việc)</option>
@@ -373,11 +373,11 @@ const CreateSupportTicketWizard = () => {
               </div>
               <div className="mb-4">
                 <label className="form-label fw-semibold text-light">Tiêu đề (Bắt buộc)</label>
-                <input type="text" className="form-control shadow-none py-2" style={customInputStyle} placeholder="Ví dụ: Lỗi không thể nhập Key kích hoạt trên Windows 11..." value={issueForm.title} onChange={(e) => setIssueForm({...issueForm, title: e.target.value})} />
+                <input type="text" className="form-control shadow-none py-2" style={customInputStyle} placeholder="Ví dụ: Lỗi không thể nhập Key kích hoạt trên Windows 11..." value={issueForm.title} onChange={(e) => setIssueForm({ ...issueForm, title: e.target.value })} />
               </div>
               <div className="mb-4">
                 <label className="form-label fw-semibold text-light">Mô tả chi tiết (Bắt buộc, tối thiểu 20 ký tự)</label>
-                <textarea rows="5" className="form-control shadow-none py-2" style={customInputStyle} placeholder="- Vấn đề xảy ra khi nào?&#10;- Mã lỗi bạn nhận được là gì?&#10;- Bạn đã thử các bước nào để khắc phục chưa?" value={issueForm.description} onChange={(e) => setIssueForm({...issueForm, description: e.target.value})} ></textarea>
+                <textarea rows="5" className="form-control shadow-none py-2" style={customInputStyle} placeholder="- Vấn đề xảy ra khi nào?&#10;- Mã lỗi bạn nhận được là gì?&#10;- Bạn đã thử các bước nào để khắc phục chưa?" value={issueForm.description} onChange={(e) => setIssueForm({ ...issueForm, description: e.target.value })} ></textarea>
               </div>
               <div className="mb-4">
                 <label className="form-label fw-semibold text-light mb-2">Đính kèm ảnh chụp màn hình (Tùy chọn)</label>
@@ -479,12 +479,22 @@ const CreateSupportTicketWizard = () => {
           )}
         </div>
       </div>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .product-card-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: rgba(24, 24, 27, 0.5); border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #52525b; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+        .custom-placeholder::placeholder { 
+    color: rgba(255, 255, 255, 0.5) !important; /* Màu trắng nhạt / xám sáng */
+  }
+
+  .product-card-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: rgba(24, 24, 27, 0.5); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: #52525b; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #f97316; }
       `}} />
     </div>
   );

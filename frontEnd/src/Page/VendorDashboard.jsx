@@ -125,37 +125,7 @@ export default function VendorDashboard() {
             <div className="flex-grow-1 d-flex flex-column">
 
                 {/* ========== TOPBAR ========== */}
-                <nav className="navbar navbar-expand px-4 py-3" style={{ backgroundColor: "rgba(0,0,0,0.4)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                    <div className="d-flex position-relative" style={{ width: "350px" }}>
-                        <span className="position-absolute top-50 start-0 translate-middle-y ps-3 text-white-50">
-                            <i className="bi bi-search"></i>
-                        </span>
-                        <input
-                            className="form-control ps-5 border-0 text-white shadow-none custom-placeholder"
-                            type="search"
-                            placeholder="Tìm kiếm nhanh..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{
-                                backgroundColor: "rgba(255, 255, 255, 0.12)", // Tăng độ sáng nền một chút
-                                borderRadius: "12px",
-                                color: "white" // Chữ người dùng nhập
-                            }}
-                        />
-
-                        {/* Thêm thẻ style này ngay trong component nếu bạn không muốn mở file CSS */}
-                        <style>
-                            {`
-    .custom-placeholder::placeholder {
-      color: white !important;
-      opacity: 0.8;
-    }
-  `}
-                        </style>
-                    </div>
-
-
-                </nav>
+  
 
                 {/* ========== CHI TIẾT NỘI DUNG (DỮ LIỆU SẼ HIỆN Ở ĐÂY) ========== */}
                 <div className="container-fluid p-4" style={{ flex: 1, overflowY: "auto" }}>

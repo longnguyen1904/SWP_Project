@@ -21,7 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.tallt.marketplace.entity.SupportTicket;
 import com.tallt.marketplace.entity.TicketMessage;
 import com.tallt.marketplace.service.CloudinaryService;
-import com.tallt.marketplace.service.SupportTicketService; // Import CloudinaryService
+import com.tallt.marketplace.service.SupportTicketService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class SupportTicketController {
 
     private final SupportTicketService ticketService;
-    private final CloudinaryService cloudinaryService; // Tiêm CloudinaryService
+    private final CloudinaryService cloudinaryService;
 
     // =========================================
     // 🛡️ HÀM BẢO MẬT: GIẢI MÃ TOKEN LẤY USER_ID
@@ -67,7 +67,6 @@ public class SupportTicketController {
             Integer userId = getUserIdFromToken(authHeader);
             String attachmentUrl = null;
 
-            // Xử lý upload lên Cloudinary
             if (file != null && !file.isEmpty()) {
                 attachmentUrl = cloudinaryService.uploadFile(file, "marketplace/tickets");
             }
@@ -89,11 +88,10 @@ public class SupportTicketController {
     // =========================================
     // 2. LẤY DANH SÁCH TICKET (DÀNH CHO VENDOR)
     // =========================================
-    @GetMapping("/vendor")
+  @GetMapping("/vendor")
     public ResponseEntity<?> getVendorTickets(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             Integer userId = getUserIdFromToken(authHeader);
-            
             List<SupportTicket> allTickets = ticketService.getAllTickets();
             List<Map<String, Object>> response = new ArrayList<>();
             
@@ -105,6 +103,9 @@ public class SupportTicketController {
                     map.put("status", t.getStatus());
                     map.put("customerName", t.getUser() != null ? t.getUser().getFullName() : "Khách hàng");
                     map.put("orderId", t.getOrder() != null ? t.getOrder().getOrderID() : null);
+                    // THÊM DÒNG NÀY ĐỂ TRẢ VỀ TÊN SẢN PHẨM
+                    map.put("productName", t.getOrder() != null && t.getOrder().getProduct() != null 
+                            ? t.getOrder().getProduct().getProductName() : "N/A");
                     map.put("createdAt", t.getCreatedAt());
                     response.add(map);
                 }
@@ -146,7 +147,7 @@ public class SupportTicketController {
     }
 
     // =========================================
-    // 4. VENDOR GỬI TIN NHẮN PHẢN HỒI (LƯU TRÊN CLOUDINARY)
+    // 4. VENDOR GỬI TIN NHẮN PHẢN HỒI
     // =========================================
     @PostMapping(value = "/{ticketId}/reply", consumes = {"multipart/form-data"})
     public ResponseEntity<?> replyTicket(
@@ -175,7 +176,7 @@ public class SupportTicketController {
     }
 
     // =========================================
-    // 5. CẬP NHẬT TRẠNG THÁI (ĐÓNG/MỞ TICKET)
+    // 5. CẬP NHẬT TRẠNG THÁI
     // =========================================
     @PutMapping("/{ticketId}/status")
     public ResponseEntity<?> updateStatus(
@@ -199,13 +200,12 @@ public class SupportTicketController {
     }
 
     // =========================================
-    // LẤY DANH SÁCH TICKET CỦA KHÁCH HÀNG (CUSTOMER)
+    // 6. LẤY DANH SÁCH TICKET (CUSTOMER)
     // =========================================
     @GetMapping("/customer")
     public ResponseEntity<?> getCustomerTickets(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             Integer userId = getUserIdFromToken(authHeader);
-            
             List<SupportTicket> allTickets = ticketService.getAllTickets();
             List<Map<String, Object>> response = new ArrayList<>();
             
@@ -216,8 +216,7 @@ public class SupportTicketController {
                     map.put("subject", t.getSubject());
                     map.put("status", t.getStatus());
                     String vendorName = (t.getVendor() != null && t.getVendor().getCompanyName() != null) 
-                                        ? t.getVendor().getCompanyName() 
-                                        : "Người bán";
+                                        ? t.getVendor().getCompanyName() : "Người bán";
                     map.put("vendorName", vendorName);
                     map.put("orderId", t.getOrder() != null ? t.getOrder().getOrderID() : null);
                     map.put("createdAt", t.getCreatedAt());
@@ -227,6 +226,18 @@ public class SupportTicketController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // =========================================
+    // 🆕 7. NEW: CHI TIẾT SẢN PHẨM/ĐƠN HÀNG
+    // =========================================
+    @GetMapping("/{ticketId}/product-details")
+    public ResponseEntity<?> getTicketProductDetails(@PathVariable Integer ticketId) {
+        try {
+            return ResponseEntity.ok(ticketService.getOrderProductDetails(ticketId));
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
         }
     }
 }
