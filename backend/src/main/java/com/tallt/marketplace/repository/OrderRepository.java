@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.tallt.marketplace.dto.user.OrderWithDownloadDTO;
 import com.tallt.marketplace.entity.Order;
 
 @Repository
@@ -28,8 +29,38 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     /** UC13: Lấy danh sách email (không trùng) của Customer đã mua sản phẩm. */
     @Query("SELECT DISTINCT o.user.email FROM Order o " +
-           "WHERE o.product.productID = :productId " +
-           "AND UPPER(o.paymentStatus) = 'COMPLETED'")
+            "WHERE o.product.productID = :productId " +
+            "AND UPPER(o.paymentStatus) = 'COMPLETED'")
     List<String> findBuyerEmailsByProductId(@Param("productId") Integer productId);
-}
 
+    @Query("""
+            SELECT new com.tallt.marketplace.dto.user.OrderWithDownloadDTO(
+                o.orderID,
+                pv.fileUrl,
+                o.user,
+                o.product,
+                o.license,
+                o.tier,
+                o.quantity,
+                o.unitPrice,
+                o.discountAmount,
+                o.totalAmount,
+                o.paymentMethod,
+                o.paymentStatus,
+                o.transactionRef,
+                o.createdAt
+            )
+            FROM Order o
+            JOIN o.product p
+            JOIN ProductVersion pv
+                ON pv.product = p
+            WHERE o.user.userID = :userId
+            AND o.paymentStatus = 'PAID'
+            AND pv.versionID = (
+                SELECT MAX(pv2.versionID)
+                FROM ProductVersion pv2
+                WHERE pv2.product = p
+            )
+            """)
+    List<OrderWithDownloadDTO> findOrderDownloadLinks(@Param("userId") Integer userId);
+}

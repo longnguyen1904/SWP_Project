@@ -43,7 +43,7 @@ const CreateSupportTicketWizard = () => {
   }
 
   // ==========================================
-  // FETCH PRODUCTS (STEP 1)
+  // FETCH PRODUCTS VÀ KHÔNG LỌC TRÙNG NỮA
   // ==========================================
   const fetchProducts = async () => {
     if (!token || !userId) {
@@ -54,35 +54,38 @@ const CreateSupportTicketWizard = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`http://localhost:8081/api/orders/user/${userId}/products`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const data = await orderAPI.getUserOrders();
+      const extractedProducts = [];
+
+      data.forEach(order => {
+        const status = String(order.paymentStatus || order.status || '').toUpperCase();
+        
+        if (status === 'PAID' || status === 'COMPLETED' || status === 'SUCCESS') {
+          const p = order.product || {};
+          
+          // Lấy ngày mua (Tuỳ thuộc vào backend trả về trường nào, ví dụ orderDate, createdAt, date...)
+          const rawDate = order.orderDate || order.createdAt || order.date || order.paymentDate;
+          const purchaseDate = rawDate ? new Date(rawDate).toLocaleDateString('vi-VN') : 'Không rõ ngày';
+
+          extractedProducts.push({
+            orderId: order.orderID || order.orderId || order.id,
+            vendorId: p.vendor?.vendorId || p.vendor?.vendorID || p.vendor?.id || p.vendor?.userID || p.vendorId || p.vendorID || order.vendorId || order.vendorID, 
+            productId: p.productId || p.id,
+            productName: p.productName || p.name || 'Sản phẩm',
+            vendorName: p.vendor?.shopName || p.vendor?.name || p.vendorName || 'Shop',
+            productImage: p.imageUrl || p.image || p.thumbnail || 'https://via.placeholder.com/64',
+            categoryName: p.category?.categoryName || p.category?.name || p.categoryName || 'Phần mềm',
+            paymentStatus: status,
+            purchaseDate: purchaseDate, // <-- Lưu thêm ngày mua
+            _rawData: p 
+          });
         }
       });
 
-      if (!response.ok) {
-        const text = await response.text().catch(() => null);
-        throw new Error(text || `Không thể tải danh sách sản phẩm (HTTP ${response.status})`);
-      }
+      // Sắp xếp đơn hàng mới nhất lên đầu
+      extractedProducts.sort((a, b) => b.orderId - a.orderId);
 
-      const data = await response.json();
-
-      let productList = [];
-      if (Array.isArray(data)) {
-        productList = data;
-      } else if (data && Array.isArray(data.data)) {
-        productList = data.data;
-      } else if (data && Array.isArray(data.content)) {
-        productList = data.content;
-      }
-
-      const paidProducts = productList.filter(p => {
-        const status = p.paymentStatus ? String(p.paymentStatus).trim().toUpperCase() : '';
-        return status === 'PAID' || status === 'COMPLETED';
-      });
-
-      setProducts(paidProducts);
+      setProducts(extractedProducts);
     } catch (err) {
       setError(err.message || 'Lỗi khi tải sản phẩm');
       setProducts([]);
@@ -123,9 +126,16 @@ const CreateSupportTicketWizard = () => {
   // ==========================================
   const handleNextToStep2 = () => {
     if (!selectedProduct) {
-      setError('Vui lòng chọn một sản phẩm để tiếp tục.');
+      setError('Vui lòng chọn một sản phẩm (đơn hàng) để tiếp tục.');
       return;
     }
+    
+    // CHẶN ĐỨNG NẾU KHÔNG TÌM THẤY VENDOR ID
+    if (!selectedProduct.vendorId) {
+       setError('Sản phẩm này bị thiếu dữ liệu mã Shop (Vendor ID) từ hệ thống. Vui lòng chọn sản phẩm khác hoặc báo lại cho Admin!');
+       return; 
+    }
+
     setError('');
     setStep(2);
   };
@@ -186,6 +196,11 @@ const CreateSupportTicketWizard = () => {
       if (selectedProduct.orderId) {
         formData.append('orderId', selectedProduct.orderId);
       }
+      // Gửi kèm productId phòng trường hợp API của bạn vẫn cần
+      if (selectedProduct.productId) {
+        formData.append('productId', selectedProduct.productId);
+      }
+      
       formData.append('subject', finalSubject);
       formData.append('description', issueForm.description);
       formData.append('priority', issueForm.priority);
@@ -318,8 +333,8 @@ const CreateSupportTicketWizard = () => {
           {/* (Giữ nguyên cấu trúc Step 1 như bản trước) */}
           {step === 1 && (
              <div className="fade-in">
-             <h4 className="fw-bold mb-2 text-white">Chọn sản phẩm cần hỗ trợ</h4>
-             <p className="small mb-4" style={{ color: '#aaa' }}>Lựa chọn sản phẩm hoặc phần mềm bạn đang gặp vấn đề.</p>
+             <h4 className="fw-bold mb-2 text-white">Chọn đơn hàng cần hỗ trợ</h4>
+             <p className="small mb-4" style={{ color: '#a1a1aa' }}>Vui lòng chọn chính xác đơn hàng phần mềm mà bạn đang gặp vấn đề.</p>
              
              {loading ? (
                <div className="text-center py-5">
@@ -353,7 +368,7 @@ const CreateSupportTicketWizard = () => {
                  </div>
 
                  <div className="row g-3" style={{ maxHeight: '450px', overflowY: 'auto', overflowX: 'hidden', paddingRight: '5px' }}>
-                   {filteredProducts.map((p) => {
+                   {filteredProducts.map((p, idx) => {
                      const isSelected = selectedProduct?.orderId === p.orderId;
                      return (
                        <div className="col-md-6" key={p.orderId}>
@@ -366,12 +381,17 @@ const CreateSupportTicketWizard = () => {
                              <div className="flex-shrink-0">
                                <img src={p.productImage || 'https://via.placeholder.com/64'} alt="Img" className="rounded" style={{ width: '60px', height: '60px', objectFit: 'cover', border: `1px solid ${borderColor}` }} />
                              </div>
-                             <div style={{ overflow: 'hidden' }}>
-                               <h6 className="mb-1 fw-bold text-white text-truncate">{p.productName || 'Sản phẩm'}</h6>
-                               <div className="small mb-1 text-truncate" style={{ color: '#aaa' }}>Vendor: <span className="text-light">{p.vendorName || 'Unknown'}</span></div>
-                               <div className="d-flex justify-content-between align-items-center mt-2">
-                                 <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#ccc', fontWeight: 'normal' }}>{getProductCategory(p)}</span>
-                                 <span style={{ fontSize: '0.75rem', color: '#888' }}>#{p.orderId}</span>
+                             <div style={{ overflow: 'hidden', width: '100%' }}>
+                               <h6 className="mb-1 fw-bold text-white text-truncate">{p.productName}</h6>
+                               <div className="small mb-1 text-truncate" style={{ color: '#a1a1aa' }}>Shop: <span className="text-light">{p.vendorName}</span></div>
+                               
+                               {/* NỔI BẬT MÃ ĐƠN & NGÀY MUA ĐỂ DỄ PHÂN BIỆT */}
+                               <div className="d-flex justify-content-between align-items-end mt-2">
+                                 <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#d4d4d8', fontWeight: 'normal' }}>{getProductCategory(p)}</span>
+                                 <div className="text-end">
+                                   <div style={{ fontSize: '0.8rem', color: isSelected ? themeColor : '#10b981', fontWeight: 'bold' }}>Mã đơn: #{p.orderId}</div>
+                                   <div style={{ fontSize: '0.75rem', color: '#71717a' }}>Ngày mua: {p.purchaseDate}</div>
+                                 </div>
                                </div>
                              </div>
                            </div>
@@ -514,7 +534,7 @@ const CreateSupportTicketWizard = () => {
                     <img src={selectedProduct?.productImage || 'https://via.placeholder.com/48'} alt="Product" className="rounded me-3" style={{ width: '48px', height: '48px', objectFit: 'cover' }} />
                     <div>
                       <h6 className="mb-0 text-white fw-bold">{selectedProduct?.productName}</h6>
-                      <small style={{ color: '#aaa' }}>Vendor: {selectedProduct?.vendorName} | Order ID: #{selectedProduct?.orderId}</small>
+                      <small style={{ color: '#a1a1aa' }}>Shop: {selectedProduct?.vendorName} | Mã đơn: <strong className="text-light">#{selectedProduct?.orderId}</strong> | Ngày mua: {selectedProduct?.purchaseDate}</small>
                     </div>
                   </div>
                 </div>
@@ -598,9 +618,13 @@ const CreateSupportTicketWizard = () => {
       <style dangerouslySetInnerHTML={{__html: `
         .product-card-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(30, 30, 30, 0.5); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #f26522; }
+        ::-webkit-scrollbar-track { background: rgba(24, 24, 27, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #52525b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+        input::placeholder, textarea::placeholder {
+          color: rgba(255, 255, 255, 0.7) !important;
+          opacity: 1; 
+        }
       `}} />
     </div>
   );
