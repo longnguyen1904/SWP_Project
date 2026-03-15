@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate, useLocation, Outlet } from "react-router-dom"; // THÊM DÒNG NÀY
 import { Line, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -17,10 +18,12 @@ import {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend, Filler);
 
 export default function RevenueDashboard() {
-  const [data, setData] = useState([]); 
-  const [topProducts, setTopProducts] = useState([]); 
-  const [vendorProducts, setVendorProducts] = useState([]); 
-  
+  const navigate = useNavigate(); // KHỞI TẠO ĐIỀU HƯỚNG
+  const location = useLocation(); // LẤY URL HIỆN TẠI
+  const [data, setData] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [vendorProducts, setVendorProducts] = useState([]);
+
   // Đã bỏ conversionRate
   const [summary, setSummary] = useState({
     totalRevenue: 0,
@@ -30,19 +33,19 @@ export default function RevenueDashboard() {
 
   const today = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState("2026-01-01");
-  const [endDate, setEndDate] = useState(today); 
-  const [activeRange, setActiveRange] = useState("custom"); 
-  
+  const [endDate, setEndDate] = useState(today);
+  const [activeRange, setActiveRange] = useState("custom");
+
   const [selectedProductId, setSelectedProductId] = useState("");
   const [isTableExpanded, setIsTableExpanded] = useState(false);
-  
+
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
-  const role = user?.roleName; 
+  const role = user?.roleName;
   const token = localStorage.getItem('accessToken');
 
   const handleQuickRange = (days, label) => {
-    const end = new Date(today); 
+    const end = new Date(today);
     const start = new Date(end);
     start.setDate(end.getDate() - days);
 
@@ -52,7 +55,7 @@ export default function RevenueDashboard() {
     setStartDate(startStr);
     setEndDate(endStr);
     setActiveRange(label);
-    
+
     loadRevenue(startStr, endStr, selectedProductId);
   };
 
@@ -65,9 +68,9 @@ export default function RevenueDashboard() {
   const loadVendorProducts = async () => {
     if (role !== "VENDOR" && role !== "ADMIN") return;
     try {
-      const config = { 
-        params: { startDate: "2000-01-01", endDate: today }, 
-        headers: { 'Authorization': `Bearer ${token}` } 
+      const config = {
+        params: { startDate: "2000-01-01", endDate: today },
+        headers: { 'Authorization': `Bearer ${token}` }
       };
       const res = await axios.get("http://localhost:8081/api/vendor/revenue/top-products", config);
       setVendorProducts(res.data || []);
@@ -97,7 +100,7 @@ export default function RevenueDashboard() {
 
       setData(dailyRes.data || []);
       setTopProducts(topProductsRes.data || []);
-      
+
       const backendSummary = summaryRes.data || {};
       setSummary({
         totalRevenue: backendSummary.totalRevenue || 0,
@@ -129,9 +132,9 @@ export default function RevenueDashboard() {
     }).catch(err => console.error("Lỗi khi xuất CSV:", err));
   };
 
-  useEffect(() => { 
+  useEffect(() => {
     loadVendorProducts();
-    loadRevenue(); 
+    loadRevenue();
   }, []);
 
   if (role !== "VENDOR" && role !== "ADMIN") {
@@ -148,8 +151,12 @@ export default function RevenueDashboard() {
       </div>
     );
   }
+  if (location.pathname.includes("TransactionLedger")) {
+    return <Outlet />;
+  }
 
-  const selectedProductName = selectedProductId 
+
+  const selectedProductName = selectedProductId
     ? vendorProducts.find(p => String(p.productId || p.id) === String(selectedProductId))?.productName || "Sản phẩm"
     : "";
 
@@ -158,19 +165,19 @@ export default function RevenueDashboard() {
     datasets: [{
       label: "Doanh thu",
       data: data.map(d => d.revenue),
-      borderColor: "#f97316", 
-      borderWidth: 3, 
+      borderColor: "#f97316",
+      borderWidth: 3,
       backgroundColor: (context) => {
         const ctx = context.chart.ctx;
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400); 
-        gradient.addColorStop(0, "rgba(249, 115, 22, 0.5)"); 
-        gradient.addColorStop(1, "rgba(249, 115, 22, 0.0)"); 
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, "rgba(249, 115, 22, 0.5)");
+        gradient.addColorStop(1, "rgba(249, 115, 22, 0.0)");
         return gradient;
       },
       fill: true,
-      tension: 0.4, 
-      pointRadius: 0, 
-      pointHoverRadius: 6, 
+      tension: 0.4,
+      pointRadius: 0,
+      pointHoverRadius: 6,
       pointBackgroundColor: "#f97316",
       pointBorderColor: "#ffffff",
       pointBorderWidth: 2,
@@ -178,14 +185,14 @@ export default function RevenueDashboard() {
   };
 
   const doughnutChartData = {
-    labels: topProducts.map(p => p.productName || p.name || 'Sản phẩm ẩn'), 
+    labels: topProducts.map(p => p.productName || p.name || 'Sản phẩm ẩn'),
     datasets: [{
       data: topProducts.map(p => p.revenue || p.total || p.amount || 0),
       backgroundColor: ["#f97316", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#facc15", "#14b8a6"],
-      borderColor: "#18181b", 
-      borderWidth: 4, 
-      borderRadius: 8, 
-      hoverOffset: 8 
+      borderColor: "#18181b",
+      borderWidth: 4,
+      borderRadius: 8,
+      hoverOffset: 8
     }]
   };
 
@@ -212,14 +219,21 @@ export default function RevenueDashboard() {
   return (
     <div style={s.bg}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        
+
         {/* HEADER SECTION */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
           <div>
             <h1 style={{ fontSize: "32px", fontWeight: "700", margin: 0, color: "#f9fafb" }}>Báo cáo doanh thu</h1>
             <p style={{ color: "#a1a1aa", marginTop: 4, margin: 0 }}>Tổng quan hoạt động kinh doanh của bạn</p>
           </div>
-
+          <button
+            onClick={() => navigate("TransactionLedger")}
+            style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid rgba(59, 130, 246, 0.4)", backgroundColor: "rgba(59, 130, 246, 0.15)", color: "#3b82f6", fontWeight: "600", cursor: "pointer", transition: "0.2s", display: "flex", alignItems: "center", gap: "6px" }}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = "rgba(59, 130, 246, 0.25)"}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = "rgba(59, 130, 246, 0.15)"}
+          >
+            📖 Xem Sổ cái chi tiết
+          </button>
           {/* LỌC SẢN PHẨM Ở GÓC PHẢI HEADER */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span style={{ color: "#a1a1aa", fontSize: "14px", fontWeight: "500" }}>Sản phẩm:</span>
@@ -249,8 +263,8 @@ export default function RevenueDashboard() {
               <span style={{ color: "#71717a" }}>-</span>
               <input type="date" value={endDate} style={s.input} onChange={e => { setEndDate(e.target.value); setActiveRange("custom"); }} />
             </div>
-            <button style={s.btnPrimary} onMouseOver={e=>e.target.style.opacity=0.8} onMouseOut={e=>e.target.style.opacity=1} onClick={() => loadRevenue()}>Lọc</button>
-            <button style={s.btnCSV} onMouseOver={e=>e.target.style.background="rgba(63, 63, 70, 0.8)"} onMouseOut={e=>e.target.style.background="rgba(39, 39, 42, 0.8)"} onClick={downloadCSV}>Xuất CSV</button>
+            <button style={s.btnPrimary} onMouseOver={e => e.target.style.opacity = 0.8} onMouseOut={e => e.target.style.opacity = 1} onClick={() => loadRevenue()}>Lọc</button>
+            <button style={s.btnCSV} onMouseOver={e => e.target.style.background = "rgba(63, 63, 70, 0.8)"} onMouseOut={e => e.target.style.background = "rgba(39, 39, 42, 0.8)"} onClick={downloadCSV}>Xuất CSV</button>
           </div>
         </div>
 
@@ -281,7 +295,7 @@ export default function RevenueDashboard() {
 
         {/* CHARTS AREA */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px", marginBottom: "24px" }}>
-          
+
           {/* Biểu đồ đường - Dùng gridColumn span 3 nếu có chọn SP, span 2 nếu xem tất cả */}
           <div style={{ ...s.card, gridColumn: selectedProductId ? "span 3" : "span 2", height: 420, minWidth: 0, display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -292,9 +306,9 @@ export default function RevenueDashboard() {
                 Live Data
               </span>
             </div>
-            
-            <div 
-              key={selectedProductId ? "single-product" : "all-products"} 
+
+            <div
+              key={selectedProductId ? "single-product" : "all-products"}
               style={{ flex: 1, position: "relative", width: "100%", minHeight: 0, overflow: "hidden" }}
             >
               <Line data={lineChartData} options={lineOptions} />
@@ -312,7 +326,7 @@ export default function RevenueDashboard() {
                 {topProducts.length > 0 ? (
                   <Doughnut data={doughnutChartData} options={pieOptions} />
                 ) : (
-                  <div style={{color: '#71717a'}}>Chưa có dữ liệu sản phẩm</div>
+                  <div style={{ color: '#71717a' }}>Chưa có dữ liệu sản phẩm</div>
                 )}
               </div>
             </div>
@@ -322,14 +336,14 @@ export default function RevenueDashboard() {
 
         {/* TABLE COLLAPSIBLE */}
         <div style={s.card}>
-          <div 
+          <div
             style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: "4px 0" }}
             onClick={() => setIsTableExpanded(!isTableExpanded)}
           >
             <div style={{ fontWeight: 600, fontSize: "16px", color: "#f4f4f5" }}>
               {selectedProductId ? `Chi tiết doanh thu - ${selectedProductName}` : "Chi tiết doanh thu theo ngày"}
             </div>
-            <div style={{ 
+            <div style={{
               background: "rgba(39, 39, 42, 0.8)", border: "1px solid rgba(82, 82, 91, 0.5)", padding: "6px 14px", borderRadius: "20px", fontSize: "13px", color: "#f4f4f5",
               display: "flex", alignItems: "center", gap: "8px", transition: "0.3s"
             }}>
@@ -338,9 +352,9 @@ export default function RevenueDashboard() {
             </div>
           </div>
 
-          <div style={{ 
-            maxHeight: isTableExpanded ? "1000px" : "0px", 
-            overflow: "hidden", 
+          <div style={{
+            maxHeight: isTableExpanded ? "1000px" : "0px",
+            overflow: "hidden",
             transition: "max-height 0.5s ease-in-out",
             opacity: isTableExpanded ? 1 : 0
           }}>
@@ -355,7 +369,7 @@ export default function RevenueDashboard() {
                 </thead>
                 <tbody>
                   {data.map((row, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid rgba(63, 63, 70, 0.3)", transition: "0.2s" }} onMouseOver={e=>e.currentTarget.style.background="rgba(39, 39, 42, 0.5)"} onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                    <tr key={i} style={{ borderBottom: "1px solid rgba(63, 63, 70, 0.3)", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.background = "rgba(39, 39, 42, 0.5)"} onMouseOut={e => e.currentTarget.style.background = "transparent"}>
                       <td style={{ padding: "16px 8px", color: "#f4f4f5" }}>{row.date}</td>
                       <td style={{ padding: "16px 8px", textAlign: "right", fontWeight: "600", color: "#10b981" }}>
                         {Number(row.revenue).toLocaleString('vi-VN')} đ
@@ -366,9 +380,9 @@ export default function RevenueDashboard() {
                     </tr>
                   ))}
                   {data.length === 0 && (
-                     <tr>
-                        <td colSpan="3" style={{textAlign: "center", padding: "30px", color: "#71717a"}}>Không có dữ liệu trong khoảng thời gian này</td>
-                     </tr>
+                    <tr>
+                      <td colSpan="3" style={{ textAlign: "center", padding: "30px", color: "#71717a" }}>Không có dữ liệu trong khoảng thời gian này</td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -387,9 +401,9 @@ const lineOptions = {
   maintainAspectRatio: false,
   interaction: {
     mode: 'index',
-    intersect: false, 
+    intersect: false,
   },
-  plugins: { 
+  plugins: {
     legend: { display: false },
     tooltip: {
       backgroundColor: "rgba(24, 24, 27, 0.95)",
@@ -399,35 +413,35 @@ const lineOptions = {
       padding: 12,
       borderColor: "rgba(82, 82, 91, 0.5)",
       borderWidth: 1,
-      displayColors: false, 
+      displayColors: false,
       callbacks: {
-        label: function(context) { return context.parsed.y.toLocaleString('vi-VN') + ' đ'; }
+        label: function (context) { return context.parsed.y.toLocaleString('vi-VN') + ' đ'; }
       }
     }
   },
   scales: {
-    x: { 
-      ticks: { color: "#71717a", font: { family: "Inter" } }, 
-      grid: { display: false, drawBorder: false } 
+    x: {
+      ticks: { color: "#71717a", font: { family: "Inter" } },
+      grid: { display: false, drawBorder: false }
     },
-    y: { 
-      ticks: { 
+    y: {
+      ticks: {
         color: "#71717a", font: { family: "Inter" },
-        callback: function(value) { return value.toLocaleString('vi-VN') + ' đ'; }
-      }, 
-      grid: { color: "rgba(82, 82, 91, 0.3)", drawBorder: false, borderDash: [5, 5] } 
+        callback: function (value) { return value.toLocaleString('vi-VN') + ' đ'; }
+      },
+      grid: { color: "rgba(82, 82, 91, 0.3)", drawBorder: false, borderDash: [5, 5] }
     }
   }
 };
 
 // Tùy chỉnh Option biểu đồ Tròn
 const pieOptions = {
-  maintainAspectRatio: false, 
+  maintainAspectRatio: false,
   layout: { padding: 10 },
-  plugins: { 
-    legend: { 
-      position: 'bottom', 
-      labels: { color: '#a1a1aa', padding: 20, usePointStyle: true, pointStyle: 'circle', font: { family: "Inter" } } 
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: { color: '#a1a1aa', padding: 20, usePointStyle: true, pointStyle: 'circle', font: { family: "Inter" } }
     },
     tooltip: {
       backgroundColor: "rgba(24, 24, 27, 0.95)",
@@ -436,7 +450,7 @@ const pieOptions = {
       borderColor: "rgba(82, 82, 91, 0.5)",
       borderWidth: 1,
       callbacks: {
-        label: function(context) {
+        label: function (context) {
           let label = context.label || '';
           if (label) label += ': ';
           if (context.parsed !== null) {
@@ -447,5 +461,5 @@ const pieOptions = {
       }
     }
   },
-  cutout: '80%' 
+  cutout: '80%'
 };
