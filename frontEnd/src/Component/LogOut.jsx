@@ -42,7 +42,7 @@ export default function LogOut() {
     logOut();
     window.location.href = "/login";
   };
-
+  
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="fixed">

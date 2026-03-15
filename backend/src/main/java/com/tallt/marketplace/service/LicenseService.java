@@ -47,4 +47,27 @@ public class LicenseService {
         
         return licenseRepository.save(license);
     }
+
+
+    public String verifyLicense(String licenseKey, Integer productID) {
+
+    License license = licenseRepository
+            .findByLicenseKey(licenseKey)
+            .orElse(null);
+
+    if (license == null) {
+        return "INVALID_LICENSE";
+    }
+
+    if (!license.getProduct().getProductID().equals(productID)) {
+        return "WRONG_PRODUCT";
+    }
+
+    if (!license.getIsActive()) {
+        return "DISABLED";
+    }
+
+    return "VALID";
+}
+
 }

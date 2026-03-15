@@ -14,6 +14,8 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "OrderID")
     private Integer orderID;
+     
+    
 
     @ManyToOne
     @JoinColumn(name = "UserID", nullable = false)
@@ -53,4 +55,6 @@ public class Order {
 
     @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    
 }

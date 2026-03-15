@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.tallt.marketplace.dto.user.OrderWithDownloadDTO;
 import com.tallt.marketplace.entity.Order;
 import com.tallt.marketplace.entity.PlatformCommission;
 import com.tallt.marketplace.entity.User;
@@ -21,72 +22,70 @@ import com.tallt.marketplace.repository.WalletTransactionRepository;
 @Service
 public class OrderService {
 
-    @Autowired
-    private OrderRepository orderRepository;
+        @Autowired
+        private OrderRepository orderRepository;
 
-    @Autowired
-    private PlatformCommissionRepository commissionRepository;
+        @Autowired
+        private PlatformCommissionRepository commissionRepository;
 
-    @Autowired
-    private WalletRepository walletRepository;
+        @Autowired
+        private WalletRepository walletRepository;
 
-    @Autowired
-    private WalletTransactionRepository walletTransactionRepository;
+        @Autowired
+        private WalletTransactionRepository walletTransactionRepository;
 
+        public List<Order> getOrdersByUser(Integer userId) {
+                return orderRepository.findByUser_UserID(userId);
+        }
 
-    public List<Order> getOrdersByUser(Integer userId) {
-        return orderRepository.findByUser_UserID(userId);
-    }
+        public List<OrderWithDownloadDTO> getOrderDownloadLinks(Integer userId) {
+                return orderRepository.findOrderDownloadLinks(userId);
+        }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
-    }
+        public List<Order> getAllOrders() {
+                return orderRepository.findAll();
+        }
 
+        public void handleSuccessfulOrder(Order order) {
 
-     public void handleSuccessfulOrder(Order order) {
+                PlatformCommission commission = commissionRepository.findTopByOrderByEffectiveFromDesc();
 
-        PlatformCommission commission =
-                commissionRepository.findTopByOrderByEffectiveFromDesc();
+                BigDecimal percent = commission.getPercentage();
 
-        BigDecimal percent = commission.getPercentage();
+                BigDecimal total = order.getTotalAmount();
 
-        BigDecimal total = order.getTotalAmount();
+                BigDecimal commissionAmount = total.multiply(percent)
+                                .divide(BigDecimal.valueOf(100));
 
-        BigDecimal commissionAmount =
-                total.multiply(percent)
-                     .divide(BigDecimal.valueOf(100));
+                BigDecimal vendorRevenue = total.subtract(commissionAmount);
 
-        BigDecimal vendorRevenue =
-                total.subtract(commissionAmount);
+                Vendor vendor = order.getProduct().getVendor();
+                User vendorUser = vendor.getUser();
 
-        Vendor vendor = order.getProduct().getVendor();
-        User vendorUser = vendor.getUser();
+                Wallet wallet = walletRepository
+                                .findByUser_UserID(vendorUser.getUserID())
+                                .orElse(null);
 
-        Wallet wallet =
-                walletRepository
-                        .findByUser_UserID(vendorUser.getUserID())
-                        .orElse(null);
+                if (wallet == null)
+                        return;
 
-        if (wallet == null) return;
+                wallet.setBalance(
+                                wallet.getBalance().add(vendorRevenue));
 
-        wallet.setBalance(
-                wallet.getBalance().add(vendorRevenue));
+                wallet.setUpdatedAt(LocalDateTime.now());
 
-        wallet.setUpdatedAt(LocalDateTime.now());
+                walletRepository.save(wallet);
 
-        walletRepository.save(wallet);
+                WalletTransaction transaction = new WalletTransaction();
 
-        WalletTransaction transaction =
-                new WalletTransaction();
+                transaction.setWallet(wallet);
+                transaction.setAmount(vendorRevenue);
+                transaction.setType(
+                                WalletTransaction.TransactionType.SALE_REVENUE);
+                transaction.setReferenceID(order.getOrderID());
+                transaction.setDescription(
+                                "Revenue from Order #" + order.getOrderID());
 
-        transaction.setWallet(wallet);
-        transaction.setAmount(vendorRevenue);
-        transaction.setType(
-                WalletTransaction.TransactionType.SALE_REVENUE);
-        transaction.setReferenceID(order.getOrderID());
-        transaction.setDescription(
-                "Revenue from Order #" + order.getOrderID());
-
-        walletTransactionRepository.save(transaction);
-    }
+                walletTransactionRepository.save(transaction);
+        }
 }
