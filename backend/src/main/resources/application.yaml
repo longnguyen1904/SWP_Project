@@ -4,8 +4,8 @@
   mail:
     host: smtp.gmail.com
     port: 587
-    username: dinhlam728@gmail.com # ← Thay bằng Gmail của bạn
-    password: mmyg umdr pqak vinb # ← Thay bằng App Password 16 ký tự
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
