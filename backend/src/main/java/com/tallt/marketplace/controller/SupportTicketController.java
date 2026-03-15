@@ -20,7 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.tallt.marketplace.entity.SupportTicket;
 import com.tallt.marketplace.entity.TicketMessage;
-import com.tallt.marketplace.service.SupportTicketService;
+import com.tallt.marketplace.service.CloudinaryService;
+import com.tallt.marketplace.service.SupportTicketService; // Import CloudinaryService
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class SupportTicketController {
 
     private final SupportTicketService ticketService;
+    private final CloudinaryService cloudinaryService; // Tiêm CloudinaryService
 
     // =========================================
     // 🛡️ HÀM BẢO MẬT: GIẢI MÃ TOKEN LẤY USER_ID
@@ -49,7 +51,7 @@ public class SupportTicketController {
     }
 
     // =========================================
-    // 1. TẠO TICKET (DÀNH CHO KHÁCH HÀNG)
+    // 1. TẠO TICKET (LƯU TRÊN CLOUDINARY)
     // =========================================
     @PostMapping(value = "/create", consumes = {"multipart/form-data"})
     public ResponseEntity<?> createTicket(
@@ -63,19 +65,11 @@ public class SupportTicketController {
     ) {
         try {
             Integer userId = getUserIdFromToken(authHeader);
-
             String attachmentUrl = null;
+
+            // Xử lý upload lên Cloudinary
             if (file != null && !file.isEmpty()) {
-                String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-                java.nio.file.Path uploadPath = java.nio.file.Paths.get("uploads");
-                
-                if (!java.nio.file.Files.exists(uploadPath)) {
-                    java.nio.file.Files.createDirectories(uploadPath);
-                }
-                
-                java.nio.file.Path filePath = uploadPath.resolve(fileName);
-                java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                attachmentUrl = "/uploads/" + fileName;
+                attachmentUrl = cloudinaryService.uploadFile(file, "marketplace/tickets");
             }
 
             SupportTicket ticket = ticketService.createTicket(userId, vendorId, orderId, subject, description);
@@ -100,12 +94,10 @@ public class SupportTicketController {
         try {
             Integer userId = getUserIdFromToken(authHeader);
             
-            // Lấy toàn bộ ticket và tự động lọc ra ticket của Vendor đang đăng nhập
             List<SupportTicket> allTickets = ticketService.getAllTickets();
             List<Map<String, Object>> response = new ArrayList<>();
             
             for (SupportTicket t : allTickets) {
-                // Kiểm tra ticket này có thuộc về User (đang đóng vai trò Vendor) này không
                 if (t.getVendor() != null && t.getVendor().getUser() != null && t.getVendor().getUser().getUserID().equals(userId)) {
                     Map<String, Object> map = new HashMap<>();
                     map.put("ticketId", t.getTicketId());
@@ -132,7 +124,7 @@ public class SupportTicketController {
             @RequestHeader(value = "Authorization", required = false) String authHeader
     ) {
         try {
-            getUserIdFromToken(authHeader); // Chặn nếu chưa đăng nhập
+            getUserIdFromToken(authHeader);
             
             List<TicketMessage> messages = ticketService.getMessagesByTicket(ticketId);
             List<Map<String, Object>> response = new ArrayList<>();
@@ -154,7 +146,7 @@ public class SupportTicketController {
     }
 
     // =========================================
-    // 4. VENDOR GỬI TIN NHẮN PHẢN HỒI
+    // 4. VENDOR GỬI TIN NHẮN PHẢN HỒI (LƯU TRÊN CLOUDINARY)
     // =========================================
     @PostMapping(value = "/{ticketId}/reply", consumes = {"multipart/form-data"})
     public ResponseEntity<?> replyTicket(
@@ -168,14 +160,7 @@ public class SupportTicketController {
             String attachmentUrl = null;
             
             if (file != null && !file.isEmpty()) {
-                String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-                java.nio.file.Path uploadPath = java.nio.file.Paths.get("uploads");
-                if (!java.nio.file.Files.exists(uploadPath)) {
-                    java.nio.file.Files.createDirectories(uploadPath);
-                }
-                java.nio.file.Path filePath = uploadPath.resolve(fileName);
-                java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                attachmentUrl = "/uploads/" + fileName;
+                attachmentUrl = cloudinaryService.uploadFile(file, "marketplace/tickets/replies");
             }
             
             ticketService.addMessage(ticketId, userId, content, attachmentUrl);
@@ -189,7 +174,7 @@ public class SupportTicketController {
         }
     }
 
-   // =========================================
+    // =========================================
     // 5. CẬP NHẬT TRẠNG THÁI (ĐÓNG/MỞ TICKET)
     // =========================================
     @PutMapping("/{ticketId}/status")
@@ -199,20 +184,20 @@ public class SupportTicketController {
             @RequestHeader(value = "Authorization", required = false) String authHeader
     ) {
         try {
-            Integer userId = getUserIdFromToken(authHeader); // Lấy ID người đang thao tác
+            Integer userId = getUserIdFromToken(authHeader); 
             String newStatus = body.get("status");
             
             if (newStatus == null || newStatus.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Trạng thái không được để trống"));
             }
             
-            // Truyền thêm userId vào để Service kiểm tra quyền
             ticketService.updateStatus(ticketId, newStatus, userId);
             return ResponseEntity.ok(Map.of("message", "Đã cập nhật trạng thái thành " + newStatus));
         } catch (Exception e) {
             return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
         }
     }
+
     // =========================================
     // LẤY DANH SÁCH TICKET CỦA KHÁCH HÀNG (CUSTOMER)
     // =========================================
@@ -221,18 +206,15 @@ public class SupportTicketController {
         try {
             Integer userId = getUserIdFromToken(authHeader);
             
-            // Lấy toàn bộ ticket và tự động lọc ra ticket do Khách hàng này tạo
             List<SupportTicket> allTickets = ticketService.getAllTickets();
             List<Map<String, Object>> response = new ArrayList<>();
             
             for (SupportTicket t : allTickets) {
-                // Kiểm tra ticket này có phải do User (Khách hàng) này tạo không
                 if (t.getUser() != null && t.getUser().getUserID().equals(userId)) {
                     Map<String, Object> map = new HashMap<>();
                     map.put("ticketId", t.getTicketId());
                     map.put("subject", t.getSubject());
                     map.put("status", t.getStatus());
-                    // Trả về tên Vendor (Tên công ty hoặc tên người bán) để Khách hàng biết đang chat với ai
                     String vendorName = (t.getVendor() != null && t.getVendor().getCompanyName() != null) 
                                         ? t.getVendor().getCompanyName() 
                                         : "Người bán";

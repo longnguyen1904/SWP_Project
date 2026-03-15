@@ -42,17 +42,55 @@ export default function CustomerTicketManagement() {
     } catch (err) { console.error("Lỗi:", err); }
   };
 
+  // ===============================================
+  // HÀM GỬI TIN NHẮN TỐI ƯU (OPTIMISTIC UI)
+  // ===============================================
   const handleSendReply = async () => {
     if (!replyText.trim() && !replyFile) return;
+
+    // 1. Lưu lại nội dung hiện tại vào biến tạm
+    const textToSend = replyText;
+    const fileToSend = replyFile;
+    const tempId = `temp-${Date.now()}`;
+    const localFileUrl = fileToSend ? URL.createObjectURL(fileToSend) : null;
+
+    // 2. Tạo tin nhắn "Giả" và đẩy ngay vào UI
+    const tempMsg = { 
+      messageId: tempId, 
+      senderId: currentUserId, 
+      senderName: "Bạn", 
+      messageContent: textToSend, 
+      attachmentUrl: localFileUrl, 
+      createdAt: new Date().toISOString(),
+      isSending: true // Cờ đánh dấu đang gửi ngầm
+    };
+    
+    setMessages(prev => [...prev, tempMsg]); 
+    
+    // 3. Reset form ngay lập tức để user gõ tiếp
+    setReplyText(""); 
+    setReplyFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    // 4. Gửi API ngầm lên Cloudinary
     try {
       const formData = new FormData();
-      formData.append("content", replyText);
-      if (replyFile) formData.append("file", replyFile);
+      formData.append("content", textToSend);
+      if (fileToSend) formData.append("file", fileToSend);
+
       const res = await axios.post(`http://localhost:8081/api/tickets/${selectedTicket.ticketId}/reply`, formData, { headers: { Authorization: `Bearer ${token}` } });
-      const newMsg = { messageId: Date.now(), senderId: currentUserId, senderName: "Bạn", messageContent: replyText, attachmentUrl: res.data.fileUrl || (replyFile ? URL.createObjectURL(replyFile) : null), createdAt: new Date().toISOString() };
-      setMessages([...messages, newMsg]); setReplyText(""); setReplyFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (err) { alert("Lỗi gửi tin!"); }
+      
+      // 5. Cập nhật lại URL Cloudinary thật khi API trả về
+      setMessages(prev => prev.map(msg => 
+        msg.messageId === tempId 
+          ? { ...msg, messageId: Date.now(), attachmentUrl: res.data.fileUrl || localFileUrl, isSending: false } 
+          : msg
+      ));
+    } catch (err) { 
+      // 6. Xóa tin nhắn lỗi nếu API sập
+      setMessages(prev => prev.filter(msg => msg.messageId !== tempId));
+      alert("Lỗi mạng! Không thể gửi ảnh lên mây."); 
+    }
   };
 
   const handleCloseTicket = async () => {
@@ -77,7 +115,6 @@ export default function CustomerTicketManagement() {
 
   const sortedMessages = [...messages].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-  // CSS BẢN CHUẨN XÁC: XÁM TRUNG TÍNH (NEUTRAL GRAY) KHÔNG ÁM XANH
   const s = {
     bg: { minHeight: "100vh", backgroundColor: "transparent", color: "#f8fafc", fontFamily: 'Inter, system-ui, sans-serif', display: "flex", padding: "24px", gap: "24px" },
     panel: { backgroundColor: "rgba(24, 24, 27, 0.85)", backdropFilter: "blur(12px)", border: "1px solid rgba(63, 63, 70, 0.4)", borderRadius: "12px", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)" },
@@ -157,8 +194,10 @@ export default function CustomerTicketManagement() {
               {sortedMessages.map((msg) => {
                 const isMine = String(msg.senderId) === String(currentUserId); 
                 return (
-                 <div key={msg.messageId} style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start" }}>
-                    <span style={{ fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>{isMine ? "Bạn" : msg.senderName} • {new Date(msg.createdAt).toLocaleTimeString("vi-VN", {hour: '2-digit', minute:'2-digit'})}</span>
+                 <div key={msg.messageId} style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", opacity: msg.isSending ? 0.6 : 1 }}>
+                    <span style={{ fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+                      {isMine ? "Bạn" : msg.senderName} • {msg.isSending ? "Đang gửi..." : new Date(msg.createdAt).toLocaleTimeString("vi-VN", {hour: '2-digit', minute:'2-digit'})}
+                    </span>
                     
                     {msg.messageContent && (
                       <div style={{ 
@@ -180,11 +219,12 @@ export default function CustomerTicketManagement() {
                         borderBottomRightRadius: isMine ? "4px" : "12px",
                         borderBottomLeftRadius: !isMine ? "4px" : "12px",
                       }}>
-                        {msg.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i) != null ? (
-                          <img src={`http://localhost:8081${msg.attachmentUrl}`} alt="attachment" style={{ maxWidth: "100%", maxHeight: "300px", display: "block", objectFit: "cover" }} />
+                        {/* UPDATE LOGIC: Chấp nhận link blob: của máy hoặc ảnh từ Cloudinary */}
+                        {msg.attachmentUrl.startsWith('blob:') || msg.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i) != null || msg.attachmentUrl.includes('res.cloudinary.com/image') ? (
+                          <img src={msg.attachmentUrl} alt="attachment" style={{ maxWidth: "100%", maxHeight: "300px", display: "block", objectFit: "cover" }} />
                         ) : (
-                          <a href={`http://localhost:8081${msg.attachmentUrl}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", padding: "12px 16px", color: "white", textDecoration: "none", fontSize: "13px", backgroundColor: isMine ? "#f97316" : "rgba(39, 39, 42, 0.8)" }}>
-                            📎 Xem file đính kèm
+                          <a href={msg.attachmentUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", padding: "12px 16px", color: "white", textDecoration: "none", fontSize: "13px", backgroundColor: isMine ? "#f97316" : "rgba(39, 39, 42, 0.8)" }}>
+                            📎 {msg.isSending ? "Đang tải file lên..." : "Xem file đính kèm"}
                           </a>
                         )}
                       </div>

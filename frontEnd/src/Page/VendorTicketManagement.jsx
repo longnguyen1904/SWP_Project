@@ -20,8 +20,6 @@ export default function VendorTicketManagement() {
   const [endDate, setEndDate] = useState("");
   
   const [isLoading, setIsLoading] = useState(false);
-  
-  // STATE MỚI: Điều khiển chế độ hiển thị bên trái (List / Kanban)
   const [isKanbanMode, setIsKanbanMode] = useState(false);
 
   const messagesEndRef = useRef(null);
@@ -53,18 +51,53 @@ export default function VendorTicketManagement() {
     } catch (err) { console.error("Lỗi:", err); }
   };
 
+  // ===============================================
+  // HÀM GỬI TIN NHẮN TỐI ƯU (OPTIMISTIC UI)
+  // ===============================================
   const handleSendReply = async () => {
     if (!replyText.trim() && !replyFile) return;
+
+    // 1. Lưu lại nội dung
+    const textToSend = replyText;
+    const fileToSend = replyFile;
+    const tempId = `temp-${Date.now()}`;
+    const localFileUrl = fileToSend ? URL.createObjectURL(fileToSend) : null;
+
+    // 2. Cập nhật UI ngay lập tức
+    const tempMsg = { 
+      messageId: tempId, 
+      senderId: currentUserId, 
+      senderName: "Bạn (Vendor)", 
+      messageContent: textToSend, 
+      attachmentUrl: localFileUrl, 
+      createdAt: new Date().toISOString(),
+      isSending: true
+    };
+    setMessages(prev => [...prev, tempMsg]); 
+    
+    // 3. Reset form để Vendor gõ tiếp
+    setReplyText(""); 
+    setReplyFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    // 4. Gọi API ngầm lên Cloudinary
     try {
       const formData = new FormData();
-      formData.append("content", replyText);
-      if (replyFile) formData.append("file", replyFile);
+      formData.append("content", textToSend);
+      if (fileToSend) formData.append("file", fileToSend);
 
       const res = await axios.post(`http://localhost:8081/api/tickets/${selectedTicket.ticketId}/reply`, formData, { headers: { Authorization: `Bearer ${token}` } });
-      const newMsg = { messageId: Date.now(), senderId: currentUserId, senderName: "Bạn (Vendor)", messageContent: replyText, attachmentUrl: res.data.fileUrl || (replyFile ? URL.createObjectURL(replyFile) : null), createdAt: new Date().toISOString() };
-      setMessages([...messages, newMsg]); setReplyText(""); setReplyFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (err) { alert("Gửi thất bại!"); }
+      
+      // 5. Cập nhật tin nhắn gốc
+      setMessages(prev => prev.map(msg => 
+        msg.messageId === tempId 
+          ? { ...msg, messageId: Date.now(), attachmentUrl: res.data.fileUrl || localFileUrl, isSending: false } 
+          : msg
+      ));
+    } catch (err) { 
+      setMessages(prev => prev.filter(msg => msg.messageId !== tempId));
+      alert("Gửi thất bại! Lỗi kết nối máy chủ."); 
+    }
   };
 
   const updateTicketStatus = async (ticketId, newStatus) => {
@@ -77,21 +110,14 @@ export default function VendorTicketManagement() {
     } catch (err) { alert(err.response?.data?.error || "Lỗi cập nhật trạng thái"); }
   };
 
-  // --- HTML5 DRAG & DROP LOGIC ---
-  const handleDragStart = (e, ticketId) => {
-    e.dataTransfer.setData("ticketId", ticketId);
-  };
-
+  const handleDragStart = (e, ticketId) => { e.dataTransfer.setData("ticketId", ticketId); };
   const handleDragOver = (e) => { e.preventDefault(); };
-
   const handleDrop = (e, newStatus) => {
     e.preventDefault();
     const ticketId = e.dataTransfer.getData("ticketId");
     if (!ticketId) return;
     const ticket = tickets.find(t => String(t.ticketId) === ticketId);
-    if (ticket && ticket.status !== newStatus) {
-      updateTicketStatus(ticket.ticketId, newStatus);
-    }
+    if (ticket && ticket.status !== newStatus) updateTicketStatus(ticket.ticketId, newStatus);
   };
 
   if (role !== "VENDOR" && role !== "ADMIN") return <div style={{ minHeight: "100vh", background: "transparent", color: "white", display: "flex", justifyContent: "center", alignItems: "center" }}><h2>🚫 Không có quyền truy cập</h2></div>;
@@ -171,7 +197,6 @@ export default function VendorTicketManagement() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
             <h2 style={{ fontSize: "20px", fontWeight: "700", margin: 0, color: "#f9fafb" }}>Quản lý Ticket</h2>
             
-            {/* NÚT TOGGLE KANBAN ĐẶT Ở ĐÂY */}
             <button 
               onClick={() => setIsKanbanMode(!isKanbanMode)}
               style={{ background: isKanbanMode ? "#3b82f6" : "rgba(39, 39, 42, 0.8)", color: isKanbanMode ? "white" : "#a1a1aa", border: `1px solid ${isKanbanMode ? "#3b82f6" : "rgba(82, 82, 91, 0.5)"}`, padding: "6px 12px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "6px" }}
@@ -208,7 +233,6 @@ export default function VendorTicketManagement() {
         {isLoading ? <div style={{ textAlign: "center", color: "#3b82f6", marginTop: "40px" }}>Đang tải...</div> : 
         
         isKanbanMode ? (
-          /* HIỂN THỊ KANBAN (3 CỘT) */
           <div style={{ display: "flex", flex: 1, overflowX: "auto", overflowY: "hidden", backgroundColor: "rgba(24, 24, 27, 0.3)" }}>
             <div style={{ flex: 1, minWidth: "220px", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(63, 63, 70, 0.4)" }} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, "Open")}>
               <div style={s.colHeader("#3b82f6")}><span style={{color: "#3b82f6"}}>🟢 Open</span><span style={s.badgeCount}>{openTickets.length}</span></div>
@@ -224,7 +248,6 @@ export default function VendorTicketManagement() {
             </div>
           </div>
         ) : (
-          /* HIỂN THỊ LIST DỌC */
           <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
             {filteredTickets.length === 0 ? <div style={{ textAlign: "center", color: "#a1a1aa", marginTop: "20px", fontSize: "14px" }}>Không có dữ liệu.</div> : 
               filteredTickets.map(t => renderTicketCard(t, false))
@@ -260,8 +283,10 @@ export default function VendorTicketManagement() {
               {sortedMessages.map((msg) => {
                 const isMine = String(msg.senderId) === String(currentUserId); 
                 return (
-                  <div key={msg.messageId} style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start" }}>
-                    <span style={{ fontSize: "12px", color: "#71717a", marginBottom: "4px" }}>{isMine ? "Bạn" : msg.senderName} • {new Date(msg.createdAt).toLocaleTimeString("vi-VN", {hour: '2-digit', minute:'2-digit'})}</span>
+                  <div key={msg.messageId} style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", opacity: msg.isSending ? 0.6 : 1 }}>
+                    <span style={{ fontSize: "12px", color: "#71717a", marginBottom: "4px" }}>
+                      {isMine ? "Bạn" : msg.senderName} • {msg.isSending ? "Đang gửi..." : new Date(msg.createdAt).toLocaleTimeString("vi-VN", {hour: '2-digit', minute:'2-digit'})}
+                    </span>
                     
                     {msg.messageContent && (
                       <div style={{ 
@@ -278,11 +303,11 @@ export default function VendorTicketManagement() {
 
                     {msg.attachmentUrl && (
                       <div style={{ maxWidth: isKanbanMode ? "90%" : "75%", borderRadius: "12px", overflow: "hidden", borderBottomRightRadius: isMine ? "4px" : "12px", borderBottomLeftRadius: !isMine ? "4px" : "12px" }}>
-                        {msg.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i) != null ? (
-                          <img src={`http://localhost:8081${msg.attachmentUrl}`} alt="attachment" style={{ maxWidth: "100%", maxHeight: "250px", display: "block", objectFit: "cover" }} />
+                        {msg.attachmentUrl.startsWith('blob:') || msg.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i) != null || msg.attachmentUrl.includes('res.cloudinary.com/image') ? (
+                          <img src={msg.attachmentUrl} alt="attachment" style={{ maxWidth: "100%", maxHeight: "250px", display: "block", objectFit: "cover" }} />
                         ) : (
-                          <a href={`http://localhost:8081${msg.attachmentUrl}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", padding: "10px 14px", color: "white", textDecoration: "none", fontSize: "13px", backgroundColor: isMine ? "#3b82f6" : "rgba(63, 63, 70, 0.6)" }}>
-                            📎 Tải file đính kèm
+                          <a href={msg.attachmentUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", padding: "10px 14px", color: "white", textDecoration: "none", fontSize: "13px", backgroundColor: isMine ? "#3b82f6" : "rgba(63, 63, 70, 0.6)" }}>
+                            📎 {msg.isSending ? "Đang tải file lên..." : "Tải file đính kèm"}
                           </a>
                         )}
                       </div>

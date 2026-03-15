@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { orderAPI } from "../services/orderApi.js";
+import { orderAPI } from "../services/orderApi.js"; // Giữ nguyên file của bạn
+import api from "../services/api.js"; // Lấy instance axios từ file api.js của bạn
 
 const CreateSupportTicketWizard = () => {
   const [step, setStep] = useState(1);
@@ -33,9 +34,8 @@ const CreateSupportTicketWizard = () => {
   const token = localStorage.getItem('accessToken');
 
   // ==========================================
-  // FETCH PRODUCTS SỬ DỤNG orderAPI
+  // FETCH PRODUCTS
   // ==========================================
-
   const fetchProducts = async () => {
     setLoading(true);
     setError('');
@@ -51,17 +51,14 @@ const CreateSupportTicketWizard = () => {
           
           extractedProducts.push({
             orderId: order.orderID || order.orderId || order.id,
-            
-            // BỘ DÒ TÌM VENDOR ID 
             vendorId: p.vendor?.vendorId || p.vendor?.vendorID || p.vendor?.id || p.vendor?.userID || p.vendorId || p.vendorID || order.vendorId || order.vendorID, 
-            
             productId: p.productId || p.id,
             productName: p.productName || p.name || 'Sản phẩm',
             vendorName: p.vendor?.shopName || p.vendor?.name || p.vendorName || 'Shop',
             productImage: p.imageUrl || p.image || p.thumbnail || 'https://via.placeholder.com/64',
             categoryName: p.category?.categoryName || p.category?.name || p.categoryName || 'Phần mềm',
             paymentStatus: status,
-            _rawData: p // Lưu lại data gốc để debug nếu cần
+            _rawData: p
           });
         }
       });
@@ -84,7 +81,6 @@ const CreateSupportTicketWizard = () => {
   // LOGIC LỌC SẢN PHẨM
   // ==========================================
   const getProductCategory = (p) => p.categoryName || p.category || 'Phần mềm'; 
-  
   const defaultCategories = ['Antivirus Software', 'VPN & Network', 'Operating System', 'Design Tools', 'Khác'];
   const dynamicCategories = Array.from(new Set(products.map(getProductCategory)));
   const filterCategories = Array.from(new Set([...defaultCategories, ...dynamicCategories]));
@@ -98,22 +94,15 @@ const CreateSupportTicketWizard = () => {
     return matchSearch && matchCategory;
   });
 
-  // ==========================================
-  // HANDLERS BƯỚC 2 & 3
-  // ==========================================
   const handleNextToStep2 = () => {
     if (!selectedProduct) {
       setError('Vui lòng chọn một sản phẩm để tiếp tục.');
       return;
     }
-    
-    // CHẶN ĐỨNG NẾU KHÔNG TÌM THẤY VENDOR ID
     if (!selectedProduct.vendorId) {
-       console.log("Dữ liệu sản phẩm bị lỗi thiếu Vendor:", selectedProduct._rawData);
        setError('Sản phẩm này bị thiếu dữ liệu mã Shop (Vendor ID) từ hệ thống. Vui lòng chọn sản phẩm khác hoặc báo lại cho Admin!');
        return; 
     }
-
     setError('');
     setStep(2);
   };
@@ -157,7 +146,7 @@ const CreateSupportTicketWizard = () => {
   };
 
   // ==========================================
-  // SUBMIT TICKET BẰNG FORMDATA
+  // SUBMIT TICKET (Sử dụng api default từ api.js)
   // ==========================================
   const handleSubmit = async () => {
     if (!isConfirmed) return;
@@ -166,61 +155,51 @@ const CreateSupportTicketWizard = () => {
 
     try {
       const finalSubject = `[${issueForm.type}] ${issueForm.title}`;
-      
       const formData = new FormData();
       
-      // BẢO HIỂM: Chỉ gửi số, không gửi chữ "undefined"
       if (selectedProduct.vendorId) {
         formData.append('vendorId', selectedProduct.vendorId);
       }
       if (selectedProduct.orderId) {
         formData.append('orderId', selectedProduct.orderId);
       }
-      
       formData.append('subject', finalSubject);
       formData.append('description', issueForm.description);
       formData.append('priority', issueForm.priority);
-      
       if (issueForm.file) {
         formData.append('file', issueForm.file);
       }
 
-      const response = await fetch('http://localhost:8081/api/tickets/create', {
-        method: 'POST',
+      // Gọi trực tiếp api.post và Gắn TOKEN THỦ CÔNG ở đây để không cần đụng vào file api.js
+      const response = await api.post('/api/tickets/create', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(errText || 'Có lỗi xảy ra khi tạo ticket. Vui lòng thử lại.');
-      }
-
-      const result = await response.json();
+      const result = response.data;
       const pad = (s) => String(s || '0').replace(/[^0-9]/g, '').padStart(6, '0');
       setSuccessTicketId(result.ticketId ? `TCK-2026-${pad(result.ticketId)}` : `TCK-2026-${pad('0')}`);
-      
       setStep(4);
       
     } catch (err) {
-      console.error("LỖI FETCH:", err);
-      setError(err.message);
+      console.error("LỖI KHI GỌI API:", err);
+      const errorMessage = err.response?.data?.error || err.message || 'Có lỗi xảy ra khi tạo ticket.';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // ==========================================
-  // THEME STYLES (Xám trung tính - TALLT Orange)
+  // THEME STYLES
   // ==========================================
   const themeColor = '#f97316'; 
   const cardBg = 'rgba(24, 24, 27, 0.85)'; 
   const inputBg = 'rgba(39, 39, 42, 0.8)'; 
   const borderColor = 'rgba(63, 63, 70, 0.4)'; 
   const textColor = '#f4f4f5';
-
   const customInputStyle = { backgroundColor: inputBg, color: '#fff', borderColor: 'rgba(82, 82, 91, 0.5)', colorScheme: 'dark' };
 
   const getPriorityColor = (priority) => {
