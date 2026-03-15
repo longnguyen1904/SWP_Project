@@ -55,7 +55,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             JOIN ProductVersion pv
                 ON pv.product = p
             WHERE o.user.userID = :userId
-            AND o.paymentStatus = 'PAID'
+            AND o.paymentStatus = 'COMPLETED'
             AND pv.versionID = (
                 SELECT MAX(pv2.versionID)
                 FROM ProductVersion pv2
