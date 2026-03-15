@@ -4,8 +4,8 @@
   mail:
     host: smtp.gmail.com
     port: 587
-    username: dinhlam728@gmail.com # ← Thay bằng Gmail của bạn
-    password: mmyg umdr pqak vinb # ← Thay bằng App Password 16 ký tự
+    username: ${MAIL_USERNAME} # ← Thay bằng Gmail của bạn
+    password: ${MAIL_PASSWORD} # ← Thay bằng App Password 16 ký tự
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
@@ -16,7 +16,7 @@
   datasource:
     url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: 123
   jpa:
     hibernate:
       ddl-auto: update
