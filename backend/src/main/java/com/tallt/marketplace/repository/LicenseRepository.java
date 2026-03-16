@@ -1,7 +1,12 @@
 package com.tallt.marketplace.repository;
 
 import com.tallt.marketplace.entity.License;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -9,7 +14,7 @@ import java.util.Optional;
 
 @Repository
 public interface LicenseRepository extends JpaRepository<License, Integer> {
-    
+
     Optional<License> findByLicenseKey(String licenseKey);
 
     Optional<License> findByOrder_OrderID(Integer orderId);
@@ -17,8 +22,21 @@ public interface LicenseRepository extends JpaRepository<License, Integer> {
     boolean existsByLicenseKey(String licenseKey);
 
     boolean existsByUser_UserIDAndProduct_ProductIDAndIsTrialTrueAndIsDeletedFalse(Integer userId, Integer productId);
+    
+    Optional<License> findByLicenseKeyAndProduct_ProductID(String licenseKey, Integer productID);
 
-    /** Kiểm tra user có License còn hiệu lực cho sản phẩm (ExpireAt > now AND IsActive = true). */
+    @Modifying
+    @Transactional
+    @Query("""
+                DELETE FROM License l
+                WHERE l.expireAt < CURRENT_TIMESTAMP
+            """)
+    int deleteExpiredLicenses();
+
+    /**
+     * Kiểm tra user có License còn hiệu lực cho sản phẩm (ExpireAt > now AND
+     * IsActive = true).
+     */
     boolean existsByUser_UserIDAndProduct_ProductIDAndIsActiveTrueAndExpireAtAfter(
             Integer userId, Integer productId, LocalDateTime now);
 

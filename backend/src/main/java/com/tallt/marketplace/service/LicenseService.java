@@ -31,10 +31,10 @@ public class LicenseService {
 
         String key;
         do {
-            key = LicenseKeyGenerator.generateKey();
+            key = LicenseKeyGenerator.generateKey(order.getProduct().getProductID());
         } while (licenseRepository.existsByLicenseKey(key));
 
-        license.setLicenseKey(key);
+        // license.setLicenseKey(key);
         license.setOrder(order);
         license.setUser(order.getUser());
         license.setProduct(order.getProduct());
@@ -43,7 +43,11 @@ public class LicenseService {
         license.setIsActive(true);
         license.setIsDeleted(false);
         license.setIsTrial(false);
+        Integer duration = order.getTier().getDurationDays();
 
+    license.setExpireAt(
+        LocalDateTime.now().plusDays(duration)
+    );
         
         return licenseRepository.save(license);
     }

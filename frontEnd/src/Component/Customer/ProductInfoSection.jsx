@@ -16,7 +16,7 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
       onBuyNow(selectedTier);
     }
   };
-
+ 
   return (
     <div className="product-info">
       <h1 className="product-info__name">{product.name}</h1>
@@ -61,6 +61,7 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
           ))}
         </div>
       )}
+
 
       {tiers.length > 0 && (
         <div>

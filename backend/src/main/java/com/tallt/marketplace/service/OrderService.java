@@ -71,7 +71,6 @@ public class OrderService {
 
                 wallet.setBalance(
                                 wallet.getBalance().add(vendorRevenue));
-
                 wallet.setUpdatedAt(LocalDateTime.now());
 
                 walletRepository.save(wallet);
