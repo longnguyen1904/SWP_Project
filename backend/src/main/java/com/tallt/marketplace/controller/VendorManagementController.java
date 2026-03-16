@@ -51,9 +51,10 @@ public class VendorManagementController {
     @PutMapping("/{id}/status")
     public Vendor updateVendorStatus(
             @PathVariable Integer id,
-            @RequestParam VendorStatus status) {
+            @RequestParam VendorStatus status,
+            @RequestParam(required = false) String rejectionNote) {
 
-        return vendorManagementService.updateVendorStatus(id, status);
+        return vendorManagementService.updateVendorStatus(id, status, rejectionNote);
     }
 
     @PutMapping("/{vendorId}/verify")

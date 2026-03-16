@@ -1,6 +1,6 @@
 package com.tallt.marketplace.controller;
 
-import com.tallt.marketplace.dto.AdminProductReviewDTO;
+import com.tallt.marketplace.dto.admin.AdminProductReviewDTO;
 import com.tallt.marketplace.service.AdminReviewService;
 import lombok.RequiredArgsConstructor;
 
