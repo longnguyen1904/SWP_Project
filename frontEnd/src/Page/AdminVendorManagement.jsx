@@ -34,6 +34,8 @@ function AdminVendorManagement() {
         return { color: colors.success, bg: "rgba(34, 197, 94, 0.1)" };
       case "REJECTED":
         return { color: colors.error, bg: "rgba(239, 68, 68, 0.1)" };
+      case "SUSPENDED":
+        return { color: "#a855f7", bg: "rgba(168, 85, 247, 0.1)" };
       default:
         return { color: colors.warning, bg: "rgba(245, 158, 11, 0.1)" };
     }
@@ -144,6 +146,7 @@ function AdminVendorManagement() {
             <option value="PENDING">PENDING</option>
             <option value="APPROVED">APPROVED</option>
             <option value="REJECTED">REJECTED</option>
+            <option value="SUSPENDED">SUSPENDED</option>
           </select>
 
           <select value={type} onChange={e => setType(e.target.value)} style={selectStyle}>
@@ -280,6 +283,20 @@ function AdminVendorManagement() {
                             Reject
                           </button>
                         </>
+                      ) : vendor.status === "APPROVED" ? (
+                        <button
+                          onClick={() => handleUpdateStatus(vendor.vendorID, "SUSPENDED")}
+                          style={actionBtn(colors.warning)}
+                        >
+                          Suspend
+                        </button>
+                      ) : vendor.status === "SUSPENDED" ? (
+                        <button
+                          onClick={() => handleUpdateStatus(vendor.vendorID, "APPROVED")}
+                          style={actionBtn(colors.success)}
+                        >
+                          Unsuspend
+                        </button>
                       ) : (
                         <span style={{ color: colors.textMuted }}>Completed</span>
                       )}

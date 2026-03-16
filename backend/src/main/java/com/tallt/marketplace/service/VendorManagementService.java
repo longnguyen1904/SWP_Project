@@ -78,6 +78,17 @@ public class VendorManagementService {
             vendor.setVerifiedAt(LocalDateTime.now());
         }
 
+        if (status == VendorStatus.SUSPENDED) {
+            Role userRole = roleRepository.findByRoleName("Customer")
+                    .orElseThrow(() -> new RuntimeException("Role Customer not found"));
+
+            User user = vendor.getUser();
+            user.setRole(userRole);
+            userRepository.save(user);
+
+            vendor.setRejectionNote(null);
+        }
+
         return vendorRepository.save(vendor);
     }
 
