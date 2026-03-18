@@ -100,6 +100,18 @@ export default function VendorDashboard() {
                     </li>
                     <li className="nav-item mb-2">
                         <NavLink
+                            to="/Page/Vendor/CouponManagement"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-ticket-perforated me-3"></i>
+                            Mã giảm giá
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
                             to="/Page/Vendor/Profile"
                             className={({ isActive }) =>
                                 `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
