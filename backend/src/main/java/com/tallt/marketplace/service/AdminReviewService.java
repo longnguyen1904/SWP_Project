@@ -1,6 +1,6 @@
 package com.tallt.marketplace.service;
 
-import com.tallt.marketplace.dto.AdminProductReviewDTO;
+import com.tallt.marketplace.dto.admin.AdminProductReviewDTO;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.entity.ProductVersion;
 import com.tallt.marketplace.exception.AppException;

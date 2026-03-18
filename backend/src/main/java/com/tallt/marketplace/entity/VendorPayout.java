@@ -24,6 +24,8 @@ public class VendorPayout {
     @Column(name = "PayoutDate")
     private LocalDateTime payoutDate;
 
+
     @Column(name = "Status")
     private String status;
+
 }
