@@ -832,6 +832,9 @@ public class ProductService {
         response.setStatus(product.getStatus().name());
         response.setGuideDocumentUrl(product.getGuideDocumentUrl());
 
+        productImageRepository.findTopByProduct_ProductIDOrderBySortOrderAsc(product.getProductID())
+                .ifPresent(img -> response.setThumbnailUrl(img.getImageUrl()));
+
         return response;
     }
 

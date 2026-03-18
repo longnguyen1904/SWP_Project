@@ -25,4 +25,5 @@ public class ProductResponse {
     private List<String> tags;
     private String status;
     private String guideDocumentUrl;
+    private String thumbnailUrl;
 }

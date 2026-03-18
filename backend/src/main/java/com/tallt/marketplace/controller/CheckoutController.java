@@ -36,7 +36,7 @@ public class CheckoutController {
      * Frontend sẽ redirect browser sang URL này.
      */
     @PostMapping("/create")
-    public ApiResponse<CheckoutResponse> createCheckout(
+    public ResponseEntity<ApiResponse<CheckoutResponse>> createCheckout(
             @RequestHeader("X-User-Id") Integer userId,
             @Valid @RequestBody CheckoutRequest request,
             HttpServletRequest httpRequest) {
@@ -44,7 +44,7 @@ public class CheckoutController {
         String ipAddress = getClientIp(httpRequest);
         CheckoutResponse response = checkoutService.createCheckout(userId, request, ipAddress);
 
-        return ApiResponse.success("Tạo đơn hàng thành công", response);
+        return ResponseEntity.ok(ApiResponse.success("Tạo đơn hàng thành công", response));
     }
 
     /**
