@@ -25,6 +25,7 @@ import CreateSupportTicketWizard from "./Page/CreateSupportTicketWizard";
 import VendorTicketManagement from "./Page/VendorTicketManagement";
 import CustomerTicketManagement from "./Page/CustomerTicketManagement";
 import PaymentResult from "./Page/PaymentResult";
+import VendorShop from "./Page/VendorShop";
 import AdminCommission from "./Page/AdminCommision.jsx";
 import AdminPayout from "./Page/AdminPayout.jsx";
 import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
@@ -73,6 +74,7 @@ export default function App() {
         <Route path="/Page/PurchasedProducts" element={<PurchasedProducts />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
+        <Route path="/vendors/:vendorId" element={<VendorShop />} />
         <Route path="/payment-result" element={<PaymentResult/>} />
         <Route path="/Page/VendorRegistration" element={<VendorRegistration/>} />
       </Routes>

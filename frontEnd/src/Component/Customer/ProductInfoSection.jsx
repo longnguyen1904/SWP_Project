@@ -57,7 +57,14 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
       <h1 className="product-info__name">{product.name}</h1>
 
       <p className="product-info__vendor">
-        by <span>{product.vendorName ?? "Vendor"}</span>
+        by{" "}
+        {product.vendorId ? (
+          <Link to={`/vendors/${product.vendorId}`} className="vendor-link">
+            {product.vendorName ?? "Vendor"}
+          </Link>
+        ) : (
+          <span>{product.vendorName ?? "Vendor"}</span>
+        )}
       </p>
 
       <div className="product-info__rating-box">

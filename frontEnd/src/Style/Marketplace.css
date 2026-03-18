@@ -803,3 +803,127 @@
   .product-info__name { font-size: 1.3rem; }
 }
 
+/* --- Vendor Link --------------------------------------------------------- */
+.vendor-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.vendor-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* --- Vendor Shop Page ---------------------------------------------------- */
+.vendor-shop {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.vendor-shop__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 32px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 16px;
+  margin-bottom: 32px;
+}
+
+.vendor-shop__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent), #ff6a3d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.vendor-shop__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vendor-shop__name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vendor-shop__verified {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #22c55e;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.vendor-shop__company {
+  margin: 0 0 4px;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.vendor-shop__description {
+  margin: 4px 0 12px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.vendor-shop__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+.vendor-shop__meta-sep {
+  opacity: 0.4;
+}
+
+.vendor-shop__toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.vendor-shop__toolbar .search-bar {
+  flex: 1;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+  .vendor-shop__header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .vendor-shop__name { justify-content: center; }
+  .vendor-shop__meta { justify-content: center; flex-wrap: wrap; }
+  .vendor-shop__toolbar { flex-direction: column; }
+}

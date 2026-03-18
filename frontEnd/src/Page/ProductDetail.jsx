@@ -77,13 +77,25 @@ const ProductDetail = () => {
   return (
     <div className="product-detail">
       {paymentFailed && (
-        <div className="alert alert--error payment-failed-alert">
-          <span>Thanh toán không thành công. Vui lòng thử lại.</span>
-          <button
-            className="payment-failed-alert__close"
-            onClick={() => setPaymentFailed(false)}
-          >
-          </button>
+        <div className="checkout-overlay" onClick={() => setPaymentFailed(false)}>
+          <div className="checkout-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="checkout-modal__header">
+              <h2 className="checkout-modal__title" style={{ color: "var(--color-error, #f44)" }}>
+                Thanh toán không thành công
+              </h2>
+              <p className="checkout-modal__subtitle">
+                Giao dịch đã bị hủy hoặc xảy ra lỗi. Vui lòng thử lại.
+              </p>
+            </div>
+            <div className="checkout-modal__actions">
+              <button
+                className="btn btn--primary"
+                onClick={() => setPaymentFailed(false)}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

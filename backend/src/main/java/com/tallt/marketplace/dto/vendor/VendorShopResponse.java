@@ -12,4 +12,6 @@ public class VendorShopResponse {
     private String type;
     private Boolean isVerified;
     private LocalDateTime createdAt;
+    private String description;
+    private Long productCount;
 }

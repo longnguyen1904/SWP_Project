@@ -216,6 +216,7 @@ public class VendorService {
         response.setType(vendor.getType() != null ? vendor.getType().name() : null);
         response.setIsVerified(vendor.getIsVerified());
         response.setCreatedAt(vendor.getCreatedAt());
+        response.setDescription(vendor.getDescription());
 
         String displayName = vendor.getCompanyName();
         if (displayName == null || displayName.isBlank()) {

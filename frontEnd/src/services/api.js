@@ -111,6 +111,11 @@ export const customerAPI = {
   getTags: () => api.get("/api/tags"),
   createCheckout: (data) => api.post("/api/checkout/create", data),
   startTrial: (productId) => api.post("/api/trials/start", { productId }),
+  getVendorShop: (vendorId) => api.get(`/api/vendors/${vendorId}`),
+  getVendorShopProducts: (vendorId, params = {}) => {
+    const queryString = buildProductsQueryString(params);
+    return api.get(`/api/vendors/${vendorId}/products${queryString}`);
+  },
 };
 
 export const uploadAPI = {
