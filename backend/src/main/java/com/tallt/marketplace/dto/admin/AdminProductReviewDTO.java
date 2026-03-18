@@ -1,4 +1,4 @@
-package com.tallt.marketplace.dto;
+package com.tallt.marketplace.dto.admin;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
