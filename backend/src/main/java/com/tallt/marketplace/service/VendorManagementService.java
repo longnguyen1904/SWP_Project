@@ -88,6 +88,17 @@ public class VendorManagementService {
             vendor.setRejectionNote(rejectionNote);
         }
 
+        if (status == VendorStatus.SUSPENDED) {
+            Role userRole = roleRepository.findByRoleName("VENDOR")
+                    .orElseThrow(() -> new RuntimeException("Role USER not found"));
+
+            User user = vendor.getUser();
+            user.setRole(userRole);
+            userRepository.save(user);
+
+            vendor.setRejectionNote(null);
+        }
+
         return vendorRepository.save(vendor);
     }
 
