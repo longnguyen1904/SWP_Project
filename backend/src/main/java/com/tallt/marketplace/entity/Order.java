@@ -15,8 +15,6 @@ public class Order {
     @Column(name = "OrderID")
     private Integer orderID;
      
-    
-
     @ManyToOne
     @JoinColumn(name = "UserID", nullable = false)
     private User user;

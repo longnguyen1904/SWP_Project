@@ -21,8 +21,11 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
 
   const handleStartTrial = async () => {
     const user = (() => {
-      try { return JSON.parse(localStorage.getItem("user") || "{}"); }
-      catch { return {}; }
+      try {
+        return JSON.parse(localStorage.getItem("user") || "{}");
+      } catch {
+        return {};
+      }
     })();
     if (!user.userID && !user.userId) {
       alert("Vui lòng đăng nhập để dùng thử.");
@@ -35,11 +38,14 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
       const data = res.data?.data;
       alert(
         `Kích hoạt trial thành công!\n\n` +
-        `License Key: ${data.licenseKey}\n` +
-        `Hết hạn: ${new Date(data.expireAt).toLocaleDateString("vi-VN")}`
+          `License Key: ${data.licenseKey}\n` +
+          `Hết hạn: ${new Date(data.expireAt).toLocaleDateString("vi-VN")}`,
       );
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data || "Không thể kích hoạt trial.";
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data ||
+        "Không thể kích hoạt trial.";
       alert(msg);
     } finally {
       setTrialLoading(false);
@@ -118,7 +124,9 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
             onClick={handleStartTrial}
             disabled={trialLoading}
           >
-            {trialLoading ? "Đang xử lý..." : `Dùng thử miễn phí (${product.trialDurationDays ?? 7} ngày)`}
+            {trialLoading
+              ? "Đang xử lý..."
+              : `Dùng thử miễn phí (${product.trialDurationDays ?? 7} ngày)`}
           </button>
         )}
       </div>

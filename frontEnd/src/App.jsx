@@ -26,6 +26,7 @@ import VendorTicketManagement from "./Page/VendorTicketManagement";
 import CustomerTicketManagement from "./Page/CustomerTicketManagement";
 import PaymentResult from "./Page/PaymentResult";
 import AdminCommission from "./Page/AdminCommision.jsx";
+import AdminPayout from "./Page/AdminPayout.jsx";
 import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
 export default function App() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="AdminVendorManagement" element={<AdminVendorManagement />} />
           <Route path="AdminReview" element={<AdminReview />} />
           <Route path="AdminCommission" element={<AdminCommission />} />
+          <Route path="AdminPayout" element={<AdminPayout />} />
           
         </Route>
          
