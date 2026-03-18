@@ -8,12 +8,46 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+
   if (!product || !selectedTier) return null;
 
   const tierId = selectedTier.tierId;
   const tierName = selectedTier.tierName;
   const price = selectedTier.price;
   const productId = product.id ?? product.productId;
+
+  const discountAmount = couponApplied
+    ? (price * couponApplied.discountPercent) / 100
+    : 0;
+  const finalPrice = Math.max(price - discountAmount, 0);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError("");
+    setCouponApplied(null);
+    try {
+      const res = await customerAPI.validateCoupon(couponCode.trim(), productId);
+      const data = unwrapResponse(res) ?? res.data;
+      setCouponApplied(data);
+    } catch (err) {
+      const raw = err?.response?.data;
+      const msg = typeof raw === "string" ? raw : (raw?.message ?? "Mã coupon không hợp lệ");
+      setCouponError(msg);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponApplied(null);
+    setCouponCode("");
+    setCouponError("");
+  };
 
   const handleConfirm = async () => {
     setLoading(true);
@@ -22,6 +56,7 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
       const res = await customerAPI.createCheckout({
         productId: productId,
         tierId: tierId,
+        couponCode: couponApplied ? couponCode.trim() : null,
       });
       const data = unwrapResponse(res) ?? res.data;
 
@@ -66,9 +101,52 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
           </div>
         </div>
 
+        <div className="checkout-modal__coupon">
+          <label className="checkout-modal__coupon-label">Mã giảm giá</label>
+          <div className="checkout-modal__coupon-input-row">
+            <input
+              type="text"
+              className="checkout-modal__coupon-input"
+              placeholder="Nhập mã coupon..."
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+              disabled={!!couponApplied || couponLoading}
+            />
+            {couponApplied ? (
+              <button
+                className="btn btn--outline checkout-modal__coupon-btn"
+                onClick={handleRemoveCoupon}
+                type="button"
+              >
+                Hủy
+              </button>
+            ) : (
+              <button
+                className="btn btn--primary checkout-modal__coupon-btn"
+                onClick={handleApplyCoupon}
+                disabled={couponLoading || !couponCode.trim()}
+                type="button"
+              >
+                {couponLoading ? "..." : "Áp dụng"}
+              </button>
+            )}
+          </div>
+          {couponError && <p className="checkout-modal__coupon-error">{couponError}</p>}
+          {couponApplied && (
+            <p className="checkout-modal__coupon-success">
+              ✅ Giảm {couponApplied.discountPercent}% — Tiết kiệm {formatPrice(discountAmount)}
+            </p>
+          )}
+        </div>
+
         <div className="checkout-modal__total">
           <span>Số tiền cần thanh toán</span>
-          <span className="checkout-modal__total-amount">{formatPrice(price)}</span>
+          <span className="checkout-modal__total-amount">
+            {couponApplied && (
+              <span className="checkout-modal__original-price">{formatPrice(price)}</span>
+            )}
+            {formatPrice(finalPrice)}
+          </span>
         </div>
 
         {error && <div className="alert alert--error">{error}</div>}

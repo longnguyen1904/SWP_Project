@@ -5,8 +5,11 @@ import ProductInfoSection from "../Component/Customer/ProductInfoSection";
 import ReviewSection from "../Component/Customer/ReviewSection";
 import RelatedProducts from "../Component/Customer/RelatedProducts";
 import CheckoutModal from "../Component/Customer/CheckoutModal";
+import WishlistButton from "../Component/Customer/WishlistButton";
+import { saveRecentlyViewed } from "../Component/Customer/RecentlyViewed";
 import useProductDetail from "../services/useProductDetail";
 import "../Style/Marketplace.css";
+import "../Style/Wishlist.css";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -36,6 +39,10 @@ const ProductDetail = () => {
     showBuyButton,
     refetchReviewsAndProduct,
   } = useProductDetail(productId);
+
+  useEffect(() => {
+    if (product) saveRecentlyViewed(product);
+  }, [product]);
 
   const handleBuyNow = (tier) => {
     setSelectedTier(tier);
@@ -128,6 +135,7 @@ const ProductDetail = () => {
           product={product}
           showBuyButton={showBuyButton}
           onBuyNow={handleBuyNow}
+          productId={Number(productId)}
         />
       </div>
 
