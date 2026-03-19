@@ -23,9 +23,7 @@ public class AdminPayoutService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final CommissionService commissionService;
 
-    /**
-     * Lấy danh sách payout
-     */
+
     public Page<AdminPayoutResponse> getAllPayouts(Pageable pageable) {
 
         Page<VendorPayout> payouts = vendorPayoutRepository.findAll(pageable);
@@ -59,9 +57,7 @@ public class AdminPayoutService {
         });
     }
 
-    /**
-     * Lấy payout pending
-     */
+
     public Page<AdminPayoutResponse> getPendingPayouts(Pageable pageable) {
 
         Page<VendorPayout> payouts = vendorPayoutRepository.findByStatus("PENDING", pageable);
@@ -85,9 +81,7 @@ public class AdminPayoutService {
         });
     }
 
-    /**
-     * Approve payout
-     */
+
     @Transactional
     public void approvePayout(Integer payoutId) {
 
@@ -104,32 +98,30 @@ public class AdminPayoutService {
                 .findByUser_UserID(vendor.getUser().getUserID())
                 .orElseThrow(() -> new AppException("Vendor wallet không tồn tại"));
 
-        // Admin wallet (UserID = 1)
+
         Wallet adminWallet = walletRepository
                 .findByUser_UserID(1)
                 .orElseThrow(() -> new AppException("Admin wallet không tồn tại"));
 
         BigDecimal payoutAmount = payout.getAmount();
 
-        // Lấy commission %
+
         BigDecimal commissionPercent = commissionService.getCurrentCommission();
 
-        // Commission amount
+
         BigDecimal commissionAmount = payoutAmount
                 .multiply(commissionPercent)
                 .divide(BigDecimal.valueOf(100));
 
-        // Vendor receive
+
         BigDecimal vendorReceive = payoutAmount.subtract(commissionAmount);
 
-        // Check admin balance
+
         if (adminWallet.getBalance().compareTo(vendorReceive) < 0) {
-            throw new AppException("Admin wallet không đủ tiền để payout");
+            throw new AppException("Admin wallet does not have enough balance for this payout");
         }
 
-        /**
-         * ===== Update balances =====
-         */
+
 
         adminWallet.setBalance(adminWallet.getBalance().subtract(vendorReceive));
         adminWallet.setUpdatedAt(LocalDateTime.now());
@@ -140,9 +132,7 @@ public class AdminPayoutService {
         walletRepository.save(adminWallet);
         walletRepository.save(vendorWallet);
 
-        /**
-         * ===== Admin withdrawal transaction =====
-         */
+
         WalletTransaction adminTransaction = new WalletTransaction();
 
         adminTransaction.setWallet(adminWallet);
@@ -154,9 +144,7 @@ public class AdminPayoutService {
 
         walletTransactionRepository.save(adminTransaction);
 
-        /**
-         * ===== Vendor deposit transaction =====
-         */
+
         WalletTransaction vendorTransaction = new WalletTransaction();
 
         vendorTransaction.setWallet(vendorWallet);
@@ -168,18 +156,14 @@ public class AdminPayoutService {
 
         walletTransactionRepository.save(vendorTransaction);
 
-        /**
-         * ===== Update payout =====
-         */
+
         payout.setStatus("COMPLETED");
         payout.setPayoutDate(LocalDateTime.now());
 
         vendorPayoutRepository.save(payout);
     }
 
-    /**
-     * Reject payout
-     */
+
     @Transactional
     public void rejectPayout(Integer payoutId) {
 
