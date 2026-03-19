@@ -652,7 +652,8 @@
 .product-info__actions {
   display: flex;
   align-items: center;
-  gap: 36px;
+  flex-wrap: nowrap;
+  gap: 12px;
   margin-top: 16px;
 }
 
@@ -1013,22 +1014,76 @@
   opacity: 0.4;
 }
 
-.vendor-shop__toolbar {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 24px;
+.vendor-shop__section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 28px 0 16px;
+  color: var(--color-text);
 }
 
-.vendor-shop__toolbar .search-bar {
-  flex: 1;
-}
-
-.empty-state {
+.vendor-shop__empty {
   text-align: center;
   padding: 48px 24px;
   color: var(--color-text-muted);
-  font-size: 1rem;
+}
+
+.vendor-shop__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.vendor-shop__card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.vendor-shop__card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-accent);
+}
+
+.vendor-shop__card-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--color-surface-raised);
+}
+
+.vendor-shop__card-body {
+  padding: 12px 14px;
+}
+
+.vendor-shop__card-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--color-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vendor-shop__card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+.vendor-shop__card-rating { color: #f5a623; font-weight: 600; }
+.vendor-shop__card-sold { margin-left: auto; }
+
+.vendor-shop__card-price {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin: 0;
 }
 
 @media (max-width: 640px) {
@@ -1039,5 +1094,73 @@
   }
   .vendor-shop__name { justify-content: center; }
   .vendor-shop__meta { justify-content: center; flex-wrap: wrap; }
-  .vendor-shop__toolbar { flex-direction: column; }
+  .vendor-shop__grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+}
+
+.vendor-shop__pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+.vendor-shop__page-btn {
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vendor-shop__page-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.vendor-shop__page-btn.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* === Coupon Banner (Product Detail) ==================================== */
+.coupon-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 20px;
+  margin: 20px 0;
+  background: linear-gradient(135deg, rgba(248, 97, 21, 0.08), rgba(248, 97, 21, 0.02));
+  border: none;
+  border-radius: 10px;
+}
+.coupon-banner__icon {
+  font-size: 1.3rem;
+}
+.coupon-banner__text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.coupon-banner__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  background: rgba(248, 97, 21, 0.15);
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  color: var(--color-accent);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.coupon-banner__tag:hover {
+  background: var(--color-accent);
+  color: #fff;
+  transform: scale(1.05);
 }

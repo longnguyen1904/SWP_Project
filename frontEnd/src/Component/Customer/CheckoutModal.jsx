@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { customerAPI } from "../../services/api";
-import { unwrapResponse } from "../../services/apiHelpers";
+import { unwrapResponse, getApiErrorMessage } from "../../services/apiHelpers";
 import { formatPrice, getProductImageUrl } from "../../services/formatters";
 import "../../Style/Payment.css";
 
@@ -32,12 +32,9 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
     setCouponApplied(null);
     try {
       const res = await customerAPI.validateCoupon(couponCode.trim(), productId);
-      const data = unwrapResponse(res) ?? res.data;
-      setCouponApplied(data);
+      setCouponApplied(unwrapResponse(res));
     } catch (err) {
-      const raw = err?.response?.data;
-      const msg = typeof raw === "string" ? raw : (raw?.message ?? "Mã coupon không hợp lệ");
-      setCouponError(msg);
+      setCouponError(getApiErrorMessage(err, "Mã coupon không hợp lệ"));
     } finally {
       setCouponLoading(false);
     }
@@ -58,7 +55,7 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
         tierId: tierId,
         couponCode: couponApplied ? couponCode.trim() : null,
       });
-      const data = unwrapResponse(res) ?? res.data;
+      const data = unwrapResponse(res);
 
       if (data?.paymentUrl) {
         window.location.href = data.paymentUrl;
@@ -66,10 +63,7 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
         setError("Không thể tạo link thanh toán. Vui lòng thử lại.");
       }
     } catch (err) {
-      const msg = err?.response?.data?.message
-        ?? err?.response?.data
-        ?? "Có lỗi xảy ra. Vui lòng thử lại.";
-      setError(typeof msg === "string" ? msg : "Có lỗi xảy ra.");
+      setError(getApiErrorMessage(err, "Có lỗi xảy ra. Vui lòng thử lại."));
     } finally {
       setLoading(false);
     }

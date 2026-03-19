@@ -39,7 +39,7 @@ const WishlistPage = () => {
     setError("");
     try {
       const res = await customerAPI.getWishlist();
-      const data = unwrapResponse(res) ?? res.data;
+      const data = unwrapResponse(res);
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(getApiErrorMessage(err, "Không thể tải danh sách yêu thích."));

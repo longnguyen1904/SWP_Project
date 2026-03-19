@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { couponAPI } from "../services/api";
-import { unwrapResponse } from "../services/apiHelpers";
+import { couponAPI, vendorAPI } from "../services/api";
+import { unwrapResponse, getApiErrorMessage } from "../services/apiHelpers";
 
 const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ code: "", discountPercent: "", maxUses: "", expiresAt: "" });
+  const [form, setForm] = useState({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [products, setProducts] = useState([]);
 
   const fetchCoupons = async () => {
     try {
       const res = await couponAPI.getCoupons();
-      const data = unwrapResponse(res) ?? res.data;
+      const data = unwrapResponse(res);
       setCoupons(Array.isArray(data) ? data : []);
     } catch {
       setCoupons([]);
@@ -22,7 +23,19 @@ const CouponManagement = () => {
     }
   };
 
-  useEffect(() => { fetchCoupons(); }, []);
+  useEffect(() => {
+    fetchCoupons();
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await vendorAPI.getVendorProducts({ size: 100 });
+      const data = unwrapResponse(res);
+      const list = data?.content ?? data;
+      setProducts(Array.isArray(list) ? list : []);
+    } catch { setProducts([]); }
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -34,15 +47,15 @@ const CouponManagement = () => {
         discountPercent: parseInt(form.discountPercent),
         maxUses: form.maxUses ? parseInt(form.maxUses) : null,
         expiresAt: form.expiresAt ? form.expiresAt + "T23:59:59" : null,
+        productId: form.productId ? parseInt(form.productId) : null,
       };
       await couponAPI.createCoupon(body);
       setSuccess("Tạo coupon thành công!");
-      setForm({ code: "", discountPercent: "", maxUses: "", expiresAt: "" });
+      setForm({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "" });
       setShowForm(false);
       fetchCoupons();
     } catch (err) {
-      const msg = err?.response?.data?.message ?? "Có lỗi xảy ra";
-      setError(typeof msg === "string" ? msg : "Có lỗi xảy ra");
+      setError(getApiErrorMessage(err, "Có lỗi xảy ra"));
     }
   };
 
@@ -131,6 +144,23 @@ const CouponManagement = () => {
                     onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
                   />
                 </div>
+              </div>
+              <div className="row g-3 mt-1">
+                <div className="col-md-6">
+                  <label className="form-label">Áp dụng cho sản phẩm</label>
+                  <select
+                    className="form-select bg-dark text-white border-secondary"
+                    value={form.productId}
+                    onChange={(e) => setForm({ ...form, productId: e.target.value })}
+                  >
+                    <option value="">Tất cả sản phẩm của tôi</option>
+                    {products.map((p) => (
+                      <option key={p.productId ?? p.productID} value={p.productId ?? p.productID}>
+                        {p.productName ?? p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="col-md-2 d-flex align-items-end">
                   <button type="submit" className="btn btn-success w-100">Tạo</button>
                 </div>
@@ -152,6 +182,7 @@ const CouponManagement = () => {
               <tr className="text-info">
                 <th>Mã</th>
                 <th>Giảm giá</th>
+                <th>Sản phẩm</th>
                 <th>Đã dùng</th>
                 <th>Tối đa</th>
                 <th>Hết hạn</th>
@@ -170,6 +201,7 @@ const CouponManagement = () => {
                   <tr key={c.couponId}>
                     <td><code className="text-warning fs-6">{c.code}</code></td>
                     <td>{c.discountPercent}%</td>
+                    <td className="text-white-50">{c.product?.productName ?? "Tất cả"}</td>
                     <td>{c.currentUses ?? 0}</td>
                     <td>{c.maxUses ?? "∞"}</td>
                     <td>{formatDate(c.expiresAt)}</td>

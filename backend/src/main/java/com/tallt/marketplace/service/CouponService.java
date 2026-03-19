@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -130,5 +131,27 @@ public class CouponService {
                 .orElseThrow(() -> new AppException("Mã coupon không tồn tại"));
         coupon.setCurrentUses(coupon.getCurrentUses() + 1);
         return couponRepository.save(coupon);
+    }
+
+    public List<Map<String, Object>> getActiveCouponsForProduct(Integer productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
+
+        Integer vendorId = product.getVendor().getVendorID();
+        List<Coupon> allVendorCoupons = couponRepository.findByVendor_VendorID(vendorId);
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Coupon c : allVendorCoupons) {
+            if (!c.getIsActive()) continue;
+            if (c.getExpiresAt() != null && c.getExpiresAt().isBefore(LocalDateTime.now())) continue;
+            if (c.getMaxUses() != null && c.getCurrentUses() >= c.getMaxUses()) continue;
+            if (c.getProduct() != null && !c.getProduct().getProductID().equals(productId)) continue;
+
+            result.add(Map.of(
+                    "code", c.getCode(),
+                    "discountPercent", c.getDiscountPercent()
+            ));
+        }
+        return result;
     }
 }

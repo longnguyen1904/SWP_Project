@@ -123,6 +123,8 @@ export const customerAPI = {
     api.get(`/api/wishlists/check?productId=${productId}`),
   validateCoupon: (code, productId) =>
     api.get(`/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`),
+  getCouponsForProduct: (productId) =>
+    api.get(`/api/coupons/product/${productId}`),
 };
 
 export const couponAPI = {

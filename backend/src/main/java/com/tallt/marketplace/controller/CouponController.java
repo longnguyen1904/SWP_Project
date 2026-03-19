@@ -49,4 +49,11 @@ public class CouponController {
         Map<String, Object> result = couponService.validateCoupon(code, productId);
         return ResponseEntity.ok(ApiResponse.success("Coupon hợp lệ", result));
     }
+
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getCouponsForProduct(
+            @PathVariable("productId") Integer productId) {
+        List<Map<String, Object>> coupons = couponService.getActiveCouponsForProduct(productId);
+        return ResponseEntity.ok(ApiResponse.success("Danh sách coupon", coupons));
+    }
 }

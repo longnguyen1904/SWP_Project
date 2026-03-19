@@ -8,6 +8,8 @@ import CheckoutModal from "../Component/Customer/CheckoutModal";
 import WishlistButton from "../Component/Customer/WishlistButton";
 import { saveRecentlyViewed } from "../Component/Customer/RecentlyViewed";
 import useProductDetail from "../services/useProductDetail";
+import { customerAPI } from "../services/api";
+import { unwrapResponse } from "../services/apiHelpers";
 import "../Style/Marketplace.css";
 import "../Style/Wishlist.css";
 
@@ -17,6 +19,7 @@ const ProductDetail = () => {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [selectedTier, setSelectedTier] = useState(null);
   const [paymentFailed, setPaymentFailed] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
 
   useEffect(() => {
     if (searchParams.get("paymentFailed") === "true") {
@@ -43,6 +46,17 @@ const ProductDetail = () => {
   useEffect(() => {
     if (product) saveRecentlyViewed(product);
   }, [product]);
+
+  useEffect(() => {
+    if (productId) {
+      customerAPI.getCouponsForProduct(productId)
+        .then((res) => {
+          const data = unwrapResponse(res);
+          setAvailableCoupons(Array.isArray(data) ? data : []);
+        })
+        .catch(() => setAvailableCoupons([]));
+    }
+  }, [productId]);
 
   const handleBuyNow = (tier) => {
     setSelectedTier(tier);
@@ -138,6 +152,22 @@ const ProductDetail = () => {
           productId={Number(productId)}
         />
       </div>
+
+      {availableCoupons.length > 0 && (
+        <div className="coupon-banner">
+          <span className="coupon-banner__text">Mã giảm giá:</span>
+          {availableCoupons.map((c, i) => (
+            <span
+              key={i}
+              className="coupon-banner__tag"
+              onClick={() => { navigator.clipboard.writeText(c.code); }}
+              title="Bấm để copy"
+            >
+              {c.code} (-{c.discountPercent}%)
+            </span>
+          ))}
+        </div>
+      )}
 
       <ReviewSection
         reviews={reviews}
