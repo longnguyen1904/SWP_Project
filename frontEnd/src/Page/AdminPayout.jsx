@@ -53,7 +53,7 @@ const AdminPayout = () => {
 
       if (!res.ok) {
         setMessage({
-          text: responseText || "Admin wallet does not have enough balance for this payout",
+          text: responseText ,
           type: "error",
         });
         return;
@@ -72,7 +72,7 @@ const AdminPayout = () => {
       );
 
       setMessage({
-        text: responseText || "Operation success",
+        text: responseText ,
         type: "success",
       });
 

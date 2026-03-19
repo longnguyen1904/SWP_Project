@@ -36,7 +36,7 @@ public class VirusTotalService {
         }
 
         try {
-            Thread.sleep(10000); // đợi VirusTotal phân tích
+            Thread.sleep(10000); 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -49,7 +49,7 @@ public class VirusTotalService {
     }
 
 
-    // 1️⃣ Gửi URL lên VirusTotal
+
     private String submitUrl(String urlToScan) {
 
 
@@ -85,7 +85,6 @@ public class VirusTotalService {
     }
 
 
-    // 2️⃣ Kiểm tra kết quả
     private boolean checkResultOnce(String analysisId) {
 
 
