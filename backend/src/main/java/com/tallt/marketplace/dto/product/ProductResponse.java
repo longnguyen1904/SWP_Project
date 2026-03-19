@@ -26,4 +26,7 @@ public class ProductResponse {
     private String status;
     private String guideDocumentUrl;
     private String thumbnailUrl;
+    private Double averageRating;
+    private Long reviewCount;
+    private Long soldCount;
 }

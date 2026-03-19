@@ -29,6 +29,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findByUser_UserID(Integer userID);
 
     void deleteByProduct_ProductID(Integer productId);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.product.productID = :productId AND UPPER(o.paymentStatus) = 'COMPLETED'")
+    long countCompletedByProductId(@Param("productId") Integer productId);
     
     
 

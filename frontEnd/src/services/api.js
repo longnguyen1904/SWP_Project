@@ -116,6 +116,21 @@ export const customerAPI = {
     const queryString = buildProductsQueryString(params);
     return api.get(`/api/vendors/${vendorId}/products${queryString}`);
   },
+  getWishlist: () => api.get("/api/wishlists/me"),
+  toggleWishlist: (productId) =>
+    api.post(`/api/wishlists/toggle?productId=${productId}`),
+  checkWishlist: (productId) =>
+    api.get(`/api/wishlists/check?productId=${productId}`),
+  validateCoupon: (code, productId) =>
+    api.get(`/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`),
+  getCouponsForProduct: (productId) =>
+    api.get(`/api/coupons/product/${productId}`),
+};
+
+export const couponAPI = {
+  getCoupons: () => api.get("/api/coupons/my"),
+  createCoupon: (data) => api.post("/api/coupons", data),
+  deleteCoupon: (id) => api.delete(`/api/coupons/${id}`),
 };
 
 export const uploadAPI = {

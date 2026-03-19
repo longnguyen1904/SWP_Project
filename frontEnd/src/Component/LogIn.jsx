@@ -1,10 +1,11 @@
 import { forwardRef, useState } from "react";
+import { authAPI } from "../services/api";
+import { unwrapResponse, getApiErrorMessage } from "../services/apiHelpers";
 import "../Style/LogIn.css";
 
 const LogIn = forwardRef(function LogIn(props, ref) {
   
   const [isLogin, setIsLogin] = useState(true);
-
 
   const [formData, setFormData] = useState({
     email: "",
@@ -15,49 +16,30 @@ const LogIn = forwardRef(function LogIn(props, ref) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
 
-   
-    const endpoint = isLogin
-      ? "http://localhost:8081/api/auth/login"
-      : "http://localhost:8081/api/auth/register";
-
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData), 
-      });
+      const res = isLogin
+        ? await authAPI.login(formData)
+        : await authAPI.register(formData);
 
+      const user = unwrapResponse(res);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        if (isLogin) {
-   
-          alert("Đăng nhập thành công! Chào " + data.fullName);
-          localStorage.setItem("user", JSON.stringify(data));
-          if (ref.current) ref.current.close();
- 
-          window.location.reload();
-        } else {
-     
-          alert("Đăng ký thành công! Hãy đăng nhập ngay.");
-          setIsLogin(true); 
-        }
+      if (isLogin) {
+        alert("Đăng nhập thành công! Chào " + user.fullName);
+        localStorage.setItem("user", JSON.stringify(user));
+        if (ref.current) ref.current.close();
+        window.location.reload();
       } else {
-        alert("Lỗi: " + (data.message || "Kiểm tra lại email/mật khẩu"));
-      }                                
+        alert("Đăng ký thành công! Hãy đăng nhập ngay.");
+        setIsLogin(true); 
+      }
     } catch (error) {
-      console.error("Lỗi kết nối:", error);
-      alert("Không thể kết nối đến Server (Port 8081)!" );
+      alert("Lỗi: " + getApiErrorMessage(error, "Kiểm tra lại email/mật khẩu"));
     }
   };
 
@@ -87,7 +69,6 @@ const LogIn = forwardRef(function LogIn(props, ref) {
             </div>
           )}
 
-        
           <div className="form-group">
             <label>Email</label>
             <input
@@ -100,7 +81,6 @@ const LogIn = forwardRef(function LogIn(props, ref) {
             />
           </div>
 
-          {/* 3. Password */}
           <div className="form-group">
             <label>Password</label>
             <input
@@ -113,15 +93,13 @@ const LogIn = forwardRef(function LogIn(props, ref) {
             />
           </div>
 
-       
-
           <button className="login-btn" type="submit">
             {isLogin ? "Log In" : "Sign Up"}
           </button>
         </form>
 
         <p className="footer-text">
-          {isLogin ? "Don’t have an account? " : "Already have an account? "}
+          {isLogin ? "Don't have an account? " : "Already have an account? "}
           <span
             onClick={() => setIsLogin(!isLogin)}
             style={{ cursor: "pointer", color: "blue", fontWeight: "bold" }}

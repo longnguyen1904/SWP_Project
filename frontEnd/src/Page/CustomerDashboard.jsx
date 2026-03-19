@@ -39,7 +39,34 @@ export default function CustomerDashboard() {
             </NavLink>
           </li>
 
-       
+          <li className="nav-item mb-2">
+            <NavLink 
+              to="/Page/Customer/Wishlist" 
+              className={({ isActive }) => 
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
+                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+                }`
+              }
+            >
+              <i className="bi bi-heart me-3"></i>
+              Yêu thích (Wishlist)
+            </NavLink>
+          </li>
+
+          <li className="nav-item mb-2">
+            <NavLink 
+              to="/Page/Customer/RecentlyViewed" 
+              className={({ isActive }) => 
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
+                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+                }`
+              }
+            >
+              <i className="bi bi-clock-history me-3"></i>
+              Đã xem gần đây
+            </NavLink>
+          </li>
+
 
            <li className="nav-item mb-2">
             <NavLink 

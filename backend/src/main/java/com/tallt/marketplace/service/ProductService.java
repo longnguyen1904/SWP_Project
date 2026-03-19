@@ -835,6 +835,11 @@ public class ProductService {
         productImageRepository.findTopByProduct_ProductIDOrderBySortOrderAsc(product.getProductID())
                 .ifPresent(img -> response.setThumbnailUrl(img.getImageUrl()));
 
+        Double avgRating = reviewRepository.getAverageRating(product.getProductID());
+        response.setAverageRating(avgRating != null ? avgRating : 0.0);
+        response.setReviewCount(reviewRepository.countByProduct_ProductID(product.getProductID()));
+        response.setSoldCount(orderRepository.countCompletedByProductId(product.getProductID()));
+
         return response;
     }
 
