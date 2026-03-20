@@ -4,7 +4,11 @@ import com.tallt.marketplace.constant.MessageConstant;
 import com.tallt.marketplace.dto.AuthResponse;
 import com.tallt.marketplace.dto.LoginRequest;
 import com.tallt.marketplace.dto.RegisterRequest;
+<<<<<<< Updated upstream
 import com.tallt.marketplace.entity.User;
+=======
+import com.tallt.marketplace.dto.TokenRequest;
+>>>>>>> Stashed changes
 import com.tallt.marketplace.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -33,5 +37,11 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) { // Thêm @Valid
         return ResponseEntity.ok(authService.register(request));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@RequestBody @Valid TokenRequest request) {
+        AuthResponse response = authService.googleLogin(request.getToken());
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập Google thành công", response));
     }
 }

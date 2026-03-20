@@ -1,17 +1,22 @@
-﻿spring:
+spring:
   application:
     name: marketplace
   mail:
     host: smtp.gmail.com
     port: 587
+<<<<<<< Updated upstream
     username: dinhlam728@gmail.com # ← Thay bằng Gmail của bạn
     password: mmyg umdr pqak vinb # ← Thay bằng App Password 16 ký tự
+=======
+    username: tài_khoản_email_của_ông@gmail.com # ← Thay bằng Gmail của bạn
+    password: mật_khẩu_ứng_dụng_16_ký_tự # ← Thay bằng App Password 16 ký tự
+>>>>>>> Stashed changes
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
   servlet:
     multipart:
-      max-file-size: 500MB
+      max-file-size: 500MB  
       max-request-size: 500MB
   datasource:
     url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -31,8 +36,8 @@
       client:
         registration:
           google:
-            client-id: 717141299175-nbm6ieb88eq2genuvl10i5u46tkauhha.apps.googleusercontent.com
-            client-secret: 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
+            client-id: 717141299175-t9nip96r7esj02q394h1s31o9rr6armd.apps.googleusercontent.com
+            client-secret: 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
             scope:
               - email
               - profile
