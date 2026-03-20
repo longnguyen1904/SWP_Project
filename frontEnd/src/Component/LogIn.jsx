@@ -32,6 +32,9 @@ const LogIn = forwardRef(function LogIn(props, ref) {
       if (isLogin) {
         alert("Đăng nhập thành công! Chào " + user.fullName);
         localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("role", user.roleName || "");
+        localStorage.setItem("accessToken", user.token || "authenticated");
+        localStorage.setItem("userId", String(user.userID || ""));
         if (ref.current) ref.current.close();
         window.location.reload();
       } else {
