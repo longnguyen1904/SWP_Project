@@ -24,6 +24,7 @@ const ReviewSection = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [actionError, setActionError] = useState("");
   const [reviewPage, setReviewPage] = useState(1);
+  const [reviewSort, setReviewSort] = useState("newest");
   const REVIEWS_PER_PAGE = 3;
 
   const currentUserId = getCurrentUserId();
@@ -36,7 +37,7 @@ const ReviewSection = ({
 
   const handleSubmitReview = async () => {
     if (!getCurrentUserId()) {
-      setSubmitError("Bạn cần đăng nhập để đánh giá.");
+      setSubmitError("Please log in to leave a review.");
       return;
     }
     setSubmitError("");
@@ -47,7 +48,7 @@ const ReviewSection = ({
       setNewRating(5);
       onReviewsChanged();
     } catch (err) {
-      setSubmitError(getApiErrorMessage(err, "Gửi đánh giá thất bại."));
+      setSubmitError(getApiErrorMessage(err, "Failed to submit review."));
     } finally {
       setIsSubmitting(false);
     }
@@ -63,7 +64,7 @@ const ReviewSection = ({
       setEditingReviewId(null);
       onReviewsChanged();
     } catch (err) {
-      setActionError(getApiErrorMessage(err, "Sửa đánh giá thất bại."));
+      setActionError(getApiErrorMessage(err, "Failed to update review."));
     } finally {
       setIsUpdating(false);
     }
@@ -71,7 +72,7 @@ const ReviewSection = ({
 
   const handleDeleteReview = async (reviewId) => {
     if (reviewId == null) return;
-    if (!window.confirm("Xóa đánh giá này?")) return;
+    if (!window.confirm("Delete this review?")) return;
     setActionError("");
     setIsDeleting(true);
     try {
@@ -80,7 +81,7 @@ const ReviewSection = ({
       setActionError("");
       onReviewsChanged();
     } catch (err) {
-      setActionError(getApiErrorMessage(err, "Xóa đánh giá thất bại."));
+      setActionError(getApiErrorMessage(err, "Failed to delete review."));
     } finally {
       setIsDeleting(false);
     }
@@ -100,17 +101,29 @@ const ReviewSection = ({
 
   return (
     <div className="reviews">
-      <h2 className="reviews__title">Customer Reviews</h2>
+      <div className="reviews__header">
+        <h2 className="reviews__title">Customer Reviews</h2>
+        {reviews.length > 0 && (
+          <select
+            className="reviews__sort"
+            value={reviewSort}
+            onChange={(e) => { setReviewSort(e.target.value); setReviewPage(1); }}
+          >
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+          </select>
+        )}
+      </div>
 
       {isCustomer && hasPurchased === false && (
         <p className="reviews__notice">
-          Bạn cần mua sản phẩm để có thể đánh giá.
+          You need to purchase this product to leave a review.
         </p>
       )}
 
       {canCreateReview && (
         <div className="review-form">
-          <h3 className="review-form__title">Viết đánh giá</h3>
+          <h3 className="review-form__title">Write a Review</h3>
           {submitError && (
             <div className="alert alert--error">
               {submitError}
@@ -118,12 +131,12 @@ const ReviewSection = ({
             </div>
           )}
           <div className="review-form__rating-row">
-            <span className="review-form__rating-label">Số sao:</span>
+            <span className="review-form__rating-label">Rating:</span>
             <StarRating value={newRating} onChange={(v) => setNewRating(v)} />
           </div>
           <textarea
             className="review-form__textarea"
-            placeholder="Nhận xét của bạn (tùy chọn)"
+            placeholder="Your comment (optional)"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             disabled={isSubmitting}
@@ -133,19 +146,24 @@ const ReviewSection = ({
             onClick={handleSubmitReview}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Đang gửi..." : "Gửi đánh giá"}
+            {isSubmitting ? "Submitting..." : "Submit Review"}
           </button>
         </div>
       )}
 
       {reviews.length === 0 ? (
         <div className="reviews__empty">
-          Chưa có đánh giá nào. Khi khách hàng để lại đánh giá, mục này sẽ hiển thị tại đây.
+          No reviews yet. Customer reviews will appear here.
         </div>
       ) : (
         (() => {
-          const totalReviewPages = Math.max(1, Math.ceil(reviews.length / REVIEWS_PER_PAGE));
-          const pagedReviews = reviews.slice(
+          const sortedReviews = [...reviews].sort((a, b) => {
+            const da = new Date(a.createdAt || 0);
+            const db = new Date(b.createdAt || 0);
+            return reviewSort === "newest" ? db - da : da - db;
+          });
+          const totalReviewPages = Math.max(1, Math.ceil(sortedReviews.length / REVIEWS_PER_PAGE));
+          const pagedReviews = sortedReviews.slice(
             (reviewPage - 1) * REVIEWS_PER_PAGE,
             reviewPage * REVIEWS_PER_PAGE,
           );
@@ -182,14 +200,14 @@ const ReviewSection = ({
                             disabled={isUpdating || rid == null}
                             onClick={() => handleUpdateReview(rid)}
                           >
-                            {isUpdating ? "Đang lưu..." : "Lưu"}
+                            {isUpdating ? "Saving..." : "Save"}
                           </button>
                           <button
                             className="btn btn--outline btn--small"
                             disabled={isUpdating}
                             onClick={cancelEditing}
                           >
-                            Hủy
+                            Cancel
                           </button>
                         </div>
                       </>
@@ -205,13 +223,13 @@ const ReviewSection = ({
                           </div>
                           {isOwnReview && role === "CUSTOMER" && (
                             <div className="review-card__actions">
-                              <button className="btn btn--outline btn--small" onClick={() => startEditing(review)}>Sửa</button>
+                              <button className="btn btn--outline btn--small" onClick={() => startEditing(review)}>Edit</button>
                               <button
                                 className="btn btn--outline btn--small btn--danger"
                                 disabled={isDeleting || rid == null}
                                 onClick={() => handleDeleteReview(rid)}
                               >
-                                {isDeleting ? "Đang xóa..." : "Xóa"}
+                                {isDeleting ? "Deleting..." : "Delete"}
                               </button>
                             </div>
                           )}

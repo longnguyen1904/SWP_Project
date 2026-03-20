@@ -42,7 +42,7 @@ const WishlistPage = () => {
       const data = unwrapResponse(res);
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể tải danh sách yêu thích."));
+      setError(getApiErrorMessage(err, "Could not load wishlist."));
     } finally {
       setLoading(false);
     }
@@ -123,7 +123,7 @@ const WishlistPage = () => {
         return next;
       });
     } catch (err) {
-      alert(getApiErrorMessage(err, "Không thể xóa sản phẩm khỏi wishlist."));
+      alert(getApiErrorMessage(err, "Could not remove item from wishlist."));
     } finally {
       setRemovingIds((prev) => {
         const next = new Set(prev);
@@ -148,7 +148,7 @@ const WishlistPage = () => {
   if (loading) {
     return (
       <div className="wishlist-page">
-        <h2 className="wishlist-page__title">Sản phẩm yêu thích</h2>
+        <h2 className="wishlist-page__title">My Wishlist</h2>
         <div className="wishlist-page__loading">
           <div className="spinner"></div>
         </div>
@@ -159,7 +159,7 @@ const WishlistPage = () => {
   if (error) {
     return (
       <div className="wishlist-page">
-        <h2 className="wishlist-page__title">Sản phẩm yêu thích</h2>
+        <h2 className="wishlist-page__title">My Wishlist</h2>
         <div className="alert alert--error">{error}</div>
       </div>
     );
@@ -168,7 +168,7 @@ const WishlistPage = () => {
   return (
     <div className="wishlist-page">
       <h2 className="wishlist-page__title">
-        Sản phẩm yêu thích
+        My Wishlist
         {items.length > 0 && (
           <span className="wishlist-page__count">{items.length}</span>
         )}
@@ -179,7 +179,7 @@ const WishlistPage = () => {
           <input
             type="text"
             className="wishlist-filters__search"
-            placeholder="Tìm theo tên..."
+            placeholder="Search by name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -188,7 +188,7 @@ const WishlistPage = () => {
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
-            <option value="">Tất cả danh mục</option>
+            <option value="">All Categories</option>
             {categories.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
@@ -198,7 +198,7 @@ const WishlistPage = () => {
             value={selectedTag}
             onChange={(e) => setSelectedTag(e.target.value)}
           >
-            <option value="">Tất cả tags</option>
+            <option value="">All Tags</option>
             {tags.map((tag) => (
               <option key={tag} value={tag}>{tag}</option>
             ))}
@@ -214,7 +214,7 @@ const WishlistPage = () => {
           </select>
           {hasFilters && (
             <button className="btn btn--outline btn--sm" onClick={handleClearFilters}>
-              Xóa bộ lọc
+              Clear Filters
             </button>
           )}
         </div>
@@ -223,19 +223,19 @@ const WishlistPage = () => {
       {items.length === 0 ? (
         <div className="wishlist-page__empty">
           <div className="wishlist-page__empty-icon">♡</div>
-          <p>Bạn chưa có sản phẩm yêu thích nào.</p>
+          <p>Your wishlist is empty.</p>
           <button
             className="btn btn--primary"
             onClick={() => navigate("/marketplace")}
           >
-            Khám phá Marketplace
+            Browse Marketplace
           </button>
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="wishlist-page__empty">
-          <p>Không tìm thấy sản phẩm phù hợp.</p>
+          <p>No matching products found.</p>
           <button className="btn btn--outline" onClick={handleClearFilters}>
-            Xóa bộ lọc
+            Clear Filters
           </button>
         </div>
       ) : (
@@ -243,10 +243,10 @@ const WishlistPage = () => {
           <table className="wishlist-table">
             <thead>
               <tr>
-                <th>Hình ảnh</th>
-                <th>Tên sản phẩm</th>
-                <th>Danh mục</th>
-                <th>Giá</th>
+                <th>Image</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Price</th>
                 <th></th>
               </tr>
             </thead>
@@ -295,7 +295,7 @@ const WishlistPage = () => {
                         onClick={() => handleRemove(pid)}
                         disabled={isRemoving}
                       >
-                        {isRemoving ? "Đang xóa..." : "Bỏ yêu thích"}
+                        {isRemoving ? "Removing..." : "Remove"}
                       </button>
                     </td>
                   </tr>

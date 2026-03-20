@@ -40,6 +40,7 @@ const ProductDetail = () => {
     isAdmin,
     isVendor,
     showBuyButton,
+    latestVersion,
     refetchReviewsAndProduct,
   } = useProductDetail(productId);
 
@@ -102,10 +103,10 @@ const ProductDetail = () => {
           <div className="checkout-modal" onClick={(e) => e.stopPropagation()}>
             <div className="checkout-modal__header">
               <h2 className="checkout-modal__title" style={{ color: "var(--color-error, #f44)" }}>
-                Thanh toán không thành công
+                Payment Failed
               </h2>
               <p className="checkout-modal__subtitle">
-                Giao dịch đã bị hủy hoặc xảy ra lỗi. Vui lòng thử lại.
+                The transaction was cancelled or an error occurred. Please try again.
               </p>
             </div>
             <div className="checkout-modal__actions">
@@ -113,7 +114,7 @@ const ProductDetail = () => {
                 className="btn btn--primary"
                 onClick={() => setPaymentFailed(false)}
               >
-                Đóng
+                Close
               </button>
             </div>
           </div>
@@ -150,18 +151,19 @@ const ProductDetail = () => {
           showBuyButton={showBuyButton}
           onBuyNow={handleBuyNow}
           productId={Number(productId)}
+          latestVersion={latestVersion}
         />
       </div>
 
       {availableCoupons.length > 0 && (
         <div className="coupon-banner">
-          <span className="coupon-banner__text">Mã giảm giá:</span>
+          <span className="coupon-banner__text">Coupons:</span>
           {availableCoupons.map((c, i) => (
             <span
               key={i}
               className="coupon-banner__tag"
               onClick={() => { navigator.clipboard.writeText(c.code); }}
-              title="Bấm để copy"
+              title="Click to copy"
             >
               {c.code} (-{c.discountPercent}%)
             </span>

@@ -10,6 +10,7 @@ const useProductDetail = (productId) => {
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [latestVersion, setLatestVersion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [hasPurchased, setHasPurchased] = useState(null);
@@ -55,6 +56,11 @@ const useProductDetail = (productId) => {
           size: 20,
         });
         setReviews(parseReviews(reviewsRes));
+
+        customerAPI
+          .getLatestVersion(productId)
+          .then((vRes) => setLatestVersion(unwrapResponse(vRes)))
+          .catch(() => setLatestVersion(null));
       } catch (err) {
         setError(
           (err.response && err.response.data && err.response.data.message)
@@ -139,6 +145,7 @@ const useProductDetail = (productId) => {
     isAdmin,
     isVendor,
     showBuyButton,
+    latestVersion,
     refetchReviewsAndProduct,
   };
 };
