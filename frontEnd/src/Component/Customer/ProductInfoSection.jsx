@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import StarRating from "./StarRating";
+import WishlistButton from "./WishlistButton";
 import { formatPrice } from "../../services/formatters";
 import { customerAPI } from "../../services/api";
 
-const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
+const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId }) => {
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [trialLoading, setTrialLoading] = useState(false);
 
@@ -93,7 +94,10 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow }) => {
         </div>
       )}
 
-      <p className="product-info__price">{formatPrice(product.basePrice)}</p>
+      <div className="product-info__price-row">
+        <p className="product-info__price">{formatPrice(product.basePrice)}</p>
+        {productId && <WishlistButton productId={productId} size={24} />}
+      </div>
 
       {tiers.length > 0 && (
         <div>

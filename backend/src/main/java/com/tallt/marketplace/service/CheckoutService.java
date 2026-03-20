@@ -37,6 +37,7 @@ public class CheckoutService {
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
     private final VNPayService vnPayService;
+    private final CouponService couponService;
 
     public CheckoutService(
             OrderRepository orderRepository,
@@ -46,7 +47,8 @@ public class CheckoutService {
             LicenseRepository licenseRepository,
             WalletRepository walletRepository,
             WalletTransactionRepository walletTransactionRepository,
-            VNPayService vnPayService) {
+            VNPayService vnPayService,
+            CouponService couponService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.licenseTierRepository = licenseTierRepository;
@@ -55,13 +57,14 @@ public class CheckoutService {
         this.walletRepository = walletRepository;
         this.walletTransactionRepository = walletTransactionRepository;
         this.vnPayService = vnPayService;
+        this.couponService = couponService;
     }
 
     /**
      * Bước 1+2: Tạo Order (Pending) + sinh URL thanh toán VNPay.
      *
      * @param userId    ID người mua (từ header X-User-Id)
-     * @param request   { productId, tierId }
+     * @param request   { productId, tierId, couponCode? }
      * @param ipAddress IP client
      * @return { orderId, paymentUrl }
      */
@@ -97,6 +100,22 @@ public class CheckoutService {
                     + "Giao dịch mới sẽ cung cấp thêm mã bản quyền hoặc cộng dồn thời gian sử dụng.";
         }
 
+        // Tính discount từ coupon (nếu có)
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        String couponCode = request.getCouponCode();
+        if (couponCode != null && !couponCode.trim().isEmpty()) {
+            Map<String, Object> couponInfo = couponService.validateCoupon(couponCode, product.getProductID());
+            int percent = (Integer) couponInfo.get("discountPercent");
+            discountAmount = tier.getPrice()
+                    .multiply(BigDecimal.valueOf(percent))
+                    .divide(BigDecimal.valueOf(100));
+        }
+
+        BigDecimal totalAmount = tier.getPrice().subtract(discountAmount);
+        if (totalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            totalAmount = BigDecimal.ZERO;
+        }
+
         // Tạo Order (1 Order = 1 Product)
         Order order = new Order();
         order.setUser(user);
@@ -104,13 +123,18 @@ public class CheckoutService {
         order.setTier(tier);
         order.setQuantity(1);
         order.setUnitPrice(tier.getPrice());
-        order.setDiscountAmount(BigDecimal.ZERO);
-        order.setTotalAmount(tier.getPrice());
+        order.setDiscountAmount(discountAmount);
+        order.setTotalAmount(totalAmount);
         order.setPaymentMethod("VNPay");
         order.setPaymentStatus(STATUS_PENDING);
         order.setCreatedAt(LocalDateTime.now());
 
         orderRepository.save(order);
+
+        // Tăng lượt sử dụng coupon
+        if (couponCode != null && !couponCode.trim().isEmpty()) {
+            couponService.useCoupon(couponCode);
+        }
 
         // Tạo URL thanh toán VNPay
         String paymentUrl = vnPayService.createPaymentUrl(order, ipAddress);

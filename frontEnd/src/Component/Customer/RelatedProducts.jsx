@@ -33,6 +33,14 @@ const RelatedProducts = ({ products = [] }) => {
             />
             <div className="related-card__body">
               <h3 className="related-card__name">{related.productName}</h3>
+              <div className="related-card__meta">
+                <span className="product-card__rating">
+                  <span className="product-card__stars">★</span>
+                  <span className="product-card__avg">{(related.averageRating ?? 0).toFixed(1)}</span>
+                  <span className="product-card__review-count">({related.reviewCount ?? 0})</span>
+                </span>
+                <span className="product-card__sold">{related.soldCount ?? 0} sold</span>
+              </div>
               <p className="related-card__price">{formatPrice(related.basePrice)}</p>
             </div>
           </div>
