@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { vendorAPI } from "../../services/api";
+import { vendorAPI, uploadAPI } from "../../services/api";
 import "../../Style/Vendor.css";
 
 const steps = ["Basic Information", "Business Details", "Documents"];
@@ -9,6 +9,8 @@ const VendorRegistration = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState("");
 
   const [formData, setFormData] = useState({
     type: "INDIVIDUAL",
@@ -23,6 +25,56 @@ const VendorRegistration = () => {
     setError("");
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg", "image/png", "image/jpg",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Chỉ chấp nhận file PDF, DOC, DOCX, JPG, PNG");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      setError("File không được vượt quá 50MB");
+      e.target.value = "";
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const isImage = file.type.startsWith("image/");
+      const res = isImage
+        ? await uploadAPI.uploadImage(fd)
+        : await uploadAPI.uploadDocument(fd);
+      const url = res.data?.data?.url;
+      if (url) {
+        setFormData((prev) => ({ ...prev, identificationDoc: url }));
+        setUploadedFileName(file.name);
+      } else {
+        setError("Upload thất bại – không nhận được URL");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Lỗi upload file. Vui lòng thử lại.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setFormData((prev) => ({ ...prev, identificationDoc: "" }));
+    setUploadedFileName("");
+  };
+
   const handleNext = () => {
     setError("");
     if (activeStep === 0 && formData.type === "COMPANY" && !formData.companyName.trim()) {
@@ -31,8 +83,8 @@ const VendorRegistration = () => {
     if (activeStep === 1 && !formData.taxCode.trim()) {
       setError("Tax Code / Citizen ID không được để trống"); return;
     }
-    if (activeStep === 2 && !formData.identificationDoc.trim()) {
-      setError("Link tài liệu xác thực không được để trống"); return;
+    if (activeStep === 2 && !formData.identificationDoc) {
+      setError("Vui lòng upload tài liệu xác thực"); return;
     }
     if (activeStep === steps.length - 1) { handleSubmit(); } else { setActiveStep((s) => s + 1); }
   };
@@ -87,9 +139,43 @@ const VendorRegistration = () => {
         return (
           <>
             <div className="form-group">
-              <label className="form-label">Identification Document URL *</label>
-              <input className="form-input" value={formData.identificationDoc} onChange={handleChange("identificationDoc")} placeholder="https://example.com/identification-document.pdf" />
-              <span className="form-hint">Provide a link to your business license or identification document</span>
+              <label className="form-label">Identification Document *</label>
+
+              {!formData.identificationDoc ? (
+                <div className="drop-zone" onClick={() => !uploading && document.getElementById("id-doc-upload").click()}>
+                  {uploading ? (
+                    <>
+                      <div className="drop-zone-icon"><span className="spinner" /></div>
+                      <div className="drop-zone-text">Đang upload tài liệu...</div>
+                      <div className="progress-bar"><div className="progress-bar-fill" /></div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="drop-zone-icon">📄</div>
+                      <div className="drop-zone-text">Click để chọn file</div>
+                      <div className="drop-zone-hint">PDF, DOC, DOCX, JPG, PNG (tối đa 50MB)</div>
+                    </>
+                  )}
+                  <input
+                    id="id-doc-upload"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    onChange={handleFileUpload}
+                    style={{ display: "none" }}
+                  />
+                </div>
+              ) : (
+                <div className="file-preview success">
+                  <span style={{ fontSize: 24 }}>✅</span>
+                  <div className="file-preview-info">
+                    <div className="file-preview-name">{uploadedFileName}</div>
+                    <div className="file-preview-size">Đã upload thành công</div>
+                  </div>
+                  <button type="button" className="btn btn-danger btn-sm" onClick={handleRemoveFile}>Xóa</button>
+                </div>
+              )}
+
+              <span className="form-hint">Upload giấy phép kinh doanh hoặc tài liệu xác thực (CMND/CCCD)</span>
             </div>
             <div className="alert alert-info">
               Please ensure your identification documents are valid and clearly visible. This information is required for vendor verification.
@@ -127,7 +213,7 @@ const VendorRegistration = () => {
 
         <div className="flex-between">
           <button className="btn btn-secondary" onClick={handleBack} disabled={activeStep === 0}>Back</button>
-          <button className="btn btn-primary" onClick={handleNext} disabled={loading}>
+          <button className="btn btn-primary" onClick={handleNext} disabled={loading || uploading}>
             {loading && <span className="spinner" />}
             {activeStep === steps.length - 1 ? "Submit Registration" : "Next"}
           </button>
