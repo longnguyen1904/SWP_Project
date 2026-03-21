@@ -5,7 +5,7 @@ import WishlistButton from "./WishlistButton";
 import { formatPrice } from "../../services/formatters";
 import { customerAPI } from "../../services/api";
 
-const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId }) => {
+const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, latestVersion }) => {
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [trialLoading, setTrialLoading] = useState(false);
 
@@ -29,7 +29,7 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId }) => 
       }
     })();
     if (!user.userID && !user.userId) {
-      alert("Vui lòng đăng nhập để dùng thử.");
+      alert("Please log in to start a trial.");
       return;
     }
 
@@ -38,15 +38,15 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId }) => 
       const res = await customerAPI.startTrial(product.productId);
       const data = res.data?.data;
       alert(
-        `Kích hoạt trial thành công!\n\n` +
+        `Trial activated successfully!\n\n` +
           `License Key: ${data.licenseKey}\n` +
-          `Hết hạn: ${new Date(data.expireAt).toLocaleDateString("vi-VN")}`,
+          `Expires: ${new Date(data.expireAt).toLocaleDateString("en-US")}`,
       );
     } catch (err) {
       const msg =
         err.response?.data?.message ||
         err.response?.data ||
-        "Không thể kích hoạt trial.";
+        "Could not activate trial.";
       alert(msg);
     } finally {
       setTrialLoading(false);
@@ -99,9 +99,27 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId }) => 
         {productId && <WishlistButton productId={productId} size={24} />}
       </div>
 
+      {latestVersion && (
+        <div className="product-info__version">
+          <span className="product-info__version-badge">
+            {latestVersion.versionNumber}
+          </span>
+          {latestVersion.createdAt && (
+            <span className="product-info__version-date">
+              Released {new Date(latestVersion.createdAt).toLocaleDateString("en-US", {
+                year: "numeric", month: "short", day: "numeric"
+              })}
+            </span>
+          )}
+          {latestVersion.releaseNotes && (
+            <p className="product-info__version-notes">{latestVersion.releaseNotes}</p>
+          )}
+        </div>
+      )}
+
       {tiers.length > 0 && (
         <div>
-          <h3 className="product-info__tiers-title">Chọn gói License</h3>
+          <h3 className="product-info__tiers-title">Select License Tier</h3>
           <div className="product-info__tiers">
             {tiers.map((tier, index) => {
               const isSelected = index === selectedTierIndex;
@@ -125,7 +143,7 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId }) => 
             className="btn btn--primary product-info__buy-btn"
             onClick={handleBuyClick}
           >
-            Mua ngay
+            Buy Now
           </button>
         )}
 
@@ -136,8 +154,8 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId }) => 
             disabled={trialLoading}
           >
             {trialLoading
-              ? "Đang xử lý..."
-              : `Dùng thử miễn phí (${product.trialDurationDays ?? 7} ngày)`}
+              ? "Processing..."
+              : `Start Free Trial (${product.trialDurationDays ?? 7} days)`}
           </button>
         )}
       </div>

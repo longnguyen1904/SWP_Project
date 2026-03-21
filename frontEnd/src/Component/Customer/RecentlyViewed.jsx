@@ -51,7 +51,7 @@ const RecentlyViewed = ({ excludeProductId } = {}) => {
 
   return (
     <div className="recently-viewed">
-      <h2 className="recently-viewed__title">Sản phẩm đã xem gần đây</h2>
+      <h2 className="recently-viewed__title">Recently Viewed</h2>
       <div className="recently-viewed__scroll">
         {items.map((product) => (
           <div

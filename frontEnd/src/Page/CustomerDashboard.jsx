@@ -35,7 +35,7 @@ export default function CustomerDashboard() {
               }
             >
               <i className="bi bi-bag-check me-3"></i>
-              Đã mua (Purchased)
+              Purchased
             </NavLink>
           </li>
 
@@ -49,7 +49,7 @@ export default function CustomerDashboard() {
               }
             >
               <i className="bi bi-heart me-3"></i>
-              Yêu thích (Wishlist)
+              Wishlist
             </NavLink>
           </li>
 
@@ -63,7 +63,7 @@ export default function CustomerDashboard() {
               }
             >
               <i className="bi bi-clock-history me-3"></i>
-              Đã xem gần đây
+              Recently Viewed
             </NavLink>
           </li>
 
@@ -114,7 +114,7 @@ export default function CustomerDashboard() {
 
         <div className="px-2 mt-auto pb-3">
           <Link to="/" className="nav-link text-white-50 p-2 small d-flex align-items-center">
-            <i className="bi bi-house-door me-2"></i> Quay lại trang chủ
+            <i className="bi bi-house-door me-2"></i> Back to Home
           </Link>
         </div>
       </div>
@@ -131,7 +131,7 @@ export default function CustomerDashboard() {
             <input
               className="form-control ps-5 border-0 text-white shadow-none custom-placeholder"
               type="search"
-              placeholder="Tìm kiếm đơn hàng của bạn..."
+              placeholder="Search your orders..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", borderRadius: "10px" }}

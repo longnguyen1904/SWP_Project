@@ -100,6 +100,7 @@ export const customerAPI = {
     return api.get(`/api/products${queryString}`);
   },
   getProductDetails: (productId) => api.get(`/api/products/${productId}`),
+  getLatestVersion: (productId) => api.get(`/api/products/${productId}/versions/latest`),
   getProductReviews: (productId, params = {}) =>
     api.get(`/api/products/${productId}/reviews`, { params }),
   getProductPurchased: (productId) => api.get(`/api/products/${productId}/purchased`),

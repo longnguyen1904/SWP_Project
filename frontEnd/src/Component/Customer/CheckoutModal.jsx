@@ -34,7 +34,7 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
       const res = await customerAPI.validateCoupon(couponCode.trim(), productId);
       setCouponApplied(unwrapResponse(res));
     } catch (err) {
-      setCouponError(getApiErrorMessage(err, "Mã coupon không hợp lệ"));
+      setCouponError(getApiErrorMessage(err, "Invalid coupon code"));
     } finally {
       setCouponLoading(false);
     }
@@ -60,10 +60,10 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
       if (data?.paymentUrl) {
         window.location.href = data.paymentUrl;
       } else {
-        setError("Không thể tạo link thanh toán. Vui lòng thử lại.");
+        setError("Unable to create payment link. Please try again.");
       }
     } catch (err) {
-      setError(getApiErrorMessage(err, "Có lỗi xảy ra. Vui lòng thử lại."));
+      setError(getApiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -73,9 +73,9 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
     <div className="checkout-overlay" onClick={onClose}>
       <div className="checkout-modal" onClick={(e) => e.stopPropagation()}>
         <div className="checkout-modal__header">
-          <h2 className="checkout-modal__title">Xác nhận mua hàng</h2>
+          <h2 className="checkout-modal__title">Confirm Purchase</h2>
           <p className="checkout-modal__subtitle">
-            Vui lòng kiểm tra thông tin sản phẩm trước khi thanh toán
+            Please review the product details before proceeding to payment
           </p>
         </div>
 
@@ -88,20 +88,20 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
           />
           <div className="checkout-modal__details">
             <h3 className="checkout-modal__product-name">{product.name}</h3>
-            <p className="checkout-modal__tier-name">Gói: {tierName}</p>
-            <p className="checkout-modal__price">Giá: {formatPrice(price)}</p>
-            <p className="checkout-modal__quantity">Số lượng: 1</p>
-            <p className="checkout-modal__delivery">Giao hàng: License Key</p>
+            <p className="checkout-modal__tier-name">Tier: {tierName}</p>
+            <p className="checkout-modal__price">Price: {formatPrice(price)}</p>
+            <p className="checkout-modal__quantity">Quantity: 1</p>
+            <p className="checkout-modal__delivery">Delivery: License Key</p>
           </div>
         </div>
 
         <div className="checkout-modal__coupon">
-          <label className="checkout-modal__coupon-label">Mã giảm giá</label>
+          <label className="checkout-modal__coupon-label">Coupon Code</label>
           <div className="checkout-modal__coupon-input-row">
             <input
               type="text"
               className="checkout-modal__coupon-input"
-              placeholder="Nhập mã coupon..."
+              placeholder="Enter coupon code..."
               value={couponCode}
               onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
               disabled={!!couponApplied || couponLoading}
@@ -112,7 +112,7 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
                 onClick={handleRemoveCoupon}
                 type="button"
               >
-                Hủy
+                Remove
               </button>
             ) : (
               <button
@@ -121,20 +121,20 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
                 disabled={couponLoading || !couponCode.trim()}
                 type="button"
               >
-                {couponLoading ? "..." : "Áp dụng"}
+                {couponLoading ? "..." : "Apply"}
               </button>
             )}
           </div>
           {couponError && <p className="checkout-modal__coupon-error">{couponError}</p>}
           {couponApplied && (
             <p className="checkout-modal__coupon-success">
-              ✅ Giảm {couponApplied.discountPercent}% — Tiết kiệm {formatPrice(discountAmount)}
+              ✅ {couponApplied.discountPercent}% off — You save {formatPrice(discountAmount)}
             </p>
           )}
         </div>
 
         <div className="checkout-modal__total">
-          <span>Số tiền cần thanh toán</span>
+          <span>Total Amount</span>
           <span className="checkout-modal__total-amount">
             {couponApplied && (
               <span className="checkout-modal__original-price">{formatPrice(price)}</span>
@@ -151,14 +151,14 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
             onClick={onClose}
             disabled={loading}
           >
-            Đóng
+            Close
           </button>
           <button
             className="btn btn--primary"
             onClick={handleConfirm}
             disabled={loading}
           >
-            {loading ? "Đang xử lý..." : "Xác nhận mua hàng"}
+            {loading ? "Processing..." : "Confirm Purchase"}
           </button>
         </div>
       </div>
