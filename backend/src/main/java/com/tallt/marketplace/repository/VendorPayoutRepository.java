@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
 public interface VendorPayoutRepository extends JpaRepository<VendorPayout, Integer> {
 
     Page<VendorPayout> findByVendor_VendorID(Integer vendorId, Pageable pageable);
+
+    Page<VendorPayout> findByStatus(String status, Pageable pageable);
 }

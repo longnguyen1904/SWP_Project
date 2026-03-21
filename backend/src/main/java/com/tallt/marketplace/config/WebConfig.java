@@ -7,16 +7,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    
+
     // Cấu hình CORS cho Frontend React gọi API
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5173")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedOriginPatterns("*")
+                .allowedMethods("*")
                 .allowedHeaders("*")
                 .allowCredentials(true);
-    } 
+
+    }
 
     // CẤU HÌNH MỚI: Cho phép truy cập trực tiếp vào thư mục ảnh "uploads"
     @Override

@@ -14,9 +14,9 @@ export const orderAPI = {
       return [];
     }
 
-    const res = await axios.get(`${BASE_URL}/api/orders/user/${userId}`);
+    const res = await axios.get(`${BASE_URL}/api/orders/user/${userId}/download-links`);
 
-    return res.data;
+    return res.data;    
   }
 
 };

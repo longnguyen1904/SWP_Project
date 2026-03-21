@@ -102,15 +102,32 @@ function AdminVendorManagement() {
   //UPDATE STATUS
   const handleUpdateStatus = async (vendorID, newStatus) => {
     try {
-      const res = await fetch(
-        `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}`,
-        { method: "PUT" }
-      );
+
+      let rejectionNote = "";
+
+      if (newStatus === "REJECTED") {
+        rejectionNote = prompt("Enter rejection reason:");
+        if (!rejectionNote) {
+          setMessage("Rejection reason is required");
+          setMessageType("error");
+          return;
+        }
+      }
+
+      const url =
+        newStatus === "REJECTED"
+          ? `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}&rejectionNote=${encodeURIComponent(rejectionNote)}`
+          : `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}`;
+
+      const res = await fetch(url, { method: "PUT" });
+
       if (!res.ok) throw new Error("Update failed");
 
       setMessage(`Vendor ${newStatus.toLowerCase()} successfully!`);
       setMessageType("success");
+
       fetchVendors(page);
+
     } catch (err) {
       setMessage(err.message);
       setMessageType("error");
@@ -219,6 +236,7 @@ function AdminVendorManagement() {
                 <th style={thStyle}>User ID</th>
                 <th style={thStyle}>Status</th>
                 <th style={thStyle}>Identification Doc</th>
+                <th style={thStyle}>Rejection Note</th>
                 <th style={thStyle}>Actions</th>
               </tr>
             </thead>
@@ -247,8 +265,6 @@ function AdminVendorManagement() {
                         {vendor.status}
                       </span>
                     </td>
-
-
                     <td style={tdStyle}>
                       {vendor.identificationDoc ? (
                         <a
@@ -266,10 +282,10 @@ function AdminVendorManagement() {
                         </a>
                       ) : "—"}
                     </td>
-
+                    <td style={tdStyle}>{vendor.rejectionNote || "—"}</td>
                     <td style={tdStyle}>
                       {vendor.status === "PENDING" ? (
-                        <>
+                        <div style={{ display: "flex", gap: "6px" }}>
                           <button
                             onClick={() => handleUpdateStatus(vendor.vendorID, "APPROVED")}
                             style={actionBtn(colors.success)}
@@ -282,7 +298,7 @@ function AdminVendorManagement() {
                           >
                             Reject
                           </button>
-                        </>
+                        </div>
                       ) : vendor.status === "APPROVED" ? (
                         <button
                           onClick={() => handleUpdateStatus(vendor.vendorID, "SUSPENDED")}

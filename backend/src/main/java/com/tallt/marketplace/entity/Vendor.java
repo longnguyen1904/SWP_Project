@@ -40,8 +40,6 @@ public class Vendor {
     @Column(name = "TaxCode")
     private String taxCode;
 
-
-
     @Column(name = "RejectionNote")
     private String rejectionNote;
 

@@ -24,9 +24,14 @@ import LicenseTierConfig from "./Page/LicenseTierConfig";
 import CreateSupportTicketWizard from "./Page/CreateSupportTicketWizard";
 import VendorTicketManagement from "./Page/VendorTicketManagement";
 import CustomerTicketManagement from "./Page/CustomerTicketManagement";
-import PaymentResult from "./Page/PaymentResult.jsx" ; 
+import PaymentResult from "./Page/PaymentResult";
+import VendorShop from "./Page/VendorShop";
+import WishlistPage from "./Page/WishlistPage";
+import RecentlyViewedPage from "./Page/RecentlyViewedPage";
 import AdminCommission from "./Page/AdminCommision.jsx";
-
+import AdminPayout from "./Page/AdminPayout.jsx";
+import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
+import CouponManagement from "./Page/CouponManagement";
 export default function App() {
   return (
     <div className="app snow">
@@ -41,6 +46,8 @@ export default function App() {
         <Route path="/Page/Customer" element={<CustomerDashboard />}>
           <Route index element={<Navigate to="PurchasedProducts" replace />} />
           <Route path="PurchasedProducts" element={<PurchasedProducts />} />
+          <Route path="Wishlist" element={<WishlistPage />} />
+          <Route path="RecentlyViewed" element={<RecentlyViewedPage />} />
           <Route path="Profile" element={<ProfilePage />} />
           <Route path="CustomerTicketManagement" element={<CustomerTicketManagement/>}/>
           <Route path="CreateSupportTicket" element={<CreateSupportTicketWizard />} />
@@ -56,6 +63,8 @@ export default function App() {
           <Route path="LicenseTiers" element={<LicenseTierConfig />} />
           <Route path="Profile" element={<ProfilePage />} />
           <Route path="VendorTicketManagement" element={<VendorTicketManagement/>}/>
+          <Route path="QualityAnalyticsDashboard" element={<QualityAnalyticsDashboard/>}/>
+          <Route path="CouponManagement" element={<CouponManagement />} />
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />
@@ -64,15 +73,14 @@ export default function App() {
           <Route path="AdminVendorManagement" element={<AdminVendorManagement />} />
           <Route path="AdminReview" element={<AdminReview />} />
           <Route path="AdminCommission" element={<AdminCommission />} />
+          <Route path="AdminPayout" element={<AdminPayout />} />
           
         </Route>
          
-
-
         <Route path="/Page/PurchasedProducts" element={<PurchasedProducts />} />
-
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
+        <Route path="/vendors/:vendorId" element={<VendorShop />} />
         <Route path="/payment-result" element={<PaymentResult/>} />
         <Route path="/Page/VendorRegistration" element={<VendorRegistration/>} />
       </Routes>
