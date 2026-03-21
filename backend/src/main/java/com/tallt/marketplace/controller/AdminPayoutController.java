@@ -1,9 +1,11 @@
 package com.tallt.marketplace.controller;
 
 import com.tallt.marketplace.dto.wallet.AdminPayoutResponse;
+import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.entity.Wallet;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.service.AdminPayoutService;
+import com.tallt.marketplace.repository.UserRepository;
 import com.tallt.marketplace.repository.WalletRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -20,13 +22,16 @@ import org.springframework.web.bind.annotation.*;
 public class AdminPayoutController {
 
     private final AdminPayoutService adminPayoutService;
-    private final WalletRepository walletRepository; 
+    private final WalletRepository walletRepository;
+    private final UserRepository userRepository;
 
     @GetMapping("/admin-wallet")
     public ResponseEntity<BigDecimal> getAdminWalletBalance() {
+        User admin = userRepository.findFirstByRole_RoleName("Admin");
+        if (admin == null) throw new AppException("Không tìm thấy tài khoản Admin");
 
         Wallet wallet = walletRepository
-                .findByUser_Role_RoleName("ADMIN")
+                .findByUser_UserID(admin.getUserID())
                 .orElseThrow(() -> new AppException("Admin wallet không tồn tại"));
 
         return ResponseEntity.ok(wallet.getBalance());

@@ -89,8 +89,7 @@ public class VendorManagementService {
         }
 
         if (status == VendorStatus.SUSPENDED) {
-            Role userRole = roleRepository.findByRoleName("2")
-.orElseThrow(() -> new RuntimeException("Role USER not found"));
+            Role userRole = roleRepository.findById(2).orElseThrow(() -> new RuntimeException("Role USER not found"));
 
             User user = vendor.getUser();
             user.setRole(userRole);

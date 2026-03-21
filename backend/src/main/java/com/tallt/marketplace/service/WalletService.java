@@ -31,9 +31,11 @@ public class WalletService {
     @Autowired
     private VendorPayoutRepository vendorPayoutRepository;
 
+    @Autowired
+    private OrderRepository orderRepository;
+
     /**
      * Lấy thông tin ví của Vendor
-     * - Bao gồm balance và danh sách giao dịch
      */
     public WalletResponse getVendorWallet(Integer userId) {
         Wallet wallet = walletRepository.findByUser_UserID(userId)
@@ -53,15 +55,14 @@ public class WalletService {
     }
 
     /**
-     * Yêu cầu rút tiền
-     * - Kiểm tra số dư đủ
-     * - Tạo VendorPayout
-     * - Trừ tiền trong Wallet
-     * - Ghi nhận WalletTransaction
+     * Yêu cầu rút tiền.
+     *
+     * Tính available = tổng doanh thu COMPLETED (từ Orders) - tổng đã rút/đang chờ (từ VendorPayouts).
+     * KHÔNG trừ ví Vendor — chỉ tạo VendorPayout(PENDING).
+     * Tiền chỉ được cộng vào ví Vendor khi Admin approve.
      */
     @Transactional
     public Map<String, Object> requestPayout(Integer userId, PayoutRequest request) {
-        // 1. Lấy Vendor
         Vendor vendor = vendorRepository.findByUser_UserID(userId)
                 .orElseThrow(() -> new AppException("Vendor không tồn tại"));
 
@@ -69,16 +70,25 @@ public class WalletService {
             throw new AppException("Vendor chưa được xác thực, không thể rút tiền");
         }
 
-        // 2. Lấy Wallet
-        Wallet wallet = walletRepository.findByUser_UserID(userId)
-                .orElseThrow(() -> new AppException("Ví không tồn tại"));
+        // Tính doanh thu từ bảng Orders (COMPLETED orders cho sản phẩm của vendor)
+        BigDecimal totalRevenue = orderRepository.sumCompletedRevenueByVendorId(vendor.getVendorID());
 
-        // 3. Kiểm tra số dư
-        if (wallet.getBalance().compareTo(request.getAmount()) < 0) {
-            throw new AppException("Số dư không đủ để rút tiền. Số dư hiện tại: " + wallet.getBalance());
+        // Tính tổng đã rút + đang chờ duyệt
+        BigDecimal totalWithdrawn = vendorPayoutRepository
+                .sumAmountByVendorAndStatus(vendor.getVendorID(), "COMPLETED");
+        BigDecimal totalPending = vendorPayoutRepository
+                .sumAmountByVendorAndStatus(vendor.getVendorID(), "PENDING");
+
+        BigDecimal available = totalRevenue.subtract(totalWithdrawn).subtract(totalPending);
+
+        if (available.compareTo(request.getAmount()) < 0) {
+            throw new AppException("Số tiền có thể rút không đủ. "
+                    + "Doanh thu: " + totalRevenue
+                    + ", Đã rút/đang chờ: " + totalWithdrawn.add(totalPending)
+                    + ", Có thể rút: " + available);
         }
 
-        // 4. Tạo VendorPayout
+        // Tạo VendorPayout — KHÔNG trừ ví
         VendorPayout payout = new VendorPayout();
         payout.setVendor(vendor);
         payout.setAmount(request.getAmount());
@@ -86,25 +96,12 @@ public class WalletService {
         payout.setStatus("PENDING");
         vendorPayoutRepository.save(payout);
 
-        // 5. Trừ tiền trong Wallet
-        wallet.setBalance(wallet.getBalance().subtract(request.getAmount()));
-        wallet.setUpdatedAt(LocalDateTime.now());
-        walletRepository.save(wallet);
-
-        // 6. Ghi nhận WalletTransaction
-        WalletTransaction transaction = new WalletTransaction();
-        transaction.setWallet(wallet);
-        transaction.setAmount(request.getAmount().negate());
-        transaction.setType(WalletTransaction.TransactionType.WITHDRAWAL);
-        transaction.setReferenceID(payout.getPayoutID());
-        transaction.setDescription("Yêu cầu rút tiền #" + payout.getPayoutID());
-        walletTransactionRepository.save(transaction);
-
         return Map.of(
                 "payoutId", payout.getPayoutID(),
                 "amount", payout.getAmount(),
                 "status", payout.getStatus(),
-                "message", "Yêu cầu rút tiền đã được gửi thành công"
+                "availableAfter", available.subtract(request.getAmount()),
+                "message", "Yêu cầu rút tiền đã được gửi, chờ Admin duyệt"
         );
     }
 
@@ -119,3 +116,4 @@ public class WalletService {
         return response;
     }
 }
+

@@ -38,10 +38,9 @@ public class VendorWalletController {
     /**
      * Yêu cầu rút tiền
      * POST /api/vendor/payouts
-     * - Kiểm tra số dư đủ
-     * - Tạo VendorPayout
-     * - Trừ tiền trong Wallet
-     * - Ghi nhận WalletTransaction
+     * - Tính available từ Orders - đã rút/pending
+     * - Tạo VendorPayout(PENDING)
+     * - Tiền cộng vào ví khi Admin approve
      */
     @PostMapping("/payouts")
     public ResponseEntity<ApiResponse<Map<String, Object>>> requestPayout(

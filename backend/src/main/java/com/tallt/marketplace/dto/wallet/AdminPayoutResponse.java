@@ -12,8 +12,11 @@ public class AdminPayoutResponse {
     private Integer vendorId;
     private String vendorName;
     private BigDecimal amount;
+    private BigDecimal platformCommission;
+    private BigDecimal tax;
+    private BigDecimal vendorReceive;
+    private String adminNote;
     private String status;
     private LocalDateTime payoutDate;
-    private BigDecimal platformCommission;
-    private BigDecimal vendorReceive;
+    private LocalDateTime processedAt;
 }

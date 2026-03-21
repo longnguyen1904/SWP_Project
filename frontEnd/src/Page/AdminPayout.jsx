@@ -114,7 +114,7 @@ const AdminPayout = () => {
           <div style={walletCardStyle}>
             <span style={{ color: COLORS.textMuted, fontSize: "14px" }}>Admin Wallet</span>
             <span style={{ color: COLORS.accent, fontSize: "20px", fontWeight: "bold" }}>
-              ${adminBalance.toLocaleString()}
+              {Number(adminBalance).toLocaleString()}₫
             </span>
           </div>
         </header>
@@ -135,6 +135,7 @@ const AdminPayout = () => {
                 <th style={thStyle}>Vendor Info</th>
                 <th style={thStyle}>Amount</th>
                 <th style={thStyle}>Platform Fee</th>
+                <th style={thStyle}>Tax</th>
                 <th style={thStyle}>Vendor Receive</th>
                 <th style={thStyle}>Status</th>
                 <th style={thStyle}>Actions</th>
@@ -142,7 +143,7 @@ const AdminPayout = () => {
             </thead>
             <tbody>
               {payouts.length === 0 ? (
-                <tr><td colSpan="7" style={emptyStateStyle}>No payouts available</td></tr>
+                <tr><td colSpan="8" style={emptyStateStyle}>No payouts available</td></tr>
               ) : (
                 payouts.map((p) => {
                   const sStyle = getStatusStyle(p.status);
@@ -155,9 +156,10 @@ const AdminPayout = () => {
                         <div style={{ fontWeight: "600" }}>{p.vendorName}</div>
                         <div style={{ fontSize: "12px", color: COLORS.textMuted }}>ID: {p.vendorId}</div>
                       </td>
-                      <td style={{ ...tdStyle, color: COLORS.accent, fontWeight: "700" }}>${p.amount}</td>
-                      <td style={{ ...tdStyle, color: COLORS.warning }}>${p.platformCommission}</td>
-                      <td style={{ ...tdStyle, color: COLORS.success, fontWeight: "700" }}>${p.vendorReceive}</td>
+                      <td style={{ ...tdStyle, color: COLORS.accent, fontWeight: "700" }}>{Number(p.amount).toLocaleString()}₫</td>
+                      <td style={{ ...tdStyle, color: COLORS.warning }}>{Number(p.platformCommission).toLocaleString()}₫</td>
+                      <td style={{ ...tdStyle, color: COLORS.error }}>{Number(p.tax || 0).toLocaleString()}₫</td>
+                      <td style={{ ...tdStyle, color: COLORS.success, fontWeight: "700" }}>{Number(p.vendorReceive).toLocaleString()}₫</td>
                       <td style={tdStyle}>
                         <span style={{ ...badgeStyle, backgroundColor: sStyle.bg, color: sStyle.color, borderColor: sStyle.color }}>
                           {p.status}

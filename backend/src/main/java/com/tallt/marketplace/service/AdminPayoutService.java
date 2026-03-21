@@ -22,39 +22,14 @@ public class AdminPayoutService {
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
     private final CommissionService commissionService;
+    private final UserRepository userRepository;
 
 
     public Page<AdminPayoutResponse> getAllPayouts(Pageable pageable) {
 
         Page<VendorPayout> payouts = vendorPayoutRepository.findAll(pageable);
 
-        return payouts.map(p -> {
-
-            AdminPayoutResponse res = new AdminPayoutResponse();
-
-            res.setPayoutId(p.getPayoutID());
-            res.setVendorId(p.getVendor().getVendorID());
-            res.setVendorName(p.getVendor().getUser().getFullName());
-
-            BigDecimal amount = p.getAmount();
-
-            BigDecimal commissionPercent = commissionService.getCurrentCommission();
-
-            BigDecimal commissionAmount = amount
-                    .multiply(commissionPercent)
-                    .divide(BigDecimal.valueOf(100));
-
-            BigDecimal vendorReceive = amount.subtract(commissionAmount);
-
-            res.setAmount(amount);
-            res.setPlatformCommission(commissionAmount);
-            res.setVendorReceive(vendorReceive);
-
-            res.setStatus(p.getStatus());
-            res.setPayoutDate(p.getPayoutDate());
-
-            return res;
-        });
+        return payouts.map(p -> toResponse(p));
     }
 
 
@@ -62,23 +37,35 @@ public class AdminPayoutService {
 
         Page<VendorPayout> payouts = vendorPayoutRepository.findByStatus("PENDING", pageable);
 
-        return payouts.map(p -> {
+        return payouts.map(p -> toResponse(p));
+    }
 
-            AdminPayoutResponse res = new AdminPayoutResponse();
+    private AdminPayoutResponse toResponse(VendorPayout p) {
+        AdminPayoutResponse res = new AdminPayoutResponse();
+        res.setPayoutId(p.getPayoutID());
+        res.setVendorId(p.getVendor().getVendorID());
+        res.setVendorName(p.getVendor().getUser().getFullName());
+        res.setAmount(p.getAmount());
+        res.setStatus(p.getStatus());
+        res.setPayoutDate(p.getPayoutDate());
+        res.setProcessedAt(p.getProcessedAt());
+        res.setAdminNote(p.getAdminNote());
 
-            res.setPayoutId(p.getPayoutID());
-            res.setVendorId(p.getVendor().getVendorID());
-            res.setVendorName(p.getVendor().getUser().getFullName());
-            res.setAmount(p.getAmount());
-            res.setStatus(p.getStatus());
-            res.setPayoutDate(p.getPayoutDate());
-            res.setPlatformCommission(p.getAmount()
-                    .multiply(commissionService.getCurrentCommission())
-                    .divide(BigDecimal.valueOf(100)));
-            res.setVendorReceive(p.getAmount().subtract(res.getPlatformCommission()));
-
-            return res;
-        });
+        if (p.getPlatformFee() != null) {
+            // COMPLETED: dùng giá trị đã lưu
+            res.setPlatformCommission(p.getPlatformFee());
+            res.setTax(p.getTax());
+            res.setVendorReceive(p.getNetAmount());
+        } else {
+            // PENDING: tính preview
+            BigDecimal commissionPercent = commissionService.getCurrentCommission();
+            BigDecimal fee = p.getAmount().multiply(commissionPercent).divide(BigDecimal.valueOf(100));
+            BigDecimal tax = p.getAmount().multiply(BigDecimal.valueOf(5)).divide(BigDecimal.valueOf(100));
+            res.setPlatformCommission(fee);
+            res.setTax(tax);
+            res.setVendorReceive(p.getAmount().subtract(fee).subtract(tax));
+        }
+        return res;
     }
 
 
@@ -94,76 +81,97 @@ public class AdminPayoutService {
 
         Vendor vendor = payout.getVendor();
 
-        Wallet vendorWallet = walletRepository
-                .findByUser_UserID(vendor.getUser().getUserID())
-                .orElseThrow(() -> new AppException("Vendor wallet không tồn tại"));
-
+        // Tìm Admin wallet theo role (không hardcode UserID)
+        User admin = userRepository.findFirstByRole_RoleName("Admin");
+        if (admin == null) throw new AppException("Không tìm thấy tài khoản Admin");
 
         Wallet adminWallet = walletRepository
-                .findByUser_UserID(1)
+                .findByUser_UserID(admin.getUserID())
                 .orElseThrow(() -> new AppException("Admin wallet không tồn tại"));
 
         BigDecimal payoutAmount = payout.getAmount();
 
-
+        // Tính phí nền tảng từ CommissionService (dynamic %)
         BigDecimal commissionPercent = commissionService.getCurrentCommission();
-
-
-        BigDecimal commissionAmount = payoutAmount
+        BigDecimal platformFee = payoutAmount
                 .multiply(commissionPercent)
                 .divide(BigDecimal.valueOf(100));
 
+        // Thuế 5% cố định
+        BigDecimal tax = payoutAmount
+                .multiply(BigDecimal.valueOf(5))
+                .divide(BigDecimal.valueOf(100));
 
-        BigDecimal vendorReceive = payoutAmount.subtract(commissionAmount);
+        // Vendor thực nhận = amount - phí - thuế
+        BigDecimal netAmount = payoutAmount.subtract(platformFee).subtract(tax);
 
-
-        if (adminWallet.getBalance().compareTo(vendorReceive) < 0) {
-            throw new AppException("Admin wallet does not have enough balance for this payout");
+        if (adminWallet.getBalance().compareTo(netAmount) < 0) {
+            throw new AppException("Admin wallet không đủ số dư. Balance: "
+                    + adminWallet.getBalance() + ", cần: " + netAmount);
         }
 
-
-
-        adminWallet.setBalance(adminWallet.getBalance().subtract(vendorReceive));
+        // Trừ ví Admin (phần trả cho Vendor)
+        adminWallet.setBalance(adminWallet.getBalance().subtract(netAmount));
         adminWallet.setUpdatedAt(LocalDateTime.now());
-
-        vendorWallet.setBalance(vendorWallet.getBalance().add(vendorReceive));
-        vendorWallet.setUpdatedAt(LocalDateTime.now());
-
         walletRepository.save(adminWallet);
-        walletRepository.save(vendorWallet);
 
+        // Ghi transaction: trừ tiền khỏi ví Admin
+        WalletTransaction adminTx = new WalletTransaction();
+        adminTx.setWallet(adminWallet);
+        adminTx.setAmount(netAmount.negate());
+        adminTx.setType(WalletTransaction.TransactionType.WITHDRAWAL);
+        adminTx.setDescription("Payout #" + payoutId + " to vendor "
+                + vendor.getCompanyName()
+                + " (Gross: " + payoutAmount + ", Fee: " + platformFee + ", Tax: " + tax + ")");
+        adminTx.setReferenceID(payoutId);
+        adminTx.setCreatedAt(LocalDateTime.now());
+        walletTransactionRepository.save(adminTx);
 
-        WalletTransaction adminTransaction = new WalletTransaction();
+        // Ghi transaction: phí nền tảng (Admin giữ lại)
+        WalletTransaction feeTx = new WalletTransaction();
+        feeTx.setWallet(adminWallet);
+        feeTx.setAmount(platformFee);
+        feeTx.setType(WalletTransaction.TransactionType.COMMISSION_FEE);
+        feeTx.setReferenceID(payoutId);
+        feeTx.setDescription("Phí nền tảng " + commissionPercent + "% từ Payout #" + payoutId);
+        feeTx.setCreatedAt(LocalDateTime.now());
+        walletTransactionRepository.save(feeTx);
 
-        adminTransaction.setWallet(adminWallet);
-        adminTransaction.setAmount(vendorReceive);
-        adminTransaction.setType(WalletTransaction.TransactionType.WITHDRAWAL);
-        adminTransaction.setDescription("Payout to vendor #" + vendor.getVendorID());
-        adminTransaction.setReferenceID(payoutId);
-        adminTransaction.setCreatedAt(LocalDateTime.now());
+        // Cộng tiền thực nhận vào ví Vendor
+        Wallet vendorWallet = walletRepository
+                .findByUser_UserID(vendor.getUser().getUserID())
+                .orElse(null);
+        if (vendorWallet != null) {
+            vendorWallet.setBalance(vendorWallet.getBalance().add(netAmount));
+            vendorWallet.setUpdatedAt(LocalDateTime.now());
+            walletRepository.save(vendorWallet);
 
-        walletTransactionRepository.save(adminTransaction);
+            WalletTransaction vendorTx = new WalletTransaction();
+            vendorTx.setWallet(vendorWallet);
+            vendorTx.setAmount(netAmount);
+            vendorTx.setType(WalletTransaction.TransactionType.DEPOSIT);
+            vendorTx.setReferenceID(payoutId);
+            vendorTx.setDescription("Nhận tiền Payout #" + payoutId
+                    + " (Gross: " + payoutAmount + ", Phí: " + platformFee + ", Thuế: " + tax + ")");
+            vendorTx.setCreatedAt(LocalDateTime.now());
+            walletTransactionRepository.save(vendorTx);
+        }
 
-
-        WalletTransaction vendorTransaction = new WalletTransaction();
-
-        vendorTransaction.setWallet(vendorWallet);
-        vendorTransaction.setAmount(vendorReceive);
-        vendorTransaction.setType(WalletTransaction.TransactionType.DEPOSIT);
-        vendorTransaction.setDescription("Payout received #" + payoutId);
-        vendorTransaction.setReferenceID(payoutId);
-        vendorTransaction.setCreatedAt(LocalDateTime.now());
-
-        walletTransactionRepository.save(vendorTransaction);
-
-
+        // Lưu chi tiết phí/thuế vào VendorPayout
+        payout.setPlatformFee(platformFee);
+        payout.setTax(tax);
+        payout.setNetAmount(netAmount);
         payout.setStatus("COMPLETED");
-        payout.setPayoutDate(LocalDateTime.now());
-
+        payout.setProcessedAt(LocalDateTime.now());
         vendorPayoutRepository.save(payout);
     }
 
 
+    /**
+     * Từ chối yêu cầu rút tiền.
+     * Vì requestPayout KHÔNG trừ ví → chỉ cần đổi status = REJECTED.
+     * Amount sẽ được trả lại vào "available" tự động (không còn bị trừ từ pending).
+     */
     @Transactional
     public void rejectPayout(Integer payoutId) {
 
@@ -175,7 +183,7 @@ public class AdminPayoutService {
         }
 
         payout.setStatus("REJECTED");
-
+        payout.setProcessedAt(LocalDateTime.now());
         vendorPayoutRepository.save(payout);
     }
 }

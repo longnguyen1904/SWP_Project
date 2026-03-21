@@ -21,9 +21,23 @@ public class VendorPayout {
     @Column(name = "Amount")
     private BigDecimal amount;
 
+    @Column(name = "PlatformFee")
+    private BigDecimal platformFee;
+
+    @Column(name = "Tax")
+    private BigDecimal tax;
+
+    @Column(name = "NetAmount")
+    private BigDecimal netAmount;
+
+    @Column(name = "AdminNote")
+    private String adminNote;
+
     @Column(name = "PayoutDate")
     private LocalDateTime payoutDate;
 
+    @Column(name = "ProcessedAt")
+    private LocalDateTime processedAt;
 
     @Column(name = "Status")
     private String status;
