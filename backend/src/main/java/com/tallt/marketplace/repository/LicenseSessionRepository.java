@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface LicenseSessionRepository extends JpaRepository<LicenseSession, Integer> {
     Optional<LicenseSession> findByLicenseAndDeviceIdentifier(License license, String deviceIdentifier);
     int countByLicenseAndIsActiveTrue(License license);
+    java.util.List<LicenseSession> findByLicenseAndIsActiveTrueOrderByLastActiveAsc(License license);
 }
