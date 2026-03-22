@@ -4,13 +4,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-<<<<<<< Updated upstream
     username: dinhlam728@gmail.com # ← Thay bằng Gmail của bạn
     password: mmyg umdr pqak vinb # ← Thay bằng App Password 16 ký tự
-=======
-    username: tài_khoản_email_của_ông@gmail.com # ← Thay bằng Gmail của bạn
-    password: mật_khẩu_ứng_dụng_16_ký_tự # ← Thay bằng App Password 16 ký tự
->>>>>>> Stashed changes
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
