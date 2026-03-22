@@ -45,8 +45,8 @@ export default function AdminCommission() {
       return;
     }
 
-    if (value < 0 || value > 100) {
-      showNotification("Commission must be between 0 and 100%", "error");
+    if (value < 0 || value > 50) {
+      showNotification("Commission must be between 0 and 50%", "error");
       return;
     }
 

@@ -29,6 +29,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findByUser_UserID(Integer userID);
 
     void deleteByProduct_ProductID(Integer productId);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.product.productID = :productId AND UPPER(o.paymentStatus) = 'COMPLETED'")
+    long countCompletedByProductId(@Param("productId") Integer productId);
     
     
 
@@ -68,4 +71,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             )
             """)
     List<OrderWithDownloadDTO> findOrderDownloadLinks(@Param("userId") Integer userId);
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.product.vendor.vendorID = :vendorId AND UPPER(o.paymentStatus) = 'COMPLETED'")
+    java.math.BigDecimal sumCompletedRevenueByVendorId(@Param("vendorId") Integer vendorId);
 }

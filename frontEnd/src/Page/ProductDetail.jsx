@@ -5,8 +5,13 @@ import ProductInfoSection from "../Component/Customer/ProductInfoSection";
 import ReviewSection from "../Component/Customer/ReviewSection";
 import RelatedProducts from "../Component/Customer/RelatedProducts";
 import CheckoutModal from "../Component/Customer/CheckoutModal";
+import WishlistButton from "../Component/Customer/WishlistButton";
+import { saveRecentlyViewed } from "../Component/Customer/RecentlyViewed";
 import useProductDetail from "../services/useProductDetail";
+import { customerAPI } from "../services/api";
+import { unwrapResponse } from "../services/apiHelpers";
 import "../Style/Marketplace.css";
+import "../Style/Wishlist.css";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -14,6 +19,7 @@ const ProductDetail = () => {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [selectedTier, setSelectedTier] = useState(null);
   const [paymentFailed, setPaymentFailed] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
 
   useEffect(() => {
     if (searchParams.get("paymentFailed") === "true") {
@@ -34,8 +40,24 @@ const ProductDetail = () => {
     isAdmin,
     isVendor,
     showBuyButton,
+    latestVersion,
     refetchReviewsAndProduct,
   } = useProductDetail(productId);
+
+  useEffect(() => {
+    if (product) saveRecentlyViewed(product);
+  }, [product]);
+
+  useEffect(() => {
+    if (productId) {
+      customerAPI.getCouponsForProduct(productId)
+        .then((res) => {
+          const data = unwrapResponse(res);
+          setAvailableCoupons(Array.isArray(data) ? data : []);
+        })
+        .catch(() => setAvailableCoupons([]));
+    }
+  }, [productId]);
 
   const handleBuyNow = (tier) => {
     setSelectedTier(tier);
@@ -77,13 +99,25 @@ const ProductDetail = () => {
   return (
     <div className="product-detail">
       {paymentFailed && (
-        <div className="alert alert--error payment-failed-alert">
-          <span>Thanh toán không thành công. Vui lòng thử lại.</span>
-          <button
-            className="payment-failed-alert__close"
-            onClick={() => setPaymentFailed(false)}
-          >
-          </button>
+        <div className="checkout-overlay" onClick={() => setPaymentFailed(false)}>
+          <div className="checkout-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="checkout-modal__header">
+              <h2 className="checkout-modal__title" style={{ color: "var(--color-error, #f44)" }}>
+                Payment Failed
+              </h2>
+              <p className="checkout-modal__subtitle">
+                The transaction was cancelled or an error occurred. Please try again.
+              </p>
+            </div>
+            <div className="checkout-modal__actions">
+              <button
+                className="btn btn--primary"
+                onClick={() => setPaymentFailed(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -116,8 +150,26 @@ const ProductDetail = () => {
           product={product}
           showBuyButton={showBuyButton}
           onBuyNow={handleBuyNow}
+          productId={Number(productId)}
+          latestVersion={latestVersion}
         />
       </div>
+
+      {availableCoupons.length > 0 && (
+        <div className="coupon-banner">
+          <span className="coupon-banner__text">Coupons:</span>
+          {availableCoupons.map((c, i) => (
+            <span
+              key={i}
+              className="coupon-banner__tag"
+              onClick={() => { navigator.clipboard.writeText(c.code); }}
+              title="Click to copy"
+            >
+              {c.code} (-{c.discountPercent}%)
+            </span>
+          ))}
+        </div>
+      )}
 
       <ReviewSection
         reviews={reviews}

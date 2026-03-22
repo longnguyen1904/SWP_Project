@@ -19,7 +19,7 @@ public class VendorManagementService {
     private final VendorRepository vendorRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-     
+
     // GET BY ID
 
     public Vendor getVendorById(Integer id) {
@@ -59,7 +59,7 @@ public class VendorManagementService {
     // APPROVE / REJECT VENDOR
     // ==============================
     @Transactional
-    public Vendor updateVendorStatus(Integer id, VendorStatus status) {
+    public Vendor updateVendorStatus(Integer id, VendorStatus status, String rejectionNote) {
 
         Vendor vendor = vendorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
@@ -76,6 +76,37 @@ public class VendorManagementService {
             userRepository.save(user);
 
             vendor.setVerifiedAt(LocalDateTime.now());
+            vendor.setRejectionNote(null); // clear nếu approve
+        }
+
+        if (status == VendorStatus.REJECTED) {
+
+            if (rejectionNote == null || rejectionNote.trim().isEmpty()) {
+                throw new RuntimeException("Rejection note is required");
+            }
+
+            vendor.setRejectionNote(rejectionNote);
+        }
+
+        if (status == VendorStatus.SUSPENDED) {
+            Role userRole = roleRepository.findById(2).orElseThrow(() -> new RuntimeException("Role USER not found"));
+
+            User user = vendor.getUser();
+            user.setRole(userRole);
+            userRepository.save(user);
+
+            vendor.setRejectionNote(null);
+        }
+
+        if (status == VendorStatus.SUSPENDED) {
+            Role userRole = roleRepository.findByRoleName("Customer")
+                    .orElseThrow(() -> new RuntimeException("Role Customer not found"));
+
+            User user = vendor.getUser();
+            user.setRole(userRole);
+            userRepository.save(user);
+
+            vendor.setRejectionNote(null);
         }
 
         return vendorRepository.save(vendor);

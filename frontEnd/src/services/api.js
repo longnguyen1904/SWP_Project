@@ -100,6 +100,7 @@ export const customerAPI = {
     return api.get(`/api/products${queryString}`);
   },
   getProductDetails: (productId) => api.get(`/api/products/${productId}`),
+  getLatestVersion: (productId) => api.get(`/api/products/${productId}/versions/latest`),
   getProductReviews: (productId, params = {}) =>
     api.get(`/api/products/${productId}/reviews`, { params }),
   getProductPurchased: (productId) => api.get(`/api/products/${productId}/purchased`),
@@ -110,6 +111,27 @@ export const customerAPI = {
   getCategories: () => api.get("/api/categories"),
   getTags: () => api.get("/api/tags"),
   createCheckout: (data) => api.post("/api/checkout/create", data),
+  startTrial: (productId) => api.post("/api/trials/start", { productId }),
+  getVendorShop: (vendorId) => api.get(`/api/vendors/${vendorId}`),
+  getVendorShopProducts: (vendorId, params = {}) => {
+    const queryString = buildProductsQueryString(params);
+    return api.get(`/api/vendors/${vendorId}/products${queryString}`);
+  },
+  getWishlist: () => api.get("/api/wishlists/me"),
+  toggleWishlist: (productId) =>
+    api.post(`/api/wishlists/toggle?productId=${productId}`),
+  checkWishlist: (productId) =>
+    api.get(`/api/wishlists/check?productId=${productId}`),
+  validateCoupon: (code, productId) =>
+    api.get(`/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`),
+  getCouponsForProduct: (productId) =>
+    api.get(`/api/coupons/product/${productId}`),
+};
+
+export const couponAPI = {
+  getCoupons: () => api.get("/api/coupons/my"),
+  createCoupon: (data) => api.post("/api/coupons", data),
+  deleteCoupon: (id) => api.delete(`/api/coupons/${id}`),
 };
 
 export const uploadAPI = {
@@ -124,6 +146,8 @@ export const uploadAPI = {
 export const profileAPI = {
   getProfile: () => api.get("/api/users/profile"),
   updateProfile: (data) => api.put("/api/users/profile", data),
+  forgotPassword: (email) => api.post("/api/users/forgot-password", { email }),
+  resetPassword: (data) => api.post("/api/users/reset-password", data),
 };
 
 export default api;

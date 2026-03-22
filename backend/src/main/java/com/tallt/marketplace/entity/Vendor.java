@@ -40,8 +40,6 @@ public class Vendor {
     @Column(name = "TaxCode")
     private String taxCode;
 
-
-
     @Column(name = "RejectionNote")
     private String rejectionNote;
 
@@ -61,6 +59,6 @@ public class Vendor {
     }
 
     public enum VendorStatus {
-        PENDING, APPROVED, REJECTED
+        PENDING, APPROVED, REJECTED, SUSPENDED
     }
 }

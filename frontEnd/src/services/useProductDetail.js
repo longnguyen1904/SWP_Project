@@ -10,27 +10,28 @@ const useProductDetail = (productId) => {
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [latestVersion, setLatestVersion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [hasPurchased, setHasPurchased] = useState(null);
   const [currentVendorId, setCurrentVendorId] = useState(null);
 
   const normalizeProduct = (data) => {
-    const raw = data.product ?? data;
+    const raw = data.product || data;
     return {
       ...raw,
       id: raw.productId,
       name: raw.productName,
-      averageRating: data.averageRating ?? raw.averageRating ?? 0,
-      reviewCount: data.reviewCount ?? raw.reviewCount ?? 0,
-      images: data.images ?? raw.images ?? [],
-      licenseTiers: data.licenseTiers ?? raw.licenseTiers ?? [],
+      averageRating: data.averageRating || raw.averageRating || 0,
+      reviewCount: data.reviewCount || raw.reviewCount || 0,
+      images: data.images || raw.images || [],
+      licenseTiers: data.licenseTiers || raw.licenseTiers || [],
     };
   };
 
   const parseReviews = (res) => {
-    const payload = unwrapResponse(res) ?? res.data;
-    return payload?.content ?? [];
+    const payload = unwrapResponse(res);
+    return (payload && payload.content) ? payload.content : [];
   };
 
   useEffect(() => {
@@ -41,19 +42,30 @@ const useProductDetail = (productId) => {
       setError("");
       try {
         const response = await customerAPI.getProductDetails(productId);
-        const data = unwrapResponse(response) ?? response.data;
+        const data = unwrapResponse(response);
         if (!data) {
           setError("Product not found");
           return;
         }
 
         setProduct(normalizeProduct(data));
-        setRelatedProducts(data.relatedProducts ?? []);
+        setRelatedProducts(data.relatedProducts || []);
 
-        const reviewsRes = await customerAPI.getProductReviews(productId, { page: 0, size: 20 });
+        const reviewsRes = await customerAPI.getProductReviews(productId, {
+          page: 0,
+          size: 20,
+        });
         setReviews(parseReviews(reviewsRes));
+
+        customerAPI
+          .getLatestVersion(productId)
+          .then((vRes) => setLatestVersion(unwrapResponse(vRes)))
+          .catch(() => setLatestVersion(null));
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load product details.");
+        setError(
+          (err.response && err.response.data && err.response.data.message)
+            || "Failed to load product details.",
+        );
       } finally {
         setLoading(false);
       }
@@ -67,8 +79,8 @@ const useProductDetail = (productId) => {
       customerAPI
         .getProductPurchased(productId)
         .then((res) => {
-          const data = unwrapResponse(res) ?? res.data;
-          setHasPurchased(Boolean(data?.purchased));
+          const data = unwrapResponse(res);
+          setHasPurchased(Boolean(data && data.purchased));
         })
         .catch(() => setHasPurchased(false));
     } else {
@@ -81,10 +93,10 @@ const useProductDetail = (productId) => {
       vendorAPI
         .getMe()
         .then((res) => {
-          const data = unwrapResponse(res) ?? res.data;
-          if (data?.vendorId != null) setCurrentVendorId(data.vendorId);
+          const data = unwrapResponse(res);
+          if (data && data.vendorId != null) setCurrentVendorId(data.vendorId);
         })
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [isVendor]);
 
@@ -95,7 +107,7 @@ const useProductDetail = (productId) => {
         customerAPI.getProductDetails(productId),
         customerAPI.getProductReviews(productId, { page: 0, size: 20 }),
       ]);
-      const data = unwrapResponse(detailRes) ?? detailRes.data;
+      const data = unwrapResponse(detailRes);
       if (data) {
         setProduct((prev) => ({ ...prev, ...normalizeProduct(data) }));
       }
@@ -105,18 +117,21 @@ const useProductDetail = (productId) => {
         customerAPI
           .getProductPurchased(productId)
           .then((res) => {
-            const purchasedData = unwrapResponse(res) ?? res.data;
-            setHasPurchased(Boolean(purchasedData?.purchased));
+            const purchasedData = unwrapResponse(res);
+            setHasPurchased(Boolean(purchasedData && purchasedData.purchased));
           })
-          .catch(() => { });
+          .catch(() => {});
       }
-    } catch (_) {
+    } catch (e) {
+      throw new Error(e);
     }
   };
 
-  const productVendorId = product?.vendorId;
+  const productVendorId = product ? product.vendorId : null;
   const isOwnProduct =
-    isVendor && currentVendorId != null && String(productVendorId) === String(currentVendorId);
+    isVendor &&
+    currentVendorId != null &&
+    String(productVendorId) === String(currentVendorId);
   const showBuyButton = !isAdmin && !isOwnProduct;
 
   return {
@@ -130,6 +145,7 @@ const useProductDetail = (productId) => {
     isAdmin,
     isVendor,
     showBuyButton,
+    latestVersion,
     refetchReviewsAndProduct,
   };
 };
