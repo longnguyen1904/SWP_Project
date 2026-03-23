@@ -1,20 +1,17 @@
 package com.tallt.marketplace.service;
 
 import com.tallt.marketplace.dto.user.UpdateProfileRequest;
-import com.tallt.marketplace.entity.PasswordResetToken;
 import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.exception.AppException;
-import com.tallt.marketplace.repository.PasswordResetTokenRepository;
 import com.tallt.marketplace.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.security.SecureRandom;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Random;
 
 @Service
 public class UserProfileService {
@@ -26,10 +23,13 @@ public class UserProfileService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private PasswordResetTokenRepository passwordResetTokenRepository;
-
-    @Autowired
     private EmailService emailService;
+
+    // Ký tự dùng để sinh mật khẩu ngẫu nhiên
+    private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+    private static final String DIGITS = "0123456789";
+    private static final String ALL_CHARS = UPPERCASE + LOWERCASE + DIGITS;
 
     /**
      * Cập nhật thông tin cá nhân
@@ -95,77 +95,78 @@ public class UserProfileService {
     }
 
     /**
-     * Gửi email OTP reset mật khẩu
-     * - Tìm user theo email
-     * - Tạo OTP 6 chữ số, lưu token (hết hạn sau 10 phút)
-     * - Gửi email chứa OTP
+     * Sinh mật khẩu ngẫu nhiên (8-10 ký tự)
+     * Đảm bảo chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 chữ số
+     */
+    private String generateRandomPassword() {
+        SecureRandom random = new SecureRandom();
+
+        // Độ dài ngẫu nhiên 8-10 ký tự
+        int length = 8 + random.nextInt(3);
+
+        StringBuilder password = new StringBuilder(length);
+
+        // Đảm bảo ít nhất 1 ký tự mỗi loại
+        password.append(UPPERCASE.charAt(random.nextInt(UPPERCASE.length())));
+        password.append(LOWERCASE.charAt(random.nextInt(LOWERCASE.length())));
+        password.append(DIGITS.charAt(random.nextInt(DIGITS.length())));
+
+        // Điền phần còn lại ngẫu nhiên
+        for (int i = 3; i < length; i++) {
+            password.append(ALL_CHARS.charAt(random.nextInt(ALL_CHARS.length())));
+        }
+
+        // Trộn ngẫu nhiên thứ tự các ký tự
+        char[] chars = password.toString().toCharArray();
+        for (int i = chars.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = chars[i];
+            chars[i] = chars[j];
+            chars[j] = temp;
+        }
+
+        return new String(chars);
+    }
+
+    /**
+     * Quên mật khẩu – sinh mật khẩu mới và gửi qua email
+     * 1. Tìm user theo email
+     * 2. Sinh mật khẩu ngẫu nhiên (8-10 ký tự, chữ hoa + chữ thường + số)
+     * 3. Hash mật khẩu mới bằng BCrypt và lưu vào DB
+     * 4. Gửi mật khẩu mới qua email cho user
      */
     @Transactional
-    public Map<String, Object> sendPasswordResetEmail(String email) {
+    public Map<String, Object> forgotPassword(String email) {
+        // Kiểm tra email
+        if (email == null || email.isBlank()) {
+            throw new AppException("Vui lòng nhập email");
+        }
+
+        // Tìm user theo email
         User user = userRepository.findByEmail(email);
         if (user == null) {
             throw new AppException("Email không tồn tại trong hệ thống");
         }
 
-        // Xóa token cũ (nếu có)
-        passwordResetTokenRepository.deleteByEmail(email);
+        // Sinh mật khẩu ngẫu nhiên
+        String newPassword = generateRandomPassword();
 
-        // Tạo OTP 6 chữ số
-        String otp = String.format("%06d", new Random().nextInt(999999));
+        // Hash mật khẩu và cập nhật vào DB
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
 
-        // Lưu token
-        PasswordResetToken resetToken = new PasswordResetToken();
-        resetToken.setEmail(email);
-        resetToken.setToken(otp);
-        resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(10));
-        passwordResetTokenRepository.save(resetToken);
-
-        // Gửi email
-        String subject = "Mã xác thực đặt lại mật khẩu - Software Marketplace";
-        String body = "Xin chào " + (user.getFullName() != null ? user.getFullName() : user.getUsername()) + ",\n\n"
-                + "Mã OTP đặt lại mật khẩu của bạn là: " + otp + "\n\n"
-                + "Mã này có hiệu lực trong 10 phút.\n"
-                + "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n\n"
+        // Gửi email chứa mật khẩu mới
+        String userName = user.getFullName() != null ? user.getFullName() : user.getUsername();
+        String subject = "Mật khẩu mới của bạn - Software Marketplace";
+        String body = "Xin chào " + userName + ",\n\n"
+                + "Mật khẩu mới của bạn là: " + newPassword + "\n\n"
+                + "Vui lòng đăng nhập và đổi mật khẩu ngay để đảm bảo an toàn.\n"
+                + "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng liên hệ hỗ trợ ngay.\n\n"
                 + "Trân trọng,\nSoftware Marketplace";
         emailService.sendEmail(email, subject, body);
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("message", "Mã OTP đã được gửi đến email " + email);
-        return result;
-    }
-
-    /**
-     * Xác thực OTP và đặt lại mật khẩu
-     */
-    @Transactional
-    public Map<String, Object> resetPassword(String email, String token, String newPassword) {
-        if (newPassword == null || newPassword.length() < 6) {
-            throw new AppException("Mật khẩu mới phải có ít nhất 6 ký tự");
-        }
-
-        PasswordResetToken resetToken = passwordResetTokenRepository
-                .findByEmailAndTokenAndUsedFalse(email, token)
-                .orElseThrow(() -> new AppException("Mã OTP không hợp lệ hoặc đã được sử dụng"));
-
-        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new AppException("Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới");
-        }
-
-        User user = userRepository.findByEmail(email);
-        if (user == null) {
-            throw new AppException("Email không tồn tại trong hệ thống");
-        }
-
-        // Đặt lại mật khẩu
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        // Đánh dấu token đã sử dụng
-        resetToken.setUsed(true);
-        passwordResetTokenRepository.save(resetToken);
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("message", "Đặt lại mật khẩu thành công");
+        result.put("message", "Mật khẩu mới đã được gửi đến email " + email);
         return result;
     }
 }

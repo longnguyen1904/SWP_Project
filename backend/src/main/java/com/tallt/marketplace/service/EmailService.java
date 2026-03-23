@@ -17,16 +17,23 @@ public class EmailService {
 
     public void sendEmail(String to, String subject, String body) {
         if (to == null || to.isBlank() || mailSender == null) {
+            System.out.println("[EmailService] Mail sender not configured, skipping email to: " + to);
             return;
         }
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        if (fromEmail != null && !fromEmail.isBlank()) {
-            message.setFrom(fromEmail);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            if (fromEmail != null && !fromEmail.isBlank()) {
+                message.setFrom(fromEmail);
+            }
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+            mailSender.send(message);
+            System.out.println("[EmailService] Email sent successfully to: " + to);
+        } catch (Exception e) {
+            System.err.println("[EmailService] Failed to send email to " + to + ": " + e.getMessage());
+            // Don't rethrow - let the caller continue even if email fails
         }
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
-        mailSender.send(message);
     }
 }

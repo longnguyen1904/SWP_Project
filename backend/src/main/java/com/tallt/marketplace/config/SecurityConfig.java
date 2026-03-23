@@ -20,6 +20,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF để test Postman/React
+            .formLogin(AbstractHttpConfigurer::disable) // Tắt form login mặc định
+            .httpBasic(AbstractHttpConfigurer::disable) // Tắt HTTP Basic
+            .oauth2Login(AbstractHttpConfigurer::disable) // Tắt OAuth2 login auto-config
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll() // Tạm thời cho phép tất cả request
             );
