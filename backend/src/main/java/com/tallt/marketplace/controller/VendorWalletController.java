@@ -30,8 +30,10 @@ public class VendorWalletController {
      */
     @GetMapping("/wallet")
     public ResponseEntity<ApiResponse<WalletResponse>> getVendorWallet(
-            @RequestHeader("X-User-Id") Integer userId) {
-        WalletResponse result = walletService.getVendorWallet(userId);
+            @RequestHeader("X-User-Id") Integer userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        WalletResponse result = walletService.getVendorWallet(userId, page, size);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -49,4 +51,5 @@ public class VendorWalletController {
         Map<String, Object> result = walletService.requestPayout(userId, request);
         return ResponseEntity.ok(ApiResponse.success("Yêu cầu rút tiền thành công", result));
     }
+
 }
