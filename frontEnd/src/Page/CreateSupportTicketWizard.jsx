@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { orderAPI } from "../services/orderApi.js"; // Giữ nguyên file của bạn
-import api from "../services/api.js"; // Lấy instance axios từ file api.js của bạn
+import { orderAPI } from "../services/orderApi.js"; 
+import api from "../services/api.js"; 
 
 const CreateSupportTicketWizard = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Step 1 State
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
-  // Step 2 State
   const [issueForm, setIssueForm] = useState({
     type: 'Bug',
     priority: 'Normal',
@@ -24,14 +22,13 @@ const CreateSupportTicketWizard = () => {
 
   const fileInputRef = useRef(null);
 
-  // Step 3 State
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Success State
   const [successTicketId, setSuccessTicketId] = useState(null);
 
   const token = localStorage.getItem('accessToken');
+
+  // Bôi đen hàm fetchProducts cũ của bạn và thay bằng hàm này:
 
   // ==========================================
   // FETCH PRODUCTS
@@ -40,29 +37,25 @@ const CreateSupportTicketWizard = () => {
     setLoading(true);
     setError('');
     try {
-      const data = await orderAPI.getUserOrders();
-      const extractedProducts = [];
+      // 🔥 GỌI HÀM MỚI Ở ĐÂY
+      const data = await orderAPI.getTicketProducts(); 
+      
+      const extractedProducts = data.map(item => ({
+        orderId: item.orderId,
+        vendorId: item.vendorId,
+        productId: item.productId,
+        productName: item.productName || 'Sản phẩm',
+        vendorName: item.vendorName || 'Shop',
+        productImage: item.productImage || 'https://via.placeholder.com/64',
+        categoryName: item.categoryName || 'Phần mềm',
+        paymentStatus: item.paymentStatus,
+        purchaseDate: item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString('vi-VN') : 'Không rõ ngày',
+        _rawData: item
+      }));
 
-      data.forEach(order => {
-        const status = String(order.paymentStatus || order.status || '').toUpperCase();
-
-        if (status === 'PAID' || status === 'COMPLETED' || status === 'SUCCESS') {
-          const p = order.product || {};
-
-          extractedProducts.push({
-            orderId: order.orderID || order.orderId || order.id,
-            vendorId: p.vendor?.vendorId || p.vendor?.vendorID || p.vendor?.id || p.vendor?.userID || p.vendorId || p.vendorID || order.vendorId || order.vendorID,
-            productId: p.productId || p.id,
-            productName: p.productName || p.name || 'Sản phẩm',
-            vendorName: p.vendor?.shopName || p.vendor?.name || p.vendorName || 'Shop',
-            productImage: p.imageUrl || p.image || p.thumbnail || 'https://via.placeholder.com/64',
-            categoryName: p.category?.categoryName || p.category?.name || p.categoryName || 'Phần mềm',
-            paymentStatus: status,
-            _rawData: p
-          });
-        }
-      });
-
+      // Sắp xếp đơn mới nhất lên đầu
+      extractedProducts.sort((a, b) => b.orderId - a.orderId);
+      
       setProducts(extractedProducts);
     } catch (err) {
       console.error("Lỗi khi tải danh sách đơn hàng:", err);
@@ -146,7 +139,7 @@ const CreateSupportTicketWizard = () => {
   };
 
   // ==========================================
-  // SUBMIT TICKET (Sử dụng api default từ api.js)
+  // SUBMIT TICKET 
   // ==========================================
   const handleSubmit = async () => {
     if (!isConfirmed) return;
@@ -157,20 +150,15 @@ const CreateSupportTicketWizard = () => {
       const finalSubject = `[${issueForm.type}] ${issueForm.title}`;
       const formData = new FormData();
 
-      if (selectedProduct.vendorId) {
-        formData.append('vendorId', selectedProduct.vendorId);
-      }
-      if (selectedProduct.orderId) {
-        formData.append('orderId', selectedProduct.orderId);
-      }
+      if (selectedProduct.vendorId) formData.append('vendorId', selectedProduct.vendorId);
+      if (selectedProduct.orderId) formData.append('orderId', selectedProduct.orderId);
+      if (selectedProduct.productId) formData.append('productId', selectedProduct.productId);
+      
       formData.append('subject', finalSubject);
       formData.append('description', issueForm.description);
       formData.append('priority', issueForm.priority);
-      if (issueForm.file) {
-        formData.append('file', issueForm.file);
-      }
+      if (issueForm.file) formData.append('file', issueForm.file);
 
-      // Gọi trực tiếp api.post và Gắn TOKEN THỦ CÔNG ở đây để không cần đụng vào file api.js
       const response = await api.post('/api/tickets/create', formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -284,14 +272,14 @@ const CreateSupportTicketWizard = () => {
                 </div>
               ) : products.length === 0 ? (
                 <div className="text-center py-5 rounded" style={{ backgroundColor: 'rgba(24, 24, 27, 0.5)' }}>
-                  <p style={{ color: '#71717a' }}>Bạn chưa có sản phẩm nào hợp lệ để tạo ticket.</p>
+                  <p style={{ color: '#71717a' }}>Bạn chưa có đơn hàng nào để tạo ticket.</p>
                 </div>
               ) : (
                 <>
                   <div className="row g-3 mb-4 p-3 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.1)', border: `1px solid ${borderColor}` }}>
                     <div className="col-md-7">
                       <div className="d-flex align-items-center rounded" style={{ backgroundColor: inputBg, border: `1px solid rgba(82, 82, 91, 0.5)`, overflow: 'hidden' }}>
-                        <span className="ps-3 pe-2 text-muted"></span>
+                        <span className="ps-3 pe-2 text-muted">🔍</span>
                         <input
                           type="text"
                           className="form-control shadow-none border-0 bg-transparent text-white py-2 custom-placeholder"
@@ -321,14 +309,14 @@ const CreateSupportTicketWizard = () => {
                           >
                             <div className="card-body d-flex gap-3 align-items-center">
                               <div className="flex-shrink-0">
-                                <img src={p.productImage || 'https://via.placeholder.com/64'} alt="Img" className="rounded" style={{ width: '60px', height: '60px', objectFit: 'cover', border: `1px solid rgba(82, 82, 91, 0.5)` }} />
+                                <img src={p.productImage} alt="Img" className="rounded" style={{ width: '60px', height: '60px', objectFit: 'cover', border: `1px solid rgba(82, 82, 91, 0.5)` }} />
                               </div>
-                              <div style={{ overflow: 'hidden' }}>
+                              <div style={{ overflow: 'hidden', width: '100%' }}>
                                 <h6 className="mb-1 fw-bold text-white text-truncate">{p.productName}</h6>
-                                <div className="small mb-1 text-truncate" style={{ color: '#a1a1aa' }}>Shop: <span className="text-light">{p.vendorName}</span></div>
+                                <div className="small mb-1 text-truncate" style={{ color: '#a1a1aa' }}><i className="bi bi-shop me-1"></i>{p.vendorName}</div>
                                 <div className="d-flex justify-content-between align-items-center mt-2">
-                                  <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#d4d4d8', fontWeight: 'normal' }}>{getProductCategory(p)}</span>
-                                  <span style={{ fontSize: '0.75rem', color: '#71717a' }}>#{p.orderId}</span>
+                                  <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#d4d4d8', fontWeight: 'normal' }}>{p.purchaseDate}</span>
+                                  <span className="order-id-badge">#{p.orderId}</span>
                                 </div>
                               </div>
                             </div>
@@ -423,7 +411,7 @@ const CreateSupportTicketWizard = () => {
                     <img src={selectedProduct?.productImage || 'https://via.placeholder.com/48'} alt="Product" className="rounded me-3" style={{ width: '48px', height: '48px', objectFit: 'cover' }} />
                     <div>
                       <h6 className="mb-0 text-white fw-bold">{selectedProduct?.productName}</h6>
-                      <small style={{ color: '#a1a1aa' }}>Shop: {selectedProduct?.vendorName} | Order ID: #{selectedProduct?.orderId}</small>
+                      <small style={{ color: '#a1a1aa' }}>Shop: {selectedProduct?.vendorName} | Order ID: <span className="text-warning fw-bold">#{selectedProduct?.orderId}</span></small>
                     </div>
                   </div>
                 </div>
@@ -482,19 +470,14 @@ const CreateSupportTicketWizard = () => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .product-card-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .order-id-badge { font-family: 'Courier New', monospace; background: #27272a; color: #facc15; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; border: 1px solid rgba(250, 204, 21, 0.2); }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: rgba(24, 24, 27, 0.5); border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #52525b; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #f97316; }
-        .custom-placeholder::placeholder { 
-    color: rgba(255, 255, 255, 0.5) !important; /* Màu trắng nhạt / xám sáng */
-  }
-
-  .product-card-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-  ::-webkit-scrollbar { width: 8px; }
-  ::-webkit-scrollbar-track { background: rgba(24, 24, 27, 0.5); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb { background: #52525b; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+        .custom-placeholder::placeholder { color: rgba(255, 255, 255, 0.5) !important; opacity: 1; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       `}} />
     </div>
   );
