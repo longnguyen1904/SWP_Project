@@ -65,9 +65,9 @@ export default function Navbar() {
           <li><Link to="/marketplace" id="router-link">Marketplace</Link></li>
           <li><Link to="../Page/About" id="router-link">About</Link></li>
           <li><Link to="../Page/Event" id="router-link">Events</Link></li>
-          <li><Link to="../Page/Tradition" id="router-link">Traditons</Link></li>
+          <li><Link to="../Page/Policy" id="router-link">Policies</Link></li>
         </ul>
-
+        
         {/* ===== RIGHT AREA ===== */}
         <div className="navbar-right">
 

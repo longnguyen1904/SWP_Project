@@ -31,10 +31,10 @@ public class LicenseService {
 
         String key;
         do {
-            key = LicenseKeyGenerator.generateKey();
+            key = LicenseKeyGenerator.generateKey(order.getProduct().getProductID());
         } while (licenseRepository.existsByLicenseKey(key));
 
-        license.setLicenseKey(key);
+        // license.setLicenseKey(key);
         license.setOrder(order);
         license.setUser(order.getUser());
         license.setProduct(order.getProduct());
@@ -43,8 +43,35 @@ public class LicenseService {
         license.setIsActive(true);
         license.setIsDeleted(false);
         license.setIsTrial(false);
+        Integer duration = order.getTier().getDurationDays();
 
+    license.setExpireAt(
+        LocalDateTime.now().plusDays(duration)
+    );
         
         return licenseRepository.save(license);
     }
+
+
+    public String verifyLicense(String licenseKey, Integer productID) {
+
+    License license = licenseRepository
+            .findByLicenseKey(licenseKey)
+            .orElse(null);
+
+    if (license == null) {
+        return "INVALID_LICENSE";
+    }
+
+    if (!license.getProduct().getProductID().equals(productID)) {
+        return "WRONG_PRODUCT";
+    }
+
+    if (!license.getIsActive()) {
+        return "DISABLED";
+    }
+
+    return "VALID";
+}
+
 }

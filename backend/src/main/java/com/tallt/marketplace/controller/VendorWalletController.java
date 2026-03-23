@@ -30,18 +30,19 @@ public class VendorWalletController {
      */
     @GetMapping("/wallet")
     public ResponseEntity<ApiResponse<WalletResponse>> getVendorWallet(
-            @RequestHeader("X-User-Id") Integer userId) {
-        WalletResponse result = walletService.getVendorWallet(userId);
+            @RequestHeader("X-User-Id") Integer userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        WalletResponse result = walletService.getVendorWallet(userId, page, size);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     /**
      * Yêu cầu rút tiền
      * POST /api/vendor/payouts
-     * - Kiểm tra số dư đủ
-     * - Tạo VendorPayout
-     * - Trừ tiền trong Wallet
-     * - Ghi nhận WalletTransaction
+     * - Tính available từ Orders - đã rút/pending
+     * - Tạo VendorPayout(PENDING)
+     * - Tiền cộng vào ví khi Admin approve
      */
     @PostMapping("/payouts")
     public ResponseEntity<ApiResponse<Map<String, Object>>> requestPayout(
@@ -50,4 +51,5 @@ public class VendorWalletController {
         Map<String, Object> result = walletService.requestPayout(userId, request);
         return ResponseEntity.ok(ApiResponse.success("Yêu cầu rút tiền thành công", result));
     }
+
 }

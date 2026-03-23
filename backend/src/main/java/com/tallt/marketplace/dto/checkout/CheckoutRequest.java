@@ -14,4 +14,6 @@ public class CheckoutRequest {
 
     @NotNull(message = "tierId is required")
     private Integer tierId;
+
+    private String couponCode;
 }

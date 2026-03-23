@@ -4,6 +4,7 @@ export const formatPrice = (price) => {
 };
 
 export const getProductImageUrl = (product) => {
+  if (product?.thumbnailUrl) return product.thumbnailUrl;
   if (product?.images?.length > 0) {
     const first = product.images[0];
     return typeof first === "string" ? first : first?.imageUrl;

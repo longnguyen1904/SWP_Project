@@ -32,7 +32,7 @@ public class License {
     @JoinColumn(name = "ProductID", nullable = false)
     private Product product;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "TierID", nullable = false)
     private LicenseTier tier;
 
@@ -50,4 +50,24 @@ public class License {
 
     @Column(name = "IsDeleted")
     private Boolean isDeleted = false;
+
+    @OneToMany(mappedBy = "license")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<LicenseSession> sessions;
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("isActivated")
+    public Boolean getIsActivated() {
+        return sessions != null && !sessions.isEmpty();
+    }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("activatedAt")
+    public LocalDateTime getActivatedAt() {
+        if (sessions == null || sessions.isEmpty()) return null;
+        return sessions.stream()
+                .map(LicenseSession::getLoginTime)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+    }
 }

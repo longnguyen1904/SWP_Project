@@ -1,17 +1,17 @@
-﻿spring:
+spring:
   application:
     name: marketplace
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    username: ${MAIL_USERNAME} # ← Thay bằng Gmail của bạn
+    password: ${MAIL_PASSWORD} # ← Thay bằng App Password 16 ký tự
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
   servlet:
     multipart:
-      max-file-size: 500MB
+      max-file-size: 500MB  
       max-request-size: 500MB
   datasource:
     url: jdbc:mysql://127.0.0.1:3307/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -26,6 +26,17 @@
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 717141299175-t9nip96r7esj02q394h1s31o9rr6armd.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - email
+              - profile
+
 server:
   port: 8081
 virustotal:

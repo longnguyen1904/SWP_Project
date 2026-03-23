@@ -3,6 +3,13 @@ package com.tallt.marketplace.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import java.util.Map;
+import java.util.UUID;
 
 import com.tallt.marketplace.constant.MessageConstant;
 import com.tallt.marketplace.constant.RoleConstant;
@@ -81,5 +88,57 @@ public class AuthService {
                 role.getRoleName(),
                 null,
                 savedUser.getUserID());
+    }
+
+    public AuthResponse googleLogin(String googleAccessToken) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(googleAccessToken);
+        HttpEntity<?> entity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    HttpMethod.GET,
+                    entity,
+                    Map.class
+            );
+
+            Map<String, Object> payload = response.getBody();
+            if (payload == null || !payload.containsKey("email")) {
+                throw new AppException("Invalid Google Token");
+            }
+
+            String email = (String) payload.get("email");
+            String name = (String) payload.get("name");
+
+            User user = userRepository.findByEmail(email);
+            if (user == null) {
+                Role role = roleRepository.findById(RoleConstant.CUSTOMER)
+                        .orElseThrow(() -> new AppException(MessageConstant.ROLE_NOT_FOUND));
+
+                user = new User();
+                user.setEmail(email);
+                user.setFullName(name);
+                user.setUsername(email.split("@")[0]);
+                user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+                user.setRole(role);
+                user.setIsActive(true);
+                user = userRepository.save(user);
+            }
+
+            String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
+
+            return new AuthResponse(
+                    user.getEmail(),
+                    user.getFullName(),
+                    user.getRole().getRoleName(),
+                    token,
+                    user.getUserID()
+            );
+
+        } catch (Exception e) {
+            throw new AppException("Failed to verify Google token: " + e.getMessage());
+        }
     }
 }

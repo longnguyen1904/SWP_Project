@@ -35,11 +35,38 @@ export default function CustomerDashboard() {
               }
             >
               <i className="bi bi-bag-check me-3"></i>
-              Đã mua (Purchased)
+              Purchased
             </NavLink>
           </li>
 
-       
+          <li className="nav-item mb-2">
+            <NavLink 
+              to="/Page/Customer/Wishlist" 
+              className={({ isActive }) => 
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
+                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+                }`
+              }
+            >
+              <i className="bi bi-heart me-3"></i>
+              Wishlist
+            </NavLink>
+          </li>
+
+          <li className="nav-item mb-2">
+            <NavLink 
+              to="/Page/Customer/RecentlyViewed" 
+              className={({ isActive }) => 
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
+                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+                }`
+              }
+            >
+              <i className="bi bi-clock-history me-3"></i>
+              Recently Viewed
+            </NavLink>
+          </li>
+
 
            <li className="nav-item mb-2">
             <NavLink 
@@ -87,14 +114,33 @@ export default function CustomerDashboard() {
 
         <div className="px-2 mt-auto pb-3">
           <Link to="/" className="nav-link text-white-50 p-2 small d-flex align-items-center">
-            <i className="bi bi-house-door me-2"></i> Quay lại trang chủ
+            <i className="bi bi-house-door me-2"></i> Back to Home
           </Link>
         </div>
       </div>
 
       {/* ================= MAIN AREA ================= */}
       <div className="flex-grow-1 d-flex flex-column">
-        
+
+        {/* ========== TOPBAR (SEARCH CHỮ TRẮNG) ========== */}
+        <nav className="navbar navbar-expand px-4 py-3" style={{ backgroundColor: "rgba(0,0,0,0.4)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+          <div className="d-flex position-relative" style={{ width: "350px" }}>
+            <span className="position-absolute top-50 start-0 translate-middle-y ps-3 text-white-50">
+              <i className="bi bi-search"></i>
+            </span>
+            <input
+              className="form-control ps-5 border-0 text-white shadow-none custom-placeholder"
+              type="search"
+              placeholder="Search your orders..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", borderRadius: "10px" }}
+            />
+          </div>
+
+
+        </nav>
+
         {/* ========== CONTENT ========== */}
         <div className="container-fluid p-4 overflow-auto" style={{ flex: 1 }}>
            <div className="text-white">

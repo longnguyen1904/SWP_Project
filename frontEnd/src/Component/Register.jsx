@@ -1,9 +1,9 @@
 import { forwardRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { OAuthConfig } from "../configurations/configuration";
-import { getToken } from "../services/localStorageService";
-import { setToken } from "../services/localStorageService";
+import { authAPI } from "../services/api";
+import { unwrapResponse, getApiErrorMessage } from "../services/apiHelpers";
+import { getToken, setToken } from "../services/localStorageService";
 import "../Style/LogIn.css";
 
 const Register = forwardRef(function Register(props, ref) {
@@ -36,44 +36,28 @@ const Register = forwardRef(function Register(props, ref) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const endpoint = isLogin
-      ? "http://localhost:8081/api/auth/login"
-      : "http://localhost:8081/api/auth/register";
-
-    const payload = isLogin
-      ? { email: formData.email, password: formData.password }
-      : formData;
-
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = isLogin
+        ? await authAPI.login({ email: formData.email, password: formData.password })
+        : await authAPI.register(formData);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Authentication failed");
-        return;
-      }
+      const user = unwrapResponse(res);
 
       if (isLogin) {
-        setToken(data.token);   // ⭐ QUAN TRỌNG
-        if (data.roleName) localStorage.setItem("role", data.roleName);
-        if (data.userID != null) localStorage.setItem("userId", String(data.userID));
+        setToken(user.token || "authenticated");
+        if (user.roleName) localStorage.setItem("role", user.roleName);
+        if (user.userID != null) localStorage.setItem("userId", String(user.userID));
+        localStorage.setItem("user", JSON.stringify(user));
         window.dispatchEvent(new Event("authChanged"));
-        localStorage.setItem("user", JSON.stringify(data));
         ref?.current?.close();
         navigate("/");
-
       } else {
         alert("Register success! Please login.");
         setIsLogin(true);
       }
     } catch (err) {
       console.error(err);
-      alert("Cannot connect to server (8081)");
+      alert(getApiErrorMessage(err, "Cannot connect to server (8081)"));
     }
   };
 
@@ -143,7 +127,7 @@ const Register = forwardRef(function Register(props, ref) {
           </button>
         </form>
 
-        {/* ===== GOOGLE LOGIN – GIỮ NGUYÊN ===== */}
+        {/* ===== GOOGLE LOGIN ===== */}
         <button
           type="button"
           className="google-btn"

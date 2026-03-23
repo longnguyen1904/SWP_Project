@@ -10,5 +10,10 @@ import java.util.List;
 @Data
 public class WalletResponse {
     private BigDecimal balance;
+    private BigDecimal available;
     private List<WalletTransactionResponse> transactions;
+    private int page;
+    private int size;
+    private int totalPages;
+    private long totalElements;
 }
