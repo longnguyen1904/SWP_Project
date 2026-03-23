@@ -5,6 +5,7 @@ import com.tallt.marketplace.dto.ApiResponse;
 import com.tallt.marketplace.dto.AuthResponse;
 import com.tallt.marketplace.dto.LoginRequest;
 import com.tallt.marketplace.dto.RegisterRequest;
+import com.tallt.marketplace.dto.TokenRequest;
 import com.tallt.marketplace.service.AuthService;
 import com.tallt.marketplace.service.UserProfileService;
 
@@ -42,6 +43,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Đăng ký thành công", result));
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@RequestBody @Valid TokenRequest request) {
+        AuthResponse response = authService.googleLogin(request.getToken());
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập Google thành công", response));
+    }
+
     /**
      * Quên mật khẩu – sinh mật khẩu mới và gửi qua email
      * POST /api/auth/forgot-password
@@ -53,4 +60,4 @@ public class AuthController {
         Map<String, Object> result = userProfileService.forgotPassword(email);
         return ResponseEntity.ok(ApiResponse.success("Mật khẩu mới đã được gửi qua email", result));
     }
-}
+}

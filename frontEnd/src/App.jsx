@@ -3,7 +3,7 @@ import { Routes, Route, Link, Navigate } from "react-router-dom";
 import Home from "./Page/Home";
 import Navbar from "./Component/Navbar";
 import About from "./Page/About";
-import Tradition from "./Page/Tradition";
+import Policy from "./Page/Policy";
 import Event from "./Page/Event";
 import Authenticate from "./Page/Authenticate";
 import RevenueDashboard from "./Page/RevenueDashboard";
@@ -42,7 +42,7 @@ export default function App() {
         <Route path="/authenticate" element={<Authenticate />} />
         <Route path="/Page/About" element={<About />} />
         <Route path="/Page/Event" element={<Event />} />
-        <Route path="/Page/Tradition" element={<Tradition />} />
+        <Route path="/Page/Policy" element={<Policy />} />
 
         <Route path="/Page/Customer" element={<CustomerDashboard />}>
           <Route index element={<Navigate to="PurchasedProducts" replace />} />

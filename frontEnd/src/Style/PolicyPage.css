@@ -1,0 +1,109 @@
+.policy-container {
+  width: 100%;
+  padding: 60px 20px;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: white;
+  min-height: 100vh;
+}
+
+.policy-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.policy-header h1 {
+  font-size: 36px;
+  font-weight: bold;
+  color: #ff7a00;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.policy-content {
+  max-width: 900px;
+  margin: 0 auto;
+  background: linear-gradient(145deg,#1a1a1a,#111);
+  border-radius: 16px;
+  padding: 50px 60px;
+  border: 1px solid #333;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+.policy-section {
+  margin-bottom: 40px;
+}
+
+.policy-section:last-child {
+  margin-bottom: 0;
+}
+
+.policy-section h3 {
+  font-size: 22px;
+  color: #ff7a00;
+  border-bottom: 1px solid #333;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.policy-section h3 span {
+  background: #ff7a00;
+  color: white;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.policy-section p {
+  color: #bbbbbb;
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 15px;
+}
+
+.policy-section p b {
+  color: white;
+}
+
+.policy-code {
+  background: #0a0a0a;
+  padding: 20px;
+  border-radius: 10px;
+  color: #00e5ff;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 15px;
+  border: 1px solid #333;
+  overflow-x: auto;
+  line-height: 1.6;
+  margin-top: 15px;
+}
+
+.policy-code-comment {
+  color: #6a9955;
+}
+
+.policy-code-keyword {
+  color: #569cd6;
+}
+
+.policy-code-string {
+  color: #ce9178;
+}
+
+@media (max-width: 768px) {
+  .policy-content {
+    padding: 30px 20px;
+  }
+  .policy-header h1 {
+    font-size: 28px;
+  }
+}
