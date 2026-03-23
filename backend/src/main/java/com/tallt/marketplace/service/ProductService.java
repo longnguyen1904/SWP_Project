@@ -62,27 +62,27 @@ public class ProductService {
     private EmailService emailService;
 
     /**
-     * Tạo sản phẩm mới cho Vendor
-     * - Insert vào Products (IsApproved=0)
-     * - Insert tags vào Tags (nếu chưa tồn tại)
-     * - Insert mapping vào ProductTags
+     * Create a new product for Vendor
+     * - Insert into Products (IsApproved=0)
+     * - Insert tags into Tags (if not existing)
+     * - Insert mapping into ProductTags
      */
     @Transactional
     public Map<String, Object> createProduct(Integer vendorId, CreateProductRequest request) {
-        // 1. Kiểm tra Vendor tồn tại
+        // 1. Check Vendor exists
         Vendor vendor = vendorRepository.findById(vendorId)
-                .orElseThrow(() -> new AppException("Vendor không tồn tại"));
+                .orElseThrow(() -> new AppException("Vendor does not exist"));
 
-        // 2. Kiểm tra Vendor đã verified
+        // 2. Check Vendor is verified
         if (!vendor.getIsVerified()) {
-            throw new AppException("Vendor chưa được xác thực, không thể tạo sản phẩm");
+            throw new AppException("Vendor is not verified, cannot create product");
         }
 
-        // 3. Kiểm tra Category tồn tại
+        // 3. Check Category exists
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new AppException("Danh mục không tồn tại"));
+                .orElseThrow(() -> new AppException("Category does not exist"));
 
-        // 4. Tạo Product
+        // 4. Create Product
         Product product = new Product();
         product.setVendor(vendor);
         product.setCategory(category);
@@ -97,10 +97,10 @@ public class ProductService {
         }
         productRepository.save(product);
 
-        // 5. Xử lý Tags
+        // 5. Process Tags
         if (request.getTags() != null && !request.getTags().isEmpty()) {
             for (String tagName : request.getTags()) {
-                // Tìm hoặc tạo Tag
+                // Find or create Tag
                 Tag tag = tagRepository.findByTagName(tagName.trim().toLowerCase())
                         .orElseGet(() -> {
                             Tag newTag = new Tag();
@@ -108,7 +108,7 @@ public class ProductService {
                             return tagRepository.save(newTag);
                         });
 
-                // Tạo mapping ProductTag
+                // Create ProductTag mapping
                 ProductTag productTag = new ProductTag();
                 productTag.setProductID(product.getProductID());
                 productTag.setTagID(tag.getTagID());
@@ -123,7 +123,7 @@ public class ProductService {
     }
 
     /**
-     * Upload 1 ảnh sản phẩm (giữ lại tương thích cũ)
+     * Upload a single product image (backward compatible)
      */
     @Transactional
     public Map<String, Object> uploadProductImage(Integer vendorId, Integer productId, ProductImageRequest request) {
@@ -139,14 +139,14 @@ public class ProductService {
 
         return Map.of(
                 "imageId", image.getImageID(),
-                "message", "Ảnh sản phẩm đã được upload thành công"
+                "message", "Product image uploaded successfully"
         );
     }
 
     /**
-     * Upload nhiều ảnh sản phẩm cùng lúc
-     * @param imageUrls danh sách URL ảnh (đã upload lên Cloudinary)
-     * @param imageType loại ảnh (SCREENSHOT, LOGO, BANNER...)
+     * Upload multiple product images at once
+     * @param imageUrls list of image URLs (already uploaded to Cloudinary)
+     * @param imageType image type (SCREENSHOT, LOGO, BANNER...)
      */
     @Transactional
     public Map<String, Object> uploadProductImages(Integer vendorId, Integer productId,
@@ -170,36 +170,36 @@ public class ProductService {
         return Map.of(
                 "imageIds", imageIds,
                 "count", imageIds.size(),
-                "message", "Upload " + imageIds.size() + " ảnh thành công"
+                "message", "Successfully uploaded " + imageIds.size() + " images"
         );
     }
 
     /**
-     * Xóa một ảnh sản phẩm (Vendor chỉ xóa ảnh của sản phẩm mình sở hữu).
+     * Delete a product image (Vendor can only delete images from their own products).
      */
     @Transactional
     public void deleteProductImage(Integer vendorId, Integer productId, Integer imageId) {
         Product product = getProductAndValidateOwner(vendorId, productId);
         ProductImage image = productImageRepository.findById(imageId)
-                .orElseThrow(() -> new AppException("Ảnh không tồn tại"));
+                .orElseThrow(() -> new AppException("Image does not exist"));
         if (!image.getProduct().getProductID().equals(product.getProductID())) {
-            throw new AppException("Ảnh không thuộc sản phẩm này");
+            throw new AppException("Image does not belong to this product");
         }
         productImageRepository.delete(image);
     }
 
     /**
-     * Cập nhật thông tin sản phẩm
-     * - DRAFT / REJECTED: cho edit, giữ nguyên status
-     * - APPROVED: cho edit, chuyển status về PENDING để Admin duyệt lại
-     * - PENDING: không cho edit
+     * Update product information
+     * - DRAFT / REJECTED: allow edit, keep status
+     * - APPROVED: allow edit, change status to PENDING for re-approval
+     * - PENDING: editing not allowed
      */
     @Transactional
     public ProductResponse updateProduct(Integer vendorId, Integer productId, UpdateProductRequest request) {
         Product product = getProductAndValidateOwner(vendorId, productId);
 
         if (product.getStatus() == Product.ProductStatus.PENDING) {
-            throw new AppException("Không thể chỉnh sửa sản phẩm đang chờ duyệt");
+            throw new AppException("Cannot edit a product that is pending review");
         }
 
         if (request.getProductName() != null) {
@@ -215,7 +215,7 @@ public class ProductService {
             product.setGuideDocumentUrl(request.getGuideDocumentUrl().isBlank() ? null : request.getGuideDocumentUrl().trim());
         }
 
-        // Nếu sản phẩm đã APPROVED, chuyển về PENDING để Admin duyệt lại
+        // If product was APPROVED, change to PENDING for Admin re-approval
         if (product.getStatus() == Product.ProductStatus.APPROVED) {
             product.setStatus(Product.ProductStatus.PENDING);
         }
@@ -226,8 +226,8 @@ public class ProductService {
     }
 
     /**
-     * Save Draft — lưu nháp sản phẩm với validation tối thiểu.
-     * Chỉ dùng khi sản phẩm ở trạng thái DRAFT hoặc REJECTED.
+     * Save Draft — save product draft with minimal validation.
+     * Only used when product is in DRAFT or REJECTED status.
      */
     @Transactional
     public ProductResponse saveDraft(Integer vendorId, Integer productId, UpdateProductRequest request) {
@@ -235,7 +235,7 @@ public class ProductService {
 
         if (product.getStatus() != Product.ProductStatus.DRAFT
                 && product.getStatus() != Product.ProductStatus.REJECTED) {
-            throw new AppException("Chỉ có thể lưu nháp khi sản phẩm ở trạng thái DRAFT hoặc REJECTED");
+            throw new AppException("Can only save draft when product is in DRAFT or REJECTED status");
         }
 
         if (request.getProductName() != null) {
@@ -251,7 +251,7 @@ public class ProductService {
             product.setGuideDocumentUrl(request.getGuideDocumentUrl().isBlank() ? null : request.getGuideDocumentUrl().trim());
         }
 
-        // Nếu REJECTED → chuyển về DRAFT khi save draft
+        // If REJECTED -> change to DRAFT when saving draft
         if (product.getStatus() == Product.ProductStatus.REJECTED) {
             product.setStatus(Product.ProductStatus.DRAFT);
             product.setRejectionNote(null);
@@ -262,52 +262,52 @@ public class ProductService {
     }
 
     /**
-     * Submit sản phẩm để Admin duyệt
-     * - Validate đầy đủ thông tin bắt buộc
-     * - Validate có ít nhất 1 version + 1 license tier
-     * - Chỉ submit khi DRAFT hoặc REJECTED
+     * Submit product for Admin approval
+     * - Validate all required information
+     * - Validate at least 1 version + 1 license tier
+     * - Only submit when DRAFT or REJECTED
      */
     @Transactional
     public Map<String, Object> submitForApproval(Integer vendorId, Integer productId) {
         Product product = getProductAndValidateOwner(vendorId, productId);
 
         if (product.getStatus() == Product.ProductStatus.APPROVED) {
-            throw new AppException("Sản phẩm đã được duyệt trước đó");
+            throw new AppException("Product has already been approved");
         }
 
         if (product.getStatus() == Product.ProductStatus.PENDING) {
-            throw new AppException("Sản phẩm đang chờ duyệt");
+            throw new AppException("Product is already pending review");
         }
 
-        // Validate thông tin bắt buộc
+        // Validate required information
         if (product.getProductName() == null || product.getProductName().isBlank()) {
-            throw new AppException("Tên sản phẩm không được để trống khi submit");
+            throw new AppException("Product name is required for submission");
         }
         if (product.getBasePrice() == null || product.getBasePrice().doubleValue() <= 0) {
-            throw new AppException("Giá sản phẩm phải lớn hơn 0 khi submit");
+            throw new AppException("Product price must be greater than 0 for submission");
         }
         if (product.getCategory() == null) {
-            throw new AppException("Danh mục sản phẩm không được để trống khi submit");
+            throw new AppException("Product category is required for submission");
         }
         if (product.getDescription() == null || product.getDescription().isBlank()) {
-            throw new AppException("Mô tả sản phẩm không được để trống khi submit");
+            throw new AppException("Product description is required for submission");
         }
         if (Boolean.TRUE.equals(product.getHasTrial())) {
             if (product.getTrialDurationDays() == null || product.getTrialDurationDays() <= 0) {
-                throw new AppException("Số ngày dùng thử phải lớn hơn 0 khi bật chế độ dùng thử");
+                throw new AppException("Trial duration must be greater than 0 when trial mode is enabled");
             }
         }
 
-        // Kiểm tra có ít nhất 1 version
+        // Check at least 1 version
         long versionCount = productVersionRepository.countByProduct_ProductID(productId);
         if (versionCount == 0) {
-            throw new AppException("Sản phẩm phải có ít nhất 1 phiên bản trước khi submit");
+            throw new AppException("Product must have at least 1 version before submission");
         }
 
-        // Kiểm tra có ít nhất 1 license tier
+        // Check at least 1 license tier
         long tierCount = licenseTierRepository.countByProduct_ProductID(productId);
         if (tierCount == 0) {
-            throw new AppException("Sản phẩm phải có ít nhất 1 license tier trước khi submit");
+            throw new AppException("Product must have at least 1 license tier before submission");
         }
 
         product.setStatus(Product.ProductStatus.PENDING);
@@ -316,33 +316,33 @@ public class ProductService {
         return Map.of(
                 "productId", product.getProductID(),
                 "status", "PENDING",
-                "message", "Sản phẩm đã được gửi để duyệt"
+                "message", "Product has been submitted for approval"
         );
     }
 
     /**
-     * Admin duyệt/từ chối sản phẩm
-     * - status: APPROVED hoặc REJECTED
-     * - note: lý do từ chối (nếu REJECTED)
+     * Admin approve/reject product
+     * - status: APPROVED or REJECTED
+     * - note: rejection reason (if REJECTED)
      */
     @Transactional
     public Map<String, Object> reviewProduct(Integer productId, String status, String note) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
+                .orElseThrow(() -> new AppException("Product does not exist"));
 
         if (product.getStatus() == Product.ProductStatus.APPROVED) {
-            throw new AppException("Sản phẩm đã được duyệt trước đó");
+            throw new AppException("Product has already been approved");
         }
 
         Product.ProductStatus newStatus;
         try {
             newStatus = Product.ProductStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new AppException("Trạng thái không hợp lệ. Chỉ chấp nhận: APPROVED hoặc REJECTED");
+            throw new AppException("Invalid status. Accepted values: APPROVED or REJECTED");
         }
 
         if (newStatus != Product.ProductStatus.APPROVED && newStatus != Product.ProductStatus.REJECTED) {
-            throw new AppException("Trạng thái không hợp lệ. Chỉ chấp nhận: APPROVED hoặc REJECTED");
+            throw new AppException("Invalid status. Accepted values: APPROVED or REJECTED");
         }
 
         product.setStatus(newStatus);
@@ -356,8 +356,8 @@ public class ProductService {
                 String to = product.getVendor() != null && product.getVendor().getUser() != null
                         ? product.getVendor().getUser().getEmail()
                         : null;
-                String subject = "Sản phẩm đã được duyệt";
-                String body = "Sản phẩm '" + product.getProductName() + "' đã được Admin duyệt và hiển thị trên marketplace.";
+                String subject = "Product Approved";
+                String body = "Your product '" + product.getProductName() + "' has been approved by Admin and is now visible on the marketplace.";
                 emailService.sendEmail(to, subject, body);
             } catch (Exception ignored) {
             }
@@ -367,13 +367,13 @@ public class ProductService {
                 "productId", product.getProductID(),
                 "status", product.getStatus().name(),
                 "message", newStatus == Product.ProductStatus.APPROVED
-                        ? "Sản phẩm đã được duyệt thành công"
-                        : "Sản phẩm đã bị từ chối"
+                        ? "Product has been approved successfully"
+                        : "Product has been rejected"
         );
     }
 
     /**
-     * Lấy danh sách sản phẩm của Vendor với filter, search, paging, sort
+     * Get vendor's product list with filter, search, paging, sort
      */
     public PageResponse<ProductResponse> getVendorProducts(Integer vendorId, String search,
                                                             Integer categoryId, String status,
@@ -388,7 +388,7 @@ public class ProductService {
             try {
                 productStatus = Product.ProductStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException("Trạng thái sản phẩm không hợp lệ. Chỉ chấp nhận: DRAFT, PENDING, APPROVED, REJECTED");
+                throw new AppException("Invalid product status. Accepted values: DRAFT, PENDING, APPROVED, REJECTED");
             }
         }
 
@@ -453,7 +453,7 @@ public class ProductService {
     }
 
     /**
-     * Lấy tất cả sản phẩm (Admin) với filter, search, paging, sort
+     * Get all products (Admin) with filter, search, paging, sort
      */
     public PageResponse<ProductResponse> getAllProducts(String search, Integer categoryId,
                                                         String status, Integer vendorId,
@@ -468,7 +468,7 @@ public class ProductService {
             try {
                 productStatus = Product.ProductStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException("Trạng thái sản phẩm không hợp lệ. Chỉ chấp nhận: DRAFT, PENDING, APPROVED, REJECTED");
+                throw new AppException("Invalid product status. Accepted values: DRAFT, PENDING, APPROVED, REJECTED");
             }
         }
 
@@ -490,11 +490,11 @@ public class ProductService {
     }
 
     /**
-     * Lấy chi tiết sản phẩm theo ID
+     * Get product detail by ID
      */
     public ProductResponse getProductById(Integer productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
+                .orElseThrow(() -> new AppException("Product does not exist"));
         return toProductResponse(product);
     }
 
@@ -547,7 +547,7 @@ public class ProductService {
                 .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
 
         if (product.getStatus() != Product.ProductStatus.APPROVED) {
-            throw new AppException("Sản phẩm chưa được duyệt");
+            throw new AppException("Product has not been approved");
         }
 
         return buildProductDetail(product, relatedSize);
@@ -658,7 +658,7 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
         if (product.getStatus() != Product.ProductStatus.APPROVED) {
-            throw new AppException("Sản phẩm chưa được duyệt");
+            throw new AppException("Product has not been approved");
         }
 
         Sort sort = sortDir.equalsIgnoreCase("desc")
@@ -695,28 +695,28 @@ public class ProductService {
     @Transactional
     public ReviewResponse createReview(Integer productId, Integer userId, Integer rating, String comment) {
         if (userId == null) {
-            throw new AppException("Bạn cần đăng nhập để đánh giá sản phẩm");
+            throw new AppException("You must be logged in to review a product");
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User không tồn tại"));
         String roleName = user.getRole() != null ? user.getRole().getRoleName() : "";
         if ("ADMIN".equalsIgnoreCase(roleName)) {
-            throw new AppException("Admin không được đánh giá sản phẩm. Chỉ được xem.");
+            throw new AppException("Admin cannot review products. View only.");
         }
         if ("VENDOR".equalsIgnoreCase(roleName)) {
-            throw new AppException("Vendor chỉ được xem review, không được nhập hoặc gửi đánh giá.");
+            throw new AppException("Vendor can only view reviews, cannot submit reviews.");
         }
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
         if (product.getStatus() != Product.ProductStatus.APPROVED) {
-            throw new AppException("Không thể đánh giá sản phẩm chưa được duyệt");
+            throw new AppException("Cannot review an unapproved product");
         }
         if (!orderRepository.existsByProduct_ProductIDAndUser_UserIDAndPaymentStatusIgnoreCaseNot(
                 productId, userId, "Pending")) {
-            throw new AppException("Bạn cần mua sản phẩm trước khi đánh giá.");
+            throw new AppException("You must purchase the product before reviewing.");
         }
         if (reviewRepository.existsByProduct_ProductIDAndUser_UserID(productId, userId)) {
-            throw new AppException("Bạn đã đánh giá sản phẩm này rồi. Chỉ được đánh giá 1 lần.");
+            throw new AppException("You have already reviewed this product. Only 1 review per product.");
         }
         Review review = new Review();
         review.setProduct(product);
@@ -748,12 +748,12 @@ public class ProductService {
      */
     @Transactional
     public ReviewResponse updateReview(Integer reviewId, Integer userId, Integer rating, String comment) {
-        if (userId == null) throw new AppException("Bạn cần đăng nhập.");
+        if (userId == null) throw new AppException("You must be logged in.");
         if (reviewId == null) throw new AppException("Review ID không hợp lệ.");
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new AppException("Đánh giá không tồn tại"));
+                .orElseThrow(() -> new AppException("Review does not exist"));
         if (review.getUser() == null || !review.getUser().getUserID().equals(userId)) {
-            throw new AppException("Bạn chỉ được sửa đánh giá của chính mình.");
+            throw new AppException("You can only edit your own review.");
         }
         review.setRating(rating != null ? rating : review.getRating());
         review.setComment(comment != null ? comment : review.getComment());
@@ -773,12 +773,12 @@ public class ProductService {
      */
     @Transactional
     public void deleteReview(Integer reviewId, Integer userId) {
-        if (userId == null) throw new AppException("Bạn cần đăng nhập.");
+        if (userId == null) throw new AppException("You must be logged in.");
         if (reviewId == null) throw new AppException("Review ID không hợp lệ.");
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new AppException("Đánh giá không tồn tại"));
+                .orElseThrow(() -> new AppException("Review does not exist"));
         if (review.getUser() == null || !review.getUser().getUserID().equals(userId)) {
-            throw new AppException("Bạn chỉ được xóa đánh giá của chính mình.");
+            throw new AppException("You can only delete your own review.");
         }
         reviewRepository.delete(review);
     }
@@ -786,20 +786,20 @@ public class ProductService {
     // ==================== HELPER METHODS ====================
 
     /**
-     * Kiểm tra sản phẩm tồn tại & Vendor là chủ sở hữu
+     * Check product exists & Vendor is the owner
      */
     private Product getProductAndValidateOwner(Integer vendorId, Integer productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
+                .orElseThrow(() -> new AppException("Product does not exist"));
 
         if (!product.getVendor().getVendorID().equals(vendorId)) {
-            throw new AppException("Bạn không có quyền thao tác trên sản phẩm này");
+            throw new AppException("You do not have permission to perform this action on this product");
         }
         return product;
     }
 
     /**
-     * Chuyển đổi Product entity sang ProductResponse DTO
+     * Convert Product entity to ProductResponse DTO
      */
     private ProductResponse toProductResponse(Product product) {
         ProductResponse response = new ProductResponse();
@@ -844,17 +844,17 @@ public class ProductService {
     }
 
     /**
-     * Xóa sản phẩm
-     * - Vendor phải là chủ sở hữu
-     * - Chỉ xóa khi chưa Approved
-     * - Xóa tất cả bản ghi con liên quan trước khi xóa sản phẩm
+     * Delete product
+     * - Vendor must be the owner
+     * - Can only delete non-approved products
+     * - Delete all related child records before deleting product
      */
     @Transactional
     public void deleteProduct(Integer vendorId, Integer productId) {
         Product product = getProductAndValidateOwner(vendorId, productId);
         
         if (product.getStatus() == Product.ProductStatus.APPROVED) {
-            throw new AppException("Không thể xóa sản phẩm đã được duyệt");
+            throw new AppException("Cannot delete an approved product");
         }
         
         // Xóa các bản ghi con theo đúng thứ tự FK

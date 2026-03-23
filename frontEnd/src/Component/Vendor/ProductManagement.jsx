@@ -41,7 +41,7 @@ const ProductManagement = () => {
 
   const handleEditClick = async (product) => {
     if (product.status === "APPROVED") {
-      const confirmed = window.confirm("⚠️ Chỉnh sửa sản phẩm đã duyệt sẽ chuyển trạng thái về PENDING để Admin duyệt lại. Bạn có muốn tiếp tục?");
+      const confirmed = window.confirm("Editing an approved product will change its status to PENDING for Admin re-review. Do you want to continue?");
       if (!confirmed) return;
     }
     setSelectedProduct(product);
@@ -75,8 +75,8 @@ const ProductManagement = () => {
   const handleLocalFileSelect = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) { setError("File phải là ảnh (jpg, png, gif, webp)"); return; }
-    if (file.size > 10 * 1024 * 1024) { setError("Ảnh không được vượt quá 10MB"); return; }
+    if (!file.type.startsWith("image/")) { setError("File must be an image (jpg, png, gif, webp)"); return; }
+    if (file.size > 10 * 1024 * 1024) { setError("Image must not exceed 10MB"); return; }
     setSelectedFile(file); setPreview(URL.createObjectURL(file)); setError("");
   };
 
@@ -90,10 +90,10 @@ const ProductManagement = () => {
       const url = response.data?.data?.url || response.data?.url;
       if (url) {
         setImagesToAdd((prev) => [...prev, { imageUrl: url, isPrimary: false, sortOrder: prev.length }]);
-        setSuccess("Upload ảnh thành công!");
+        setSuccess("Image uploaded successfully!");
         clearLocalFile();
       }
-    } catch (err) { setError(err.response?.data?.message || "Upload ảnh thất bại."); }
+    } catch (err) { setError(err.response?.data?.message || "Image upload failed."); }
     finally { setUploading(false); }
   };
 
@@ -161,7 +161,7 @@ const ProductManagement = () => {
         <div className="vendor-page-header">
           <h2 className="vendor-page-title">Product Management</h2>
           <div className="flex-gap">
-            <button className="btn btn-secondary btn-sm" onClick={fetchProducts}>🔄 Refresh</button>
+            <button className="btn btn-secondary btn-sm" onClick={fetchProducts}>Refresh</button>
             <button className="btn btn-primary btn-sm" onClick={() => navigate(uploadPath)}>+ Add Product</button>
           </div>
         </div>
@@ -202,7 +202,7 @@ const ProductManagement = () => {
                   </div>
                   {product.status === "REJECTED" && product.rejectionNote && (
                     <div className="alert alert-error" style={{ marginBottom: 8 }}>
-                      <strong>Lý do từ chối:</strong> {product.rejectionNote}
+                      <strong>Rejection reason:</strong> {product.rejectionNote}
                     </div>
                   )}
                   <div className="product-card-actions">
@@ -248,12 +248,12 @@ const ProductManagement = () => {
                   <label className="form-label">Guide Document URL</label>
                   <input className="form-input" value={editFormData.guideDocumentUrl} placeholder="https://example.com/guide.pdf"
                     onChange={(e) => setEditFormData({ ...editFormData, guideDocumentUrl: e.target.value })} />
-                  <span className="form-hint">Link tài liệu hướng dẫn sử dụng (tùy chọn)</span>
+                  <span className="form-hint">Link to user guide document (optional)</span>
                 </div>
               </div>
 
               {/* Image Management */}
-              <div className="section-title mt-16">Ảnh sản phẩm</div>
+              <div className="section-title mt-16">Product Images</div>
               <div className="image-gallery">
                 {editImages.map((img) => {
                   const imgId = img.imageId ?? img.id;
@@ -278,8 +278,8 @@ const ProductManagement = () => {
                   onClick={() => imageInputRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                   onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleLocalFileSelect({ target: { files: [f] } }); }}>
-                  <div className="drop-zone-text">Kéo thả ảnh hoặc <strong>click để chọn từ máy</strong></div>
-                  <div className="drop-zone-hint">jpg, png, gif, webp — Tối đa 10MB</div>
+                  <div className="drop-zone-text">Drag and drop image or <strong>click to select from device</strong></div>
+                  <div className="drop-zone-hint">jpg, png, gif, webp — Max 10MB</div>
                 </div>
               )}
 
@@ -291,19 +291,19 @@ const ProductManagement = () => {
                     <div className="file-preview-size">{(selectedFile.size / 1024).toFixed(1)} KB</div>
                   </div>
                   <button className="btn btn-primary btn-sm" onClick={handleUploadToCloud} disabled={uploading}>
-                    {uploading ? <><span className="spinner" /> Uploading...</> : "⬆ Upload"}
+                    {uploading ? <><span className="spinner" /> Uploading...</> : "Upload"}
                   </button>
-                  <button className="btn-icon danger" onClick={clearLocalFile} disabled={uploading}>🗑️</button>
+                  <button className="btn-icon danger" onClick={clearLocalFile} disabled={uploading}>Remove</button>
                 </div>
               )}
 
               {uploading && <div className="progress-bar mb-16"><div className="progress-bar-fill" /></div>}
 
-              <span className="form-hint mb-8" style={{ display: "block" }}>Hoặc dán URL ảnh trực tiếp:</span>
+              <span className="form-hint mb-8" style={{ display: "block" }}>Or paste image URL directly:</span>
               <div className="flex-gap">
                 <input className="form-input" style={{ flex: 1 }} placeholder="https://..." value={newImageUrl}
                   onChange={(e) => setNewImageUrl(e.target.value)} />
-                <button className="btn btn-secondary btn-sm" onClick={handleAddNewImage} disabled={!newImageUrl.trim()}>Thêm</button>
+                <button className="btn btn-secondary btn-sm" onClick={handleAddNewImage} disabled={!newImageUrl.trim()}>Add</button>
               </div>
             </div>
             <div className="vendor-modal-footer">

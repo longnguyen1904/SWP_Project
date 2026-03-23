@@ -15,11 +15,11 @@ const LicenseTiersStep = ({ licenseTiers, setLicenseTiers, tierForm, setTierForm
         <div>
             <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 16 }}>License Tiers</h3>
             <div className="form-row mb-16">
-                <div className="form-group"><label className="form-label">Tên Tier</label><input className="form-input" placeholder="VD: Basic" value={tierForm.tierName} onChange={handleChange("tierName")} /></div>
-                <div className="form-group"><label className="form-label">Mã Tier</label><input className="form-input" placeholder="VD: STD" value={tierForm.tierCode} onChange={handleChange("tierCode")} /></div>
-                <div className="form-group"><label className="form-label">Giá ($)</label><input className="form-input" type="number" placeholder="0" value={tierForm.price} onChange={handleChange("price")} /></div>
-                <div className="form-group"><label className="form-label">Số thiết bị</label><input className="form-input" type="number" placeholder="1" value={tierForm.maxDevices} onChange={handleChange("maxDevices")} /></div>
-                <div className="form-group"><label className="form-label">Thời hạn (ngày)</label><input className="form-input" type="number" placeholder="365" value={tierForm.durationDays} onChange={handleChange("durationDays")} /></div>
+                <div className="form-group"><label className="form-label">Tier Name</label><input className="form-input" placeholder="e.g., Basic" value={tierForm.tierName} onChange={handleChange("tierName")} /></div>
+                <div className="form-group"><label className="form-label">Tier Code</label><input className="form-input" placeholder="e.g., STD" value={tierForm.tierCode} onChange={handleChange("tierCode")} /></div>
+                <div className="form-group"><label className="form-label">Price ($)</label><input className="form-input" type="number" placeholder="0" value={tierForm.price} onChange={handleChange("price")} /></div>
+                <div className="form-group"><label className="form-label">Max Devices</label><input className="form-input" type="number" placeholder="1" value={tierForm.maxDevices} onChange={handleChange("maxDevices")} /></div>
+                <div className="form-group"><label className="form-label">Duration (days)</label><input className="form-input" type="number" placeholder="365" value={tierForm.durationDays} onChange={handleChange("durationDays")} /></div>
                 <div style={{ flex: 0, paddingTop: 24 }}><button className="btn btn-secondary" onClick={addTier} style={{ height: 42 }}>+ Add</button></div>
             </div>
 
@@ -38,7 +38,7 @@ const LicenseTiersStep = ({ licenseTiers, setLicenseTiers, tierForm, setTierForm
                                 <td><button className="btn btn-danger btn-sm" onClick={() => removeTier(tier.id)}>Delete</button></td>
                             </tr>
                         ))}
-                        {licenseTiers.length === 0 && <tr><td colSpan="6" className="table-empty">Chưa có tier nào</td></tr>}
+                        {licenseTiers.length === 0 && <tr><td colSpan="6" className="table-empty">No tiers yet</td></tr>}
                     </tbody>
                 </table>
             </div>
