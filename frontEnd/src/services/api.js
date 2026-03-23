@@ -36,6 +36,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (userData) => api.post("/api/auth/register", userData),
   login: (credentials) => api.post("/api/auth/login", credentials),
+  forgotPassword: (email) => api.post("/api/auth/forgot-password", { email }),
 };
 
 export const vendorAPI = {
@@ -147,7 +148,6 @@ export const profileAPI = {
   getProfile: () => api.get("/api/users/profile"),
   updateProfile: (data) => api.put("/api/users/profile", data),
   forgotPassword: (email) => api.post("/api/users/forgot-password", { email }),
-  resetPassword: (data) => api.post("/api/users/reset-password", data),
 };
 
 export default api;

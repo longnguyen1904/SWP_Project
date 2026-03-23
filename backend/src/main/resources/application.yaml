@@ -1,11 +1,11 @@
-﻿spring:
+spring:
   application:
     name: marketplace
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME} # ← Thay bằng Gmail của bạn
-    password: ${MAIL_PASSWORD} # ← Thay bằng App Password 16 ký tự
+    username: dinhlam728@gmail.com
+    password: jnnekdezbkglotvd
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
@@ -16,7 +16,7 @@
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: 123
+    password: root
   jpa:
     hibernate:
       ddl-auto: update
