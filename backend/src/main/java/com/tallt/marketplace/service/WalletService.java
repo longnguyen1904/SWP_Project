@@ -4,7 +4,10 @@ import com.tallt.marketplace.dto.wallet.*;
 import com.tallt.marketplace.entity.*;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.*;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,23 +38,58 @@ public class WalletService {
         @Autowired
         private CommissionService commissionService;
 
-        public WalletResponse getVendorWallet(Integer userId) {
+        // GET WALLET
+        public WalletResponse getVendorWallet(Integer userId, int page, int size) {
 
                 Wallet wallet = walletRepository.findByUser_UserID(userId)
                                 .orElseThrow(() -> new AppException("Ví không tồn tại"));
 
-                List<WalletTransactionResponse> transactions = walletTransactionRepository
-                                .findByWallet_WalletIDOrderByCreatedAtDesc(wallet.getWalletID())
+                Vendor vendor = vendorRepository.findByUser_UserID(userId)
+                                .orElseThrow(() -> new AppException("Vendor không tồn tại"));
+
+                BigDecimal totalRevenue = Optional.ofNullable(
+                                orderRepository.sumCompletedRevenueByVendorId(vendor.getVendorID()))
+                                .orElse(BigDecimal.ZERO);
+
+                BigDecimal totalWithdrawn = Optional.ofNullable(
+                                vendorPayoutRepository.sumAmountByVendorAndStatus(vendor.getVendorID(), "COMPLETED"))
+                                .orElse(BigDecimal.ZERO);
+
+                BigDecimal totalPending = Optional.ofNullable(
+                                vendorPayoutRepository.sumAmountByVendorAndStatus(vendor.getVendorID(), "PENDING"))
+                                .orElse(BigDecimal.ZERO);
+
+                BigDecimal available = totalRevenue
+                                .subtract(totalWithdrawn)
+                                .subtract(totalPending);
+
+                // ✅ PAGINATION
+                Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+                Page<WalletTransaction> txPage = walletTransactionRepository.findByWallet_WalletID(
+                                wallet.getWalletID(),
+                                pageable);
+
+                List<WalletTransactionResponse> transactions = txPage.getContent()
                                 .stream()
                                 .map(this::toTransactionResponse)
                                 .collect(Collectors.toList());
 
                 WalletResponse res = new WalletResponse();
                 res.setBalance(wallet.getBalance());
+                res.setAvailable(available);
                 res.setTransactions(transactions);
+
+                
+                res.setPage(page);
+                res.setSize(size);
+                res.setTotalPages(txPage.getTotalPages());
+                res.setTotalElements(txPage.getTotalElements());
+
                 return res;
         }
 
+        // REQUEST PAYOUT
         @Transactional
         public Map<String, Object> requestPayout(Integer userId, PayoutRequest request) {
 
@@ -62,14 +100,17 @@ public class WalletService {
                         throw new AppException("Vendor chưa verify");
                 }
 
-                BigDecimal totalRevenue = orderRepository
-                                .sumCompletedRevenueByVendorId(vendor.getVendorID());
+                BigDecimal totalRevenue = Optional.ofNullable(
+                                orderRepository.sumCompletedRevenueByVendorId(vendor.getVendorID()))
+                                .orElse(BigDecimal.ZERO);
 
-                BigDecimal totalWithdrawn = vendorPayoutRepository
-                                .sumAmountByVendorAndStatus(vendor.getVendorID(), "COMPLETED");
+                BigDecimal totalWithdrawn = Optional.ofNullable(
+                                vendorPayoutRepository.sumAmountByVendorAndStatus(vendor.getVendorID(), "COMPLETED"))
+                                .orElse(BigDecimal.ZERO);
 
-                BigDecimal totalPending = vendorPayoutRepository
-                                .sumAmountByVendorAndStatus(vendor.getVendorID(), "PENDING");
+                BigDecimal totalPending = Optional.ofNullable(
+                                vendorPayoutRepository.sumAmountByVendorAndStatus(vendor.getVendorID(), "PENDING"))
+                                .orElse(BigDecimal.ZERO);
 
                 BigDecimal available = totalRevenue
                                 .subtract(totalWithdrawn)
@@ -79,7 +120,7 @@ public class WalletService {
                         throw new AppException("Không đủ tiền rút");
                 }
 
-                // SNAPSHOT COMMISSION 
+                // SNAPSHOT COMMISSION
                 BigDecimal percent = commissionService.getCurrentCommission();
 
                 BigDecimal fee = request.getAmount()
@@ -98,8 +139,8 @@ public class WalletService {
                 payout.setVendor(vendor);
                 payout.setAmount(request.getAmount());
                 payout.setPlatformFee(fee);
-                payout.setTax(tax); 
-                payout.setNetAmount(net); 
+                payout.setTax(tax);
+                payout.setNetAmount(net);
                 payout.setPayoutDate(LocalDateTime.now());
                 payout.setStatus("PENDING");
 
@@ -113,6 +154,7 @@ public class WalletService {
                                 "availableAfter", available.subtract(request.getAmount()));
         }
 
+        // MAPPER
         private WalletTransactionResponse toTransactionResponse(WalletTransaction t) {
                 WalletTransactionResponse res = new WalletTransactionResponse();
                 res.setType(t.getType().name());

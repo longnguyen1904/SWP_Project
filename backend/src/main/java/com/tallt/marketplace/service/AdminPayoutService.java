@@ -93,7 +93,6 @@ public class AdminPayoutService {
                 .findByUser_UserID(admin.getUserID())
                 .orElseThrow(() -> new AppException("Admin wallet không tồn tại"));
 
-        BigDecimal payoutAmount = payout.getAmount();
 
         // ✅ DÙNG SNAPSHOT
         BigDecimal platformFee = payout.getPlatformFee();
