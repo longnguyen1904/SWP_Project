@@ -16,7 +16,26 @@ public class AppDesktop {
         guard.requireLicenseToLaunch(() -> {
             // Đặt code khởi chạy UI chính của Vendor ở đây
             System.out.println("Đang mở phần mềm chính...");
-            // Ví dụ: new MainFrame().setVisible(true);
+
+            // Tạo một cửa sổ giả lập để app không bị tắt ngay lập tức
+            javax.swing.JFrame frame = new javax.swing.JFrame("Main Vendor App");
+            frame.setSize(400, 300);
+
+            frame.setDefaultCloseOperation(javax.swing.JFrame.DO_NOTHING_ON_CLOSE);
+            frame.addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowClosing(java.awt.event.WindowEvent e) {
+                    System.out.println("Đang nhả License...");
+                    guard.releaseSession();
+                    System.exit(0);
+                }
+            });
+            frame.setLocationRelativeTo(null);
+            javax.swing.JLabel label = new javax.swing.JLabel("Phần mềm chính đang hoạt động...",
+                    javax.swing.JLabel.CENTER);
+            label.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 16));
+            frame.add(label);
+            frame.setVisible(true);
         });
     }
 }

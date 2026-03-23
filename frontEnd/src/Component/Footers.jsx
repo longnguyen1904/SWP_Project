@@ -7,19 +7,19 @@ export default function Footer() {
                 <div className="row">
                     <div className="col-md-4 footer-col">
                         <div className="footer_contact">
-                            <h4>Contact Us</h4>
+                            <h4>Liên Hệ Chúng Tôi</h4>
                             <div className="contact_link_box">
                                 <a href="#">
                                     <i className="fa fa-map-marker" aria-hidden="true"></i>
-                                    <span> Location</span>
+                                    <span> Đại học FPT (FPT University)</span>
                                 </a>
                                 <a href="#">
                                     <i className="fa fa-phone" aria-hidden="true"></i>
-                                    <span> Call +01 1234567890</span>
+                                    <span> Zalo: +84 123 456 789</span>
                                 </a>
                                 <a href="#">
                                     <i className="fa fa-envelope" aria-hidden="true"></i>
-                                    <span> demo@gmail.com</span>
+                                    <span> longnguyen1904@gmail.com</span>
                                 </a>
                             </div>
                         </div>
@@ -27,30 +27,30 @@ export default function Footer() {
 
                     <div className="col-md-4 footer-col">
                         <div className="footer_detail">
-                            <a href="#" className="footer-logo">Feane</a>
+                            <a href="#" className="footer-logo">TALLT Market</a>
                             <p>
-                                Necessary, making this the first true generator on the Internet.
+                                Nền tảng Sàn Giao Dịch Phần Mềm tiên phong (Software Marketplace). 
+                                Nơi chia sẻ mã nguồn, Dapps và tích hợp công nghệ bảo vệ bản quyền LicenseGuard tiên tiến nhất.
                             </p>
                             <div className="footer_social">
+                                <a href="https://github.com/longnguyen1904"><i className="fa fa-github"></i></a>
                                 <a href="#"><i className="fa fa-facebook"></i></a>
-                                <a href="#"><i className="fa fa-twitter"></i></a>
                                 <a href="#"><i className="fa fa-linkedin"></i></a>
-                                <a href="#"><i className="fa fa-instagram"></i></a>
-                                <a href="#"><i className="fa fa-pinterest"></i></a>
                             </div>
                         </div>
                     </div>
                     <div className="col-md-4 footer-col">
-                        <h4>Opening Hours</h4>
-                        <p>Everyday</p>
-                        <p>10.00 Am - 10.00 Pm</p>
+                        <h4>Hỗ Trợ Developer</h4>
+                        <p>Sẵn sàng hỗ trợ 24/7</p>
+                        <p>Team kỹ thuật của chúng tôi luôn túc trực để hỗ trợ bạn tích hợp SDK và review Dapp.</p>
                     </div>
                 </div>
 
                 <div className="footer-info">
                     <p>
-                        &copy;  All Rights Reserved By{" "}
-                        <a href="https://html.design/">Free Html Templates</a>
+                        &copy; 2026 Bản quyền thuộc về{" "}
+                        <a href="https://github.com/longnguyen1904" target="_blank" rel="noopener noreferrer">Long Nguyen (TALLT Team)</a>.
+                        <br/> Đồ án môn học SWP391.
                     </p>
                 </div>
             </div>

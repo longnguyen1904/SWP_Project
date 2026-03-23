@@ -127,14 +127,14 @@ const Register = forwardRef(function Register(props, ref) {
           </button>
         </form>
 
-        {/* ===== GOOGLE LOGIN – GIỮ NGUYÊN ===== */}
-        {/* <button
+        {/* ===== GOOGLE LOGIN ===== */}
+        <button
           type="button"
           className="google-btn"
           onClick={handleGoogleLogin}
         >
           Continue with Google
-        </button> */}
+        </button>
 
         <div className="divider"></div>
 
