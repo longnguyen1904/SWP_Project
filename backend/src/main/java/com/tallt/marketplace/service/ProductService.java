@@ -830,6 +830,7 @@ public class ProductService {
 
         // Xác định status
         response.setStatus(product.getStatus().name());
+        response.setRejectionNote(product.getRejectionNote());
         response.setGuideDocumentUrl(product.getGuideDocumentUrl());
 
         productImageRepository.findTopByProduct_ProductIDOrderBySortOrderAsc(product.getProductID())
@@ -846,16 +847,11 @@ public class ProductService {
     /**
      * Delete product
      * - Vendor must be the owner
-     * - Can only delete non-approved products
      * - Delete all related child records before deleting product
      */
     @Transactional
     public void deleteProduct(Integer vendorId, Integer productId) {
         Product product = getProductAndValidateOwner(vendorId, productId);
-        
-        if (product.getStatus() == Product.ProductStatus.APPROVED) {
-            throw new AppException("Cannot delete an approved product");
-        }
         
         // Xóa các bản ghi con theo đúng thứ tự FK
         // 1. License (tham chiếu Order + Product + LicenseTier)

@@ -30,11 +30,21 @@ public class VendorController {
     private ProductService productService;
 
     /**
+     * Check current user's vendor registration status
+     * GET /api/vendors/my-status
+     */
+    @GetMapping("/my-status")
+    public ResponseEntity<ApiResponse<?>> getMyVendorStatus(
+            @RequestHeader("X-User-Id") Integer userId) {
+        return ResponseEntity.ok(ApiResponse.success(vendorService.getMyVendorStatus(userId)));
+    }
+
+    /**
      * Register as a Vendor
      * POST /api/vendors/register
      * - User submits verification info to become a Vendor
-     * - Creates Vendors record (IsVerified=0, IsActive=1)
-     * - Updates Users.RoleID = 2 (Vendor)
+     * - Creates Vendors record (Status=PENDING)
+     * - Role remains CUSTOMER until Admin approves
      */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<VendorRegisterResponse>> registerVendor(

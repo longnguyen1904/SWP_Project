@@ -13,6 +13,10 @@ import com.tallt.marketplace.entity.Wallet;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,10 +43,30 @@ public class VendorService {
     private WalletRepository walletRepository;
 
     /**
+     * Get current user's vendor registration status
+     */
+    public Map<String, Object> getMyVendorStatus(Integer userId) {
+        Optional<Vendor> vendorOpt = vendorRepository.findByUser_UserID(userId);
+        if (vendorOpt.isEmpty()) {
+            return Map.of("registered", false);
+        }
+        Vendor vendor = vendorOpt.get();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("registered", true);
+        result.put("vendorId", vendor.getVendorID());
+        result.put("status", vendor.getStatus().name());
+        result.put("rejectionNote", vendor.getRejectionNote());
+        result.put("companyName", vendor.getCompanyName());
+        result.put("createdAt", vendor.getCreatedAt());
+        result.put("verifiedAt", vendor.getVerifiedAt());
+        return result;
+    }
+
+    /**
      * Register as a Vendor
      * - Check User exists & Role = Customer
-     * - Create Vendors record (IsVerified=0, IsActive=1)
-     * - Update Users.RoleID = 2 (Vendor)
+     * - Create Vendors record (Status=PENDING)
+     * - Role remains CUSTOMER until Admin approves
      * - Create Wallet for Vendor
      */
     @Transactional
@@ -58,8 +82,16 @@ public class VendorService {
         }
 
         // 3. Check not already registered as Vendor
-        if (vendorRepository.existsByUser_UserID(userId)) {
-            throw new AppException("User has already registered as a Vendor");
+        Optional<Vendor> existingVendor = vendorRepository.findByUser_UserID(userId);
+        if (existingVendor.isPresent()) {
+            Vendor existing = existingVendor.get();
+            if (existing.getStatus() == Vendor.VendorStatus.REJECTED) {
+                // Allow re-registration: delete old rejected record
+                vendorRepository.delete(existing);
+                vendorRepository.flush();
+            } else {
+                throw new AppException("User has already registered as a Vendor");
+            }
         }
 
         // 4. Validate type
@@ -90,16 +122,14 @@ public class VendorService {
         vendor.setStatus(Vendor.VendorStatus.PENDING);
         vendorRepository.save(vendor);
 
-        // 7. Update Role to Vendor
-        Role vendorRole = roleRepository.findById(RoleConstant.VENDOR)
-                .orElseThrow(() -> new AppException("Vendor role does not exist in the system"));
-        user.setRole(vendorRole);
-        userRepository.save(user);
+        // Role remains unchanged (CUSTOMER) until Admin approves
 
-        // 8. Create Wallet for Vendor
-        Wallet wallet = new Wallet();
-        wallet.setUser(user);
-        walletRepository.save(wallet);
+        // 7. Create Wallet for Vendor (only if not already exists)
+        if (walletRepository.findByUser_UserID(userId).isEmpty()) {
+            Wallet wallet = new Wallet();
+            wallet.setUser(user);
+            walletRepository.save(wallet);
+        }
 
         return new VendorRegisterResponse(
                 vendor.getVendorID(),

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { vendorAPI, uploadAPI } from "../../services/api";
 import "../../Style/Vendor.css";
 
@@ -12,6 +12,10 @@ const VendorRegistration = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState("");
 
+  // Vendor status tracking
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [vendorStatus, setVendorStatus] = useState(null); // null = not registered
+
   const [formData, setFormData] = useState({
     type: "INDIVIDUAL",
     companyName: "",
@@ -19,6 +23,24 @@ const VendorRegistration = () => {
     taxCode: "",
     identificationDoc: "",
   });
+
+  // Check if user already registered as vendor
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await vendorAPI.getMyVendorStatus();
+        const data = res.data?.data ?? res.data;
+        if (data?.registered) {
+          setVendorStatus(data);
+        }
+      } catch {
+        // Not registered or error — show registration form
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+    checkStatus();
+  }, []);
 
   const handleChange = (field) => (e) => {
     setFormData({ ...formData, [field]: e.target.value });
@@ -92,6 +114,7 @@ const VendorRegistration = () => {
     setLoading(true); setError(""); setSuccess("");
     try {
       await vendorAPI.registerVendor(formData);
+      setVendorStatus({ registered: true, status: "PENDING" });
       setSuccess("Vendor registration submitted successfully! Please wait for admin approval.");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
@@ -100,6 +123,110 @@ const VendorRegistration = () => {
     }
   };
 
+  // Loading state while checking vendor status
+  if (checkingStatus) {
+    return (
+      <div className="vendor-page-narrow">
+        <div className="vendor-card">
+          <div className="loading-center"><span className="spinner spinner-lg" /> Checking registration status...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // If already registered — show status panel instead of form
+  if (vendorStatus?.registered) {
+    const status = vendorStatus.status;
+    return (
+      <div className="vendor-page-narrow">
+        <div className="vendor-card">
+          <div className="text-center mb-24">
+            <h2 className="vendor-page-title">Vendor Registration</h2>
+            <p className="vendor-page-subtitle">Your vendor application status</p>
+          </div>
+
+          {/* Status Card */}
+          <div style={{
+            background: status === "APPROVED" ? "rgba(16, 185, 129, 0.1)"
+              : status === "REJECTED" ? "rgba(239, 68, 68, 0.1)"
+              : "rgba(245, 158, 11, 0.1)",
+            border: `1px solid ${status === "APPROVED" ? "#10b981"
+              : status === "REJECTED" ? "#ef4444"
+              : "#f59e0b"}`,
+            borderRadius: 12,
+            padding: "24px",
+            marginBottom: 24
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <span className={`badge ${
+                status === "APPROVED" ? "badge-success"
+                : status === "REJECTED" ? "badge-error"
+                : "badge-warning"
+              }`} style={{ fontSize: 14, padding: "6px 16px" }}>
+                {status === "APPROVED" ? "Approved" : status === "REJECTED" ? "Rejected" : "Pending Review"}
+              </span>
+            </div>
+
+            {status === "PENDING" && (
+              <p style={{ color: "#e2e8f0", margin: 0 }}>
+                Your vendor registration is being reviewed by our admin team. This usually takes 1-3 business days. You will be notified once a decision is made.
+              </p>
+            )}
+
+            {status === "APPROVED" && (
+              <p style={{ color: "#10b981", margin: 0 }}>
+                Your vendor registration has been approved! You can now access vendor features and start selling products.
+              </p>
+            )}
+
+            {status === "REJECTED" && (
+              <>
+                <p style={{ color: "#ef4444", margin: 0, marginBottom: vendorStatus.rejectionNote ? 12 : 0 }}>
+                  Your vendor registration has been rejected.
+                </p>
+                {vendorStatus.rejectionNote && (
+                  <div className="alert alert-error" style={{ marginTop: 8 }}>
+                    <strong>Rejection reason:</strong> {vendorStatus.rejectionNote}
+                  </div>
+                )}
+                <button
+                  className="btn btn-primary"
+                  style={{ marginTop: 16 }}
+                  onClick={() => setVendorStatus(null)}
+                >
+                  Register Again
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Registration Details */}
+          <div className="info-grid">
+            {vendorStatus.companyName && (
+              <div className="info-row">
+                <span className="info-label">Company Name</span>
+                <span className="info-value">{vendorStatus.companyName}</span>
+              </div>
+            )}
+            {vendorStatus.createdAt && (
+              <div className="info-row">
+                <span className="info-label">Submitted</span>
+                <span className="info-value">{new Date(vendorStatus.createdAt).toLocaleDateString()}</span>
+              </div>
+            )}
+            {vendorStatus.verifiedAt && (
+              <div className="info-row">
+                <span className="info-label">Verified</span>
+                <span className="info-value">{new Date(vendorStatus.verifiedAt).toLocaleDateString()}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Registration form (not yet registered)
   const renderStep = () => {
     switch (activeStep) {
       case 0:

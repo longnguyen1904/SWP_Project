@@ -213,7 +213,7 @@ const ProductManagement = () => {
                       <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(product)}>Edit</button>
                     ) : null}
                     <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(product)}
-                      disabled={product.status === "APPROVED" || product.status === "PENDING"}>Delete</button>
+                      disabled={product.status === "PENDING"}>Delete</button>
                   </div>
                 </div>
               );
