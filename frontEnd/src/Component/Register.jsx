@@ -7,6 +7,7 @@ import "../Style/LogIn.css";
 
 const Register = forwardRef(function Register({ onSwitchToLogin }, ref) {
   const navigate = useNavigate();
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [formData, setFormData] = useState({
     email: "",
@@ -26,6 +27,14 @@ const Register = forwardRef(function Register({ onSwitchToLogin }, ref) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.password.length < 6) {
+      alert("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+    if (formData.password !== confirmPassword) {
+      alert("Xác nhận mật khẩu không khớp");
+      return;
+    }
     try {
       await authAPI.register(formData);
       alert("Register success! Please login.");
@@ -61,6 +70,18 @@ const Register = forwardRef(function Register({ onSwitchToLogin }, ref) {
             <label>Password</label>
             <input type="password" name="password" placeholder="••••••••"
               value={formData.password} onChange={handleChange} required />
+            {formData.password && formData.password.length < 6 && (
+              <span style={{ color: "#1a1a2e", fontSize: "0.8rem", fontWeight: "600" }}>Tối thiểu 6 ký tự</span>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input type="password" placeholder="••••••••"
+              value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            {confirmPassword && confirmPassword !== formData.password && (
+              <span style={{ color: "#1a1a2e", fontSize: "0.8rem", fontWeight: "600" }}>Mật khẩu không khớp</span>
+            )}
           </div>
 
           <button className="login-btn" type="submit">Sign Up</button>
@@ -81,3 +102,4 @@ const Register = forwardRef(function Register({ onSwitchToLogin }, ref) {
 });
 
 export default Register;
+
