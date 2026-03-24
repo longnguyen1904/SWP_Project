@@ -87,6 +87,46 @@ public class VNPayService {
         return calculatedHash.equalsIgnoreCase(receivedHash);
     }
 
+    /**
+     * Tạo URL thanh toán VNPay cho Admin Payout (chuyển tiền cho vendor).
+     *
+     * @param payout    VendorPayout đã validate
+     * @param ipAddress IP của Admin
+     * @return URL đầy đủ để redirect browser sang VNPay gateway
+     */
+    public String createPayoutPaymentUrl(com.tallt.marketplace.entity.VendorPayout payout, String ipAddress) {
+        // netAmount là số tiền vendor nhận, Admin phải trả qua VNPay
+        long amountInVNPay = payout.getNetAmount().longValue() * 100;
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String createDate = LocalDateTime.now().format(fmt);
+        String expireDate = LocalDateTime.now().plusMinutes(15).format(fmt);
+
+        // Dùng prefix PAYOUT_ để phân biệt với checkout thông thường
+        String txnRef = "PAYOUT_" + payout.getPayoutID();
+
+        TreeMap<String, String> params = new TreeMap<>();
+        params.put("vnp_Version", vnPayConfig.getVersion());
+        params.put("vnp_Command", vnPayConfig.getCommand());
+        params.put("vnp_TmnCode", vnPayConfig.getTmnCode());
+        params.put("vnp_Amount", String.valueOf(amountInVNPay));
+        params.put("vnp_CurrCode", "VND");
+        params.put("vnp_TxnRef", txnRef);
+        params.put("vnp_OrderInfo", "Admin payout #" + payout.getPayoutID()
+                + " for Vendor " + payout.getVendor().getVendorID());
+        params.put("vnp_OrderType", "other");
+        params.put("vnp_Locale", "vn");
+        params.put("vnp_ReturnUrl", vnPayConfig.getPayoutReturnUrl());
+        params.put("vnp_IpAddr", ipAddress != null ? ipAddress : "127.0.0.1");
+        params.put("vnp_CreateDate", createDate);
+        params.put("vnp_ExpireDate", expireDate);
+
+        String queryString = buildQueryString(params);
+        String secureHash = hmacSHA512(vnPayConfig.getHashSecret(), queryString);
+
+        return vnPayConfig.getPayUrl() + "?" + queryString + "&vnp_SecureHash=" + secureHash;
+    }
+
     // ==================== PRIVATE METHODS ====================
 
     /**

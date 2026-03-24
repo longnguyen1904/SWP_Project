@@ -57,16 +57,25 @@ const AdminPayout = () => {
         method: "POST",
       });
 
-      const responseText = await res.text();
-
       if (!res.ok) {
-        setMessage({ text: responseText, type: "error" });
+        const errorText = await res.text();
+        setMessage({ text: errorText, type: "error" });
         return;
       }
 
-      setMessage({ text: responseText, type: "success" });
+      if (action === "approve") {
+        // Approve → backend trả JSON { paymentUrl: "..." }
+        const data = await res.json();
+        if (data.paymentUrl) {
+          // Redirect admin sang VNPay sandbox để thanh toán
+          window.location.href = data.paymentUrl;
+          return;
+        }
+      }
 
-      // ✅ reload lại nhưng KHÔNG bị mất item nữa
+      // Reject → plain text response
+      const responseText = await res.text();
+      setMessage({ text: responseText, type: "success" });
       await fetchData();
 
     } catch (err) {
@@ -85,6 +94,7 @@ const AdminPayout = () => {
       COMPLETED: { color: COLORS.success, bg: "rgba(34, 197, 94, 0.1)" },
       REJECTED: { color: COLORS.error, bg: "rgba(239, 68, 68, 0.1)" },
       PENDING: { color: COLORS.warning, bg: "rgba(245, 158, 11, 0.1)" },
+      APPROVED_PENDING_PAYMENT: { color: COLORS.accent, bg: "rgba(56, 189, 248, 0.1)" },
     };
     return styles[status] || styles.PENDING;
   };
@@ -139,7 +149,7 @@ const AdminPayout = () => {
               ) : (
                 payouts.map((p) => {
                   const sStyle = getStatusStyle(p.status);
-                  const isProcessed = p.status !== "PENDING";
+                  const isProcessed = p.status !== "PENDING" && p.status !== "APPROVED_PENDING_PAYMENT";
 
                   return (
                     <tr key={p.payoutId} style={{ ...trStyle, opacity: isProcessed ? 0.6 : 1 }}>

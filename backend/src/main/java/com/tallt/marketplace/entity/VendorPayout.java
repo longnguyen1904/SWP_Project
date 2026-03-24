@@ -42,4 +42,7 @@ public class VendorPayout {
     @Column(name = "Status")
     private String status;
 
+    @Column(name = "TransactionRef")
+    private String transactionRef;
+
 }
