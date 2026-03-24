@@ -17,8 +17,8 @@ const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, 
     const handleFileSelect = (event) => {
         const file = event.target.files[0];
         if (!file) return;
-        if (!file.type.startsWith("image/")) { setError("File phải là ảnh (jpg, png, gif, webp)"); return; }
-        if (file.size > 10 * 1024 * 1024) { setError("Ảnh không được vượt quá 10MB"); return; }
+        if (!file.type.startsWith("image/")) { setError("File must be an image (jpg, png, gif, webp)"); return; }
+        if (file.size > 10 * 1024 * 1024) { setError("Image must not exceed 10MB"); return; }
         setSelectedFile(file);
         setPreview(URL.createObjectURL(file));
         setError("");
@@ -34,10 +34,10 @@ const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, 
             const url = response.data?.data?.url || response.data?.url;
             if (url) {
                 setImageUpload((prev) => ({ ...prev, imageUrl: url }));
-                setSuccess("Upload ảnh thành công!");
+                setSuccess("Image uploaded successfully!");
                 setTimeout(() => setSuccess(""), 3000);
             }
-        } catch (err) { setError(err.response?.data?.message || "Upload ảnh thất bại."); }
+        } catch (err) { setError(err.response?.data?.message || "Image upload failed."); }
         finally { setUploading(false); }
     };
 
@@ -56,16 +56,16 @@ const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, 
 
     return (
         <div>
-            <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 16 }}>🖼️ Upload Ảnh Sản Phẩm</h3>
+            <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 16 }}>Upload Product Images</h3>
             <input ref={imageInputRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: "none" }} />
 
             {!selectedFile && !imageUpload.imageUrl && (
                 <div className="drop-zone mb-16" onClick={() => imageInputRef.current?.click()}
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleFileSelect({ target: { files: [f] } }); }}>
-                    <div className="drop-zone-icon">🖼️</div>
-                    <div className="drop-zone-text">Kéo thả ảnh vào đây hoặc <strong>click để chọn</strong></div>
-                    <div className="drop-zone-hint">jpg, png, gif, webp — Tối đa 10MB</div>
+                    <div className="drop-zone-icon"></div>
+                    <div className="drop-zone-text">Drag and drop image here or <strong>click to select</strong></div>
+                    <div className="drop-zone-hint">jpg, png, gif, webp — Max 10MB</div>
                 </div>
             )}
 
@@ -77,26 +77,26 @@ const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, 
                         <div className="file-preview-size">{formatFileSize(selectedFile.size)}</div>
                     </div>
                     <button className="btn btn-primary btn-sm" onClick={handleUploadToCloud} disabled={uploading}>
-                        {uploading ? <><span className="spinner" /> Đang upload...</> : "⬆ Upload"}
+                        {uploading ? <><span className="spinner" /> Uploading...</> : "Upload"}
                     </button>
-                    <button className="btn-icon danger" onClick={clearFile} disabled={uploading}>🗑️</button>
+                    <button className="btn-icon danger" onClick={clearFile} disabled={uploading}>Remove</button>
                 </div>
             )}
 
             {imageUpload.imageUrl && (
                 <div className="file-preview success mb-16">
-                    <span style={{ fontSize: 24 }}>✅</span>
+                    <span style={{ fontSize: 24 }}></span>
                     <div className="file-preview-info">
-                        <div className="file-preview-name">Ảnh đã upload!</div>
+                        <div className="file-preview-name">Image uploaded!</div>
                         <div className="file-preview-size word-break">{imageUpload.imageUrl}</div>
                     </div>
-                    <button className="btn-icon danger" onClick={() => { setImageUpload((prev) => ({ ...prev, imageUrl: "" })); clearFile(); }}>🗑️</button>
+                    <button className="btn-icon danger" onClick={() => { setImageUpload((prev) => ({ ...prev, imageUrl: "" })); clearFile(); }}>Remove</button>
                 </div>
             )}
 
             {uploading && <div className="progress-bar mb-16"><div className="progress-bar-fill" /></div>}
 
-            <span className="form-hint mb-8" style={{ display: "block" }}>Hoặc dán URL ảnh trực tiếp:</span>
+            <span className="form-hint mb-8" style={{ display: "block" }}>Or paste image URL directly:</span>
             <div className="form-row mb-16">
                 <div className="form-group" style={{ flex: 3 }}>
                     <label className="form-label">Image URL</label>
@@ -104,14 +104,14 @@ const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, 
                         onChange={(e) => setImageUpload({ ...imageUpload, imageUrl: e.target.value })} />
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Ảnh chính?</label>
+                    <label className="form-label">Primary?</label>
                     <select className="form-select" value={imageUpload.isPrimary} onChange={(e) => setImageUpload({ ...imageUpload, isPrimary: e.target.value === "true" })}>
                         <option value="false">Not Primary</option>
                         <option value="true">Primary</option>
                     </select>
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Thứ tự</label>
+                    <label className="form-label">Order</label>
                     <input className="form-input" type="number" placeholder="0" value={imageUpload.sortOrder}
                         onChange={(e) => setImageUpload({ ...imageUpload, sortOrder: e.target.value })} />
                 </div>
@@ -135,7 +135,7 @@ const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, 
                                 <td><button className="btn btn-danger btn-sm" onClick={() => setImages((prev) => prev.filter((img) => img.id !== image.id))}>Delete</button></td>
                             </tr>
                         ))}
-                        {images.length === 0 && <tr><td colSpan="5" className="table-empty">Chưa có ảnh nào</td></tr>}
+                        {images.length === 0 && <tr><td colSpan="5" className="table-empty">No images yet</td></tr>}
                     </tbody>
                 </table>
             </div>

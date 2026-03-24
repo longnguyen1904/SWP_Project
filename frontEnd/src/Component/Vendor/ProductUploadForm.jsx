@@ -102,10 +102,10 @@ const ProductUploadForm = () => {
         else if (hasImages) setActiveStep(2);
         else setActiveStep(0);
 
-        setSuccess("Đã tải bản nháp thành công!");
+        setSuccess("Draft loaded successfully!");
         setTimeout(() => setSuccess(""), 3000);
       } catch (err) {
-        setError("Không thể tải bản nháp: " + (err.response?.data?.message || err.message));
+        setError("Cannot load draft: " + (err.response?.data?.message || err.message));
       } finally { setInitialLoading(false); }
     };
     loadDraft();
@@ -122,14 +122,14 @@ const ProductUploadForm = () => {
         if (!productData.basePrice || parseFloat(productData.basePrice) <= 0) { setError("Base price must be greater than 0"); return false; }
         return true;
       case 1:
-        if (images.length === 0) { setError("Vui lòng thêm ít nhất 1 ảnh sản phẩm"); return false; }
+        if (images.length === 0) { setError("Please add at least 1 product image"); return false; }
         return true;
       case 2:
         if (!version.versionNumber) { setError("Version number is required"); return false; }
         if (!version.fileUrl) { setError("File URL is required"); return false; }
         return true;
       case 3:
-        if (licenseTiers.length === 0) { setError("Vui lòng thêm ít nhất 1 license tier"); return false; }
+        if (licenseTiers.length === 0) { setError("Please add at least 1 license tier"); return false; }
         return true;
       default: return true;
     }
@@ -187,7 +187,7 @@ const ProductUploadForm = () => {
         default: break;
       }
       setActiveStep((prev) => prev + 1);
-    } catch (err) { setError(err.response?.data?.message || "Lỗi khi lưu. Vui lòng thử lại."); }
+    } catch (err) { setError(err.response?.data?.message || "Error saving. Please try again."); }
     finally { setLoading(false); }
   };
 
@@ -201,7 +201,7 @@ const ProductUploadForm = () => {
       setActiveStep(0); setProductId(null);
       setProductData({ productName: "", categoryId: "", description: "", basePrice: "", hasTrial: false, trialDurationDays: 7, guideDocumentUrl: "", tags: [] });
       setImages([]); setVersion({ versionNumber: "", fileUrl: "", releaseNotes: "" }); setLicenseTiers([]);
-    } catch (err) { setError(err.response?.data?.message || "Submit thất bại."); }
+    } catch (err) { setError(err.response?.data?.message || "Submit failed."); }
     finally { setLoading(false); }
   };
 
@@ -213,16 +213,16 @@ const ProductUploadForm = () => {
         const response = await vendorAPI.createProduct(payload);
         const data = response.data?.data ?? response.data;
         setProductId(data?.productId ?? data?.id);
-        setSuccess("Đã lưu nháp sản phẩm mới!");
+        setSuccess("New product draft saved!");
       } else {
         await vendorAPI.saveDraft(productId, {
           productName: productData.productName || null, description: productData.description || null,
           basePrice: productData.basePrice ? parseFloat(productData.basePrice) : null, guideDocumentUrl: productData.guideDocumentUrl || null,
         });
-        setSuccess("Đã lưu nháp thành công!");
+        setSuccess("Draft saved successfully!");
       }
       setTimeout(() => setSuccess(""), 3000);
-    } catch (err) { setError(err.response?.data?.message || "Lưu nháp thất bại."); }
+    } catch (err) { setError(err.response?.data?.message || "Save draft failed."); }
     finally { setLoading(false); }
   };
 
@@ -245,7 +245,7 @@ const ProductUploadForm = () => {
 
       <div className="vendor-card">
         {initialLoading ? (
-          <div className="loading-center"><span className="spinner spinner-lg" /> Đang tải bản nháp...</div>
+          <div className="loading-center"><span className="spinner spinner-lg" /> Loading draft...</div>
         ) : (
           <>
             {/* Stepper */}
@@ -270,7 +270,7 @@ const ProductUploadForm = () => {
               <div className="flex-gap">
                 {activeStep < steps.length - 1 && (
                   <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={loading}>
-                    {loading ? <span className="spinner" /> : "💾"} Save Draft
+                    {loading ? <span className="spinner" /> : ""} Save Draft
                   </button>
                 )}
                 {activeStep === steps.length - 1 ? (

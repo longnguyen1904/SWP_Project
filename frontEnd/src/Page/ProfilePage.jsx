@@ -27,7 +27,7 @@ export default function ProfilePage() {
       setProfile(data);
       setFullName(data.fullName || "");
     } catch (err) {
-      setError(err.response?.data?.message || "Không thể tải thông tin cá nhân");
+      setError(err.response?.data?.message || "Cannot load profile information");
     } finally {
       setProfileLoading(false);
     }
@@ -38,13 +38,13 @@ export default function ProfilePage() {
     setMessage(""); setError("");
 
     if (!fullName.trim() && !newPassword) {
-      setError("Vui lòng nhập thông tin cần cập nhật"); return;
+      setError("Please enter information to update"); return;
     }
     if (newPassword) {
-      if (!oldPassword) { setError("Vui lòng nhập mật khẩu cũ"); return; }
-      if (newPassword.length < 6) { setError("Mật khẩu mới phải có ít nhất 6 ký tự"); return; }
-      if (newPassword !== confirmPassword) { setError("Xác nhận mật khẩu không khớp"); return; }
-      if (oldPassword === newPassword) { setError("Mật khẩu mới phải khác mật khẩu cũ"); return; }
+      if (!oldPassword) { setError("Please enter old password"); return; }
+      if (newPassword.length < 6) { setError("New password must be at least 6 characters"); return; }
+      if (newPassword !== confirmPassword) { setError("Password confirmation does not match"); return; }
+      if (oldPassword === newPassword) { setError("New password must be different from old password"); return; }
     }
 
     setLoading(true);
@@ -54,7 +54,7 @@ export default function ProfilePage() {
       if (newPassword) { payload.oldPassword = oldPassword; payload.newPassword = newPassword; }
 
       await profileAPI.updateProfile(payload);
-      setMessage("Cập nhật thông tin thành công ✅");
+      setMessage("Profile updated successfully");
       setOldPassword(""); setNewPassword(""); setConfirmPassword("");
 
       try {
@@ -65,7 +65,7 @@ export default function ProfilePage() {
 
       fetchProfile();
     } catch (err) {
-      setError(err.response?.data?.message || "Có lỗi xảy ra khi cập nhật");
+      setError(err.response?.data?.message || "An error occurred while updating");
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ export default function ProfilePage() {
     return (
       <div className="profile-container">
         <div className="vendor-card profile-card">
-          <div className="loading-center"><span className="spinner spinner-lg" /> Đang tải thông tin...</div>
+          <div className="loading-center"><span className="spinner spinner-lg" /> Loading information...</div>
         </div>
       </div>
     );
@@ -87,52 +87,52 @@ export default function ProfilePage() {
 
         <div className="profile-header">
           <div className="profile-avatar">{fullName ? fullName.charAt(0).toUpperCase() : "U"}</div>
-          <h2 className="vendor-page-title">Cài đặt tài khoản</h2>
-          <p className="vendor-page-subtitle">Quản lý thông tin cá nhân và bảo mật</p>
+          <h2 className="vendor-page-title">Account Settings</h2>
+          <p className="vendor-page-subtitle">Manage personal information and security</p>
         </div>
 
         {profile && (
           <div className="info-section">
             <div className="info-row"><span className="info-label">Email</span><span className="info-value">{profile.email}</span></div>
             <div className="info-row"><span className="info-label">Username</span><span className="info-value">{profile.username}</span></div>
-            <div className="info-row"><span className="info-label">Vai trò</span><span className="badge badge-primary">{profile.role}</span></div>
+            <div className="info-row"><span className="info-label">Role</span><span className="badge badge-primary">{profile.role}</span></div>
             <div className="info-row">
-              <span className="info-label">Ngày tạo</span>
+              <span className="info-label">Created</span>
               <span className="info-value">{profile.createdAt ? new Date(profile.createdAt).toLocaleDateString("vi-VN") : "—"}</span>
             </div>
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="section-title">Thông tin cá nhân</div>
+          <div className="section-title">Personal Information</div>
           <div className="form-group">
-            <label className="form-label">Họ và tên</label>
-            <input className="form-input" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nhập tên mới của bạn" />
+            <label className="form-label">Full Name</label>
+            <input className="form-input" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your new name" />
           </div>
 
           <div className="divider" />
 
-          <div className="section-title">Đổi mật khẩu</div>
+          <div className="section-title">Change Password</div>
           <div className="form-group">
-            <label className="form-label">Mật khẩu cũ</label>
+            <label className="form-label">Old Password</label>
             <input className="form-input" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} placeholder="••••••••" />
           </div>
           <div className="form-group">
-            <label className="form-label">Mật khẩu mới</label>
+            <label className="form-label">New Password</label>
             <input className="form-input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" />
-            {newPassword && newPassword.length < 6 && <span className="form-error-text">Tối thiểu 6 ký tự</span>}
+            {newPassword && newPassword.length < 6 && <span className="form-error-text">Minimum 6 characters</span>}
           </div>
           <div className="form-group">
-            <label className="form-label">Xác nhận mật khẩu mới</label>
+            <label className="form-label">Confirm New Password</label>
             <input className="form-input" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
-            {confirmPassword && confirmPassword !== newPassword && <span className="form-error-text">Mật khẩu không khớp</span>}
+            {confirmPassword && confirmPassword !== newPassword && <span className="form-error-text">Password does not match</span>}
           </div>
 
           {message && <div className="alert alert-success">{message}</div>}
           {error && <div className="alert alert-error">{error}</div>}
 
           <button type="submit" className="btn btn-primary" style={{ width: "100%" }} disabled={loading}>
-            {loading ? <><span className="spinner" /> Đang lưu...</> : "Lưu thay đổi"}
+            {loading ? <><span className="spinner" /> Saving...</> : "Save Changes"}
           </button>
         </form>
       </div>

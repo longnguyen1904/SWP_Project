@@ -25,21 +25,21 @@ public class UserProfileService {
     @Autowired
     private EmailService emailService;
 
-    // Ký tự dùng để sinh mật khẩu ngẫu nhiên
+    // Characters used for random password generation
     private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
     private static final String DIGITS = "0123456789";
     private static final String ALL_CHARS = UPPERCASE + LOWERCASE + DIGITS;
 
     /**
-     * Cập nhật thông tin cá nhân
-     * - Cập nhật fullName
-     * - Đổi mật khẩu (kiểm tra mật khẩu cũ, hash mật khẩu mới)
+     * Update user profile
+     * - Update fullName
+     * - Change password (verify old password, hash new password)
      */
     @Transactional
     public Map<String, Object> updateProfile(Integer userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User không tồn tại"));
+                .orElseThrow(() -> new AppException("User does not exist"));
 
         // Update fullName if provided
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
@@ -50,17 +50,17 @@ public class UserProfileService {
         if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
             // Must provide old password
             if (request.getOldPassword() == null || request.getOldPassword().isBlank()) {
-                throw new AppException("Vui lòng nhập mật khẩu cũ");
+                throw new AppException("Please enter old password");
             }
 
             // Verify old password
             if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
-                throw new AppException("Mật khẩu cũ không chính xác");
+                throw new AppException("Old password is incorrect");
             }
 
             // Old and new must differ
             if (request.getOldPassword().equals(request.getNewPassword())) {
-                throw new AppException("Mật khẩu mới phải khác mật khẩu cũ");
+                throw new AppException("New password must be different from old password");
             }
 
             user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
@@ -72,16 +72,16 @@ public class UserProfileService {
         result.put("userId", user.getUserID());
         result.put("fullName", user.getFullName());
         result.put("email", user.getEmail());
-        result.put("message", "Cập nhật thông tin thành công");
+        result.put("message", "Profile updated successfully");
         return result;
     }
 
     /**
-     * Lấy thông tin cá nhân
+     * Get user profile
      */
     public Map<String, Object> getProfile(Integer userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User không tồn tại"));
+                .orElseThrow(() -> new AppException("User does not exist"));
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("userId", user.getUserID());
@@ -95,28 +95,28 @@ public class UserProfileService {
     }
 
     /**
-     * Sinh mật khẩu ngẫu nhiên (8-10 ký tự)
-     * Đảm bảo chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 chữ số
+     * Generate random password (8-10 characters)
+     * Ensures at least 1 uppercase, 1 lowercase, 1 digit
      */
     private String generateRandomPassword() {
         SecureRandom random = new SecureRandom();
 
-        // Độ dài ngẫu nhiên 8-10 ký tự
+        // Random length 8-10 characters
         int length = 8 + random.nextInt(3);
 
         StringBuilder password = new StringBuilder(length);
 
-        // Đảm bảo ít nhất 1 ký tự mỗi loại
+        // Ensure at least 1 character of each type
         password.append(UPPERCASE.charAt(random.nextInt(UPPERCASE.length())));
         password.append(LOWERCASE.charAt(random.nextInt(LOWERCASE.length())));
         password.append(DIGITS.charAt(random.nextInt(DIGITS.length())));
 
-        // Điền phần còn lại ngẫu nhiên
+        // Fill remaining with random characters
         for (int i = 3; i < length; i++) {
             password.append(ALL_CHARS.charAt(random.nextInt(ALL_CHARS.length())));
         }
 
-        // Trộn ngẫu nhiên thứ tự các ký tự
+        // Shuffle character order randomly
         char[] chars = password.toString().toCharArray();
         for (int i = chars.length - 1; i > 0; i--) {
             int j = random.nextInt(i + 1);
@@ -129,44 +129,44 @@ public class UserProfileService {
     }
 
     /**
-     * Quên mật khẩu – sinh mật khẩu mới và gửi qua email
-     * 1. Tìm user theo email
-     * 2. Sinh mật khẩu ngẫu nhiên (8-10 ký tự, chữ hoa + chữ thường + số)
-     * 3. Hash mật khẩu mới bằng BCrypt và lưu vào DB
-     * 4. Gửi mật khẩu mới qua email cho user
+     * Forgot password - generate new password and send via email
+     * 1. Find user by email
+     * 2. Generate random password (8-10 chars, uppercase + lowercase + digits)
+     * 3. Hash new password with BCrypt and save to DB
+     * 4. Send new password via email to user
      */
     @Transactional
     public Map<String, Object> forgotPassword(String email) {
-        // Kiểm tra email
+        // Check email
         if (email == null || email.isBlank()) {
-            throw new AppException("Vui lòng nhập email");
+            throw new AppException("Please enter an email address");
         }
 
-        // Tìm user theo email
+        // Find user by email
         User user = userRepository.findByEmail(email);
         if (user == null) {
-            throw new AppException("Email không tồn tại trong hệ thống");
+            throw new AppException("Email does not exist in the system");
         }
 
-        // Sinh mật khẩu ngẫu nhiên
+        // Generate random password
         String newPassword = generateRandomPassword();
 
-        // Hash mật khẩu và cập nhật vào DB
+        // Hash password and update in DB
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Gửi email chứa mật khẩu mới
+        // Send email with new password
         String userName = user.getFullName() != null ? user.getFullName() : user.getUsername();
-        String subject = "Mật khẩu mới của bạn - Software Marketplace";
-        String body = "Xin chào " + userName + ",\n\n"
-                + "Mật khẩu mới của bạn là: " + newPassword + "\n\n"
-                + "Vui lòng đăng nhập và đổi mật khẩu ngay để đảm bảo an toàn.\n"
-                + "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng liên hệ hỗ trợ ngay.\n\n"
-                + "Trân trọng,\nSoftware Marketplace";
+        String subject = "Your New Password - Software Marketplace";
+        String body = "Hello " + userName + ",\n\n"
+                + "Your new password is: " + newPassword + "\n\n"
+                + "Please log in and change your password immediately to ensure security.\n"
+                + "If you did not request a password reset, please contact support immediately.\n\n"
+                + "Best regards,\nSoftware Marketplace";
         emailService.sendEmail(email, subject, body);
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("message", "Mật khẩu mới đã được gửi đến email " + email);
+        result.put("message", "New password has been sent to email " + email);
         return result;
     }
 }
