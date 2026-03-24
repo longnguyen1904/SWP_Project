@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -60,18 +61,18 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                         "LEFT JOIN Tag t ON t.tagID = pt.tagID " +
                         "WHERE p.status = 'APPROVED' " +
                         "AND (:search IS NULL OR p.productName LIKE %:search% OR p.description LIKE %:search%) " +
-                        "AND (:categoryId IS NULL OR p.category.categoryID = :categoryId) " +
+                        "AND (:categoryIds IS NULL OR p.category.categoryID IN :categoryIds) " +
                         "AND (:hasTrial IS NULL OR p.hasTrial = :hasTrial) " +
                         "AND (:minPrice IS NULL OR p.basePrice >= :minPrice) " +
                         "AND (:maxPrice IS NULL OR p.basePrice <= :maxPrice) " +
-                        "AND (:tag IS NULL OR t.tagName = :tag)")
+                        "AND (:tags IS NULL OR t.tagName IN :tags)")
         Page<Product> findApprovedStorefront(
                         @Param("search") String search,
-                        @Param("categoryId") Integer categoryId,
+                        @Param("categoryIds") List<Integer> categoryIds,
                         @Param("hasTrial") Boolean hasTrial,
-                        @Param("minPrice") java.math.BigDecimal minPrice,
-                        @Param("maxPrice") java.math.BigDecimal maxPrice,
-                        @Param("tag") String tag,
+                        @Param("minPrice") BigDecimal minPrice,
+                        @Param("maxPrice") BigDecimal maxPrice,
+                        @Param("tags") List<String> tags,
                         Pageable pageable);
 
         /**

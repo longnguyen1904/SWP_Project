@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,11 +41,11 @@ public class ProductController {
     @GetMapping
     public ApiResponse<PageResponse<ProductResponse>> getStorefrontProducts(
             @RequestParam(required = false, name = "q") String search,
-            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) List<Integer> categoryId,
             @RequestParam(required = false) Boolean hasTrial,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
-            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) List<String> tag,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,

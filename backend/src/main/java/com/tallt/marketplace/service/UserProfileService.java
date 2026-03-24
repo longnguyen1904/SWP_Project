@@ -125,12 +125,15 @@ public class UserProfileService {
         // Send OTP via email
         String userName = user.getFullName() != null ? user.getFullName() : user.getUsername();
         String subject = "Password Reset OTP - Software Marketplace";
-        String body = "Hello " + userName + ",\n\n"
-                + "Your OTP code is: " + otp + "\n\n"
-                + "This code will expire in " + OTP_EXPIRY_MINUTES + " minutes.\n"
-                + "If you did not request a password reset, please ignore this email.\n\n"
-                + "Best regards,\nSoftware Marketplace";
-        emailService.sendEmail(email, subject, body);
+        String title = "Password Reset";
+        String body = "<p>Hello <strong>" + userName + "</strong>,</p>"
+                + "<p>We received a request to reset your password. Use the OTP code below:</p>"
+                + "<div style='text-align:center;margin:24px 0;'>"
+                + "<span style='display:inline-block;background:#2d3748;color:#667eea;font-size:32px;font-weight:700;"
+                + "letter-spacing:8px;padding:16px 32px;border-radius:8px;'>" + otp + "</span></div>"
+                + "<p>This code will expire in <strong>" + OTP_EXPIRY_MINUTES + " minutes</strong>.</p>"
+                + "<p style='color:#718096;'>If you did not request a password reset, please ignore this email.</p>";
+        emailService.sendEmail(email, subject, title, body);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("message", "OTP has been sent to email " + email);

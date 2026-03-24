@@ -95,10 +95,10 @@ export const customerAPI = {
   getProducts: (params = {}) => {
     const adapted = { ...params };
     if (Array.isArray(params.categoryIds) && params.categoryIds.length > 0) {
-      adapted.categoryId = params.categoryIds[0];
+      adapted.categoryId = params.categoryIds;
     }
     if (Array.isArray(params.tags) && params.tags.length > 0) {
-      adapted.tag = params.tags[0];
+      adapted.tag = params.tags;
     }
     const queryString = buildProductsQueryString(adapted);
     return api.get(`/api/products${queryString}`);
@@ -130,6 +130,12 @@ export const customerAPI = {
     api.get(`/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`),
   getCouponsForProduct: (productId) =>
     api.get(`/api/coupons/product/${productId}`),
+  followVendor: (vendorId) =>
+    api.post(`/api/vendors/${vendorId}/follow`, {}),
+  checkFollowVendor: (vendorId) =>
+    api.get(`/api/vendors/${vendorId}/follow/check`),
+  getMyFollowedVendors: () =>
+    api.get("/api/follow/my-vendors"),
 };
 
 export const couponAPI = {

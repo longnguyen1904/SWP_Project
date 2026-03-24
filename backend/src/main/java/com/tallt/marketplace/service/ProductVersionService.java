@@ -12,6 +12,7 @@ import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.ProductVersionRepository;
 import com.tallt.marketplace.repository.VendorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +43,9 @@ public class ProductVersionService {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Value("${vnpay.frontend-url:http://localhost:5173}")
+    private String frontendBaseUrl;
 
     /**
      * Create a new version for product
@@ -222,18 +226,25 @@ public class ProductVersionService {
             String subject = "New Update: " + product.getProductName()
                     + " v" + version.getVersionNumber();
 
-            String body = "Hello,\n\n"
-                    + "The product '" + product.getProductName()
-                    + "' that you purchased has a new version:\n\n"
-                    + "Version: " + version.getVersionNumber() + "\n"
-                    + "Notes: " + (version.getReleaseNotes() != null
-                            ? version.getReleaseNotes() : "None")
-                    + "\n\nVisit the system to download the update.\n\n"
-                    + "Best regards,\nTALLT Marketplace";
+            String title = "Product Update Available";
+            String body = "<p>Hello,</p>"
+                    + "<p>The product <strong>" + product.getProductName()
+                    + "</strong> that you purchased has a new version:</p>"
+                    + "<div style='background:#2d3748;border-left:4px solid #667eea;padding:16px 20px;border-radius:6px;margin:16px 0;'>"
+                    + "<p style='margin:0 0 8px;color:#e2e8f0;font-size:16px;font-weight:600;'>Version "
+                    + version.getVersionNumber() + "</p>"
+                    + "<p style='margin:0;color:#a0aec0;'>"
+                    + (version.getReleaseNotes() != null ? version.getReleaseNotes() : "No release notes")
+                    + "</p></div>"
+                    + "<p style='text-align:center;margin:24px 0;'>"
+                    + "<a href='" + frontendBaseUrl + "/products/" + product.getProductID() + "' "
+                    + "style='display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);"
+                    + "color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;"
+                    + "font-size:16px;font-weight:600;'>Khám phá ngay →</a></p>";
 
             for (String email : emails) {
                 try {
-                    emailService.sendEmail(email, subject, body);
+                    emailService.sendEmail(email, subject, title, body);
                 } catch (Exception ignored) {
                 }
             }

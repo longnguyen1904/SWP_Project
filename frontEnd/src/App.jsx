@@ -35,6 +35,7 @@ import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
 import TransactionLedger from "./Page/TransactionLedger.jsx";
 import CouponManagement from "./Page/CouponManagement";
 import VendorWallet from "./Page/VendorWallet.jsx";
+import FollowedVendors from "./Page/FollowedVendors";
 export default function App() {
   return (
     <div className="app snow">
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="Profile" element={<ProfilePage />} />
           <Route path="CustomerTicketManagement" element={<CustomerTicketManagement />} />
           <Route path="CreateSupportTicket" element={<CreateSupportTicketWizard />} />
+          <Route path="FollowedVendors" element={<FollowedVendors />} />
         </Route>
 
 
@@ -71,6 +73,7 @@ export default function App() {
           <Route path="QualityAnalyticsDashboard" element={<QualityAnalyticsDashboard />} />
           <Route path="CouponManagement" element={<CouponManagement />} />
           <Route path="Wallet" element={<VendorWallet />} />
+          <Route path="FollowedVendors" element={<FollowedVendors />} />
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />

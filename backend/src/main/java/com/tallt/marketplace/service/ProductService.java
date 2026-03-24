@@ -7,6 +7,7 @@ import com.tallt.marketplace.entity.*;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -60,6 +61,12 @@ public class ProductService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private VendorFollowerRepository vendorFollowerRepository;
+
+    @Value("${vnpay.frontend-url:http://localhost:5173}")
+    private String frontendBaseUrl;
 
     /**
      * Create a new product for Vendor
@@ -357,10 +364,18 @@ public class ProductService {
                         ? product.getVendor().getUser().getEmail()
                         : null;
                 String subject = "Product Approved";
-                String body = "Your product '" + product.getProductName() + "' has been approved by Admin and is now visible on the marketplace.";
-                emailService.sendEmail(to, subject, body);
+                String title = "Congratulations! 🎉";
+                String body = "<p>Your product <strong>" + product.getProductName()
+                        + "</strong> has been approved by Admin.</p>"
+                        + "<div style='background:#2d3748;border-left:4px solid #48bb78;padding:16px 20px;border-radius:6px;margin:16px 0;'>"
+                        + "<p style='margin:0;color:#48bb78;font-weight:600;'>✅ Product is now live on the marketplace</p></div>"
+                        + "<p>Customers can now discover and purchase your product.</p>";
+                emailService.sendEmail(to, subject, title, body);
             } catch (Exception ignored) {
             }
+
+            // Gửi email thông báo cho followers của vendor
+            notifyFollowersOfNewProduct(product);
         }
 
         return Map.of(
@@ -502,11 +517,11 @@ public class ProductService {
      * UC11 - Marketplace Storefront: list sản phẩm public đã được duyệt
      */
     public PageResponse<ProductResponse> getStorefrontProducts(String search,
-                                                               Integer categoryId,
+                                                               List<Integer> categoryIds,
                                                                Boolean hasTrial,
                                                                java.math.BigDecimal minPrice,
                                                                java.math.BigDecimal maxPrice,
-                                                               String tag,
+                                                               List<String> tags,
                                                                int page, int size,
                                                                String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc")
@@ -514,14 +529,18 @@ public class ProductService {
                 : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        String normalizedTag = (tag != null && !tag.isBlank()) ? tag.trim().toLowerCase() : null;
+        List<Integer> normalizedCategoryIds = (categoryIds != null && !categoryIds.isEmpty()) ? categoryIds : null;
+        List<String> normalizedTags = (tags != null && !tags.isEmpty())
+                ? tags.stream().map(t -> t.trim().toLowerCase()).collect(Collectors.toList())
+                : null;
+
         Page<Product> productPage = productRepository.findApprovedStorefront(
                 (search != null && !search.isBlank()) ? search.trim() : null,
-                categoryId,
+                normalizedCategoryIds,
                 hasTrial,
                 minPrice,
                 maxPrice,
-                normalizedTag,
+                normalizedTags,
                 pageable
         );
 
@@ -871,5 +890,48 @@ public class ProductService {
         
         // Cuối cùng xóa Product
         productRepository.delete(product);
+    }
+    /**
+     * Gửi email thông báo sản phẩm mới cho tất cả followers của vendor.
+     * Non-blocking: exception không ảnh hưởng đến luồng approve.
+     */
+    private void notifyFollowersOfNewProduct(Product product) {
+        try {
+            Integer vendorId = product.getVendor().getVendorID();
+            List<String> emails = vendorFollowerRepository.findFollowerEmailsByVendorId(vendorId);
+            System.out.println("[FollowerNotify] Vendor " + vendorId + " has " + emails.size() + " follower(s)");
+            if (emails.isEmpty()) return;
+
+            String vendorName = product.getVendor().getCompanyName() != null
+                    ? product.getVendor().getCompanyName()
+                    : product.getVendor().getUser().getFullName();
+
+            String subject = "New Product from " + vendorName + ": " + product.getProductName();
+            String title = "New Product Available";
+            String body = "<p>Hello,</p>"
+                    + "<p>A vendor you follow — <strong>" + vendorName
+                    + "</strong> — just published a new product:</p>"
+                    + "<div style='background:#2d3748;border-left:4px solid #f86115;padding:16px 20px;border-radius:6px;margin:16px 0;'>"
+                    + "<p style='margin:0 0 4px;color:#e2e8f0;font-size:18px;font-weight:600;'>" + product.getProductName() + "</p>"
+                    + "<p style='margin:0;color:#a0aec0;'>" + product.getCategory().getCategoryName() + "</p>"
+                    + "</div>"
+                    + "<p style='text-align:center;margin:24px 0;'>"
+                    + "<a href='" + frontendBaseUrl + "/products/" + product.getProductID() + "' "
+                    + "style='display:inline-block;background:linear-gradient(135deg,#f86115 0%,#ff6a3d 100%);"
+                    + "color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;"
+                    + "font-size:16px;font-weight:600;'>Khám phá ngay →</a></p>";
+
+            for (String email : emails) {
+                try {
+                    System.out.println("[FollowerNotify] Sending email to: " + email);
+                    emailService.sendEmail(email, subject, title, body);
+                } catch (Exception e) {
+                    System.err.println("[FollowerNotify] Failed to send to " + email + ": " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[FollowerNotify] Error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
