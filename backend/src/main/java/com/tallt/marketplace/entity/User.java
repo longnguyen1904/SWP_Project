@@ -41,6 +41,12 @@ public class User {
     @Column(name = "OtpAttempts")
     private Integer otpAttempts = 0;
 
+    @Column(name = "FailedLoginAttempts")
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "LockoutUntil")
+    private LocalDateTime lockoutUntil;
+
     @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

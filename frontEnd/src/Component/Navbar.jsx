@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import logo from "../public/logo_no_bg.png";
+import LogIn from "./LogIn";
 import Register from "./Register";
 import "../Style/Navbar.css";
 
@@ -27,12 +28,17 @@ function isCustomer() {
   return getRole() === "CUSTOMER";
 }
 export default function Navbar() {
-  const dialog = useRef();
+  const loginDialog = useRef();
+  const registerDialog = useRef();
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
   const [role, setRole] = useState(getRole());
 
-  function handleClick() {
-    dialog.current.showModal();
+  function openLogin() {
+    loginDialog.current.showModal();
+  }
+
+  function openRegister() {
+    registerDialog.current.showModal();
   }
 
   function handleLogout() {
@@ -53,7 +59,8 @@ export default function Navbar() {
   return (
     <>
       <nav className="navbar">
-        <Register ref={dialog}></Register>
+        <LogIn ref={loginDialog} onSwitchToRegister={openRegister} />
+        <Register ref={registerDialog} onSwitchToLogin={openLogin} />
 
         <h1 className="logo">
           <img src={logo} alt="logo" />
@@ -76,7 +83,7 @@ export default function Navbar() {
               Logout
             </button>
           ) : (
-            <button className="Register" onClick={handleClick}>
+            <button className="Register" onClick={openLogin}>
               Login / SignUp
             </button>
           )}
@@ -124,4 +131,4 @@ export default function Navbar() {
       </nav>
     </>
   );
-}
+}
