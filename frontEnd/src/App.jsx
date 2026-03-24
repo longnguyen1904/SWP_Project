@@ -30,7 +30,9 @@ import WishlistPage from "./Page/WishlistPage";
 import RecentlyViewedPage from "./Page/RecentlyViewedPage";
 import AdminCommission from "./Page/AdminCommision.jsx";
 import AdminPayout from "./Page/AdminPayout.jsx";
+import PayoutResult from "./Page/PayoutResult.jsx";
 import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
+import TransactionLedger from "./Page/TransactionLedger.jsx";
 import CouponManagement from "./Page/CouponManagement";
 import VendorWallet from "./Page/VendorWallet.jsx";
 export default function App() {
@@ -57,7 +59,9 @@ export default function App() {
 
         <Route path="/Page/Vendor" element={<VendorDashboard />}>
           <Route index element={<Navigate to="RevenueDashboard" replace />} />
-          <Route path="RevenueDashboard" element={<RevenueDashboard />} />
+          <Route path="RevenueDashboard" element={<RevenueDashboard />} >
+            <Route path="TransactionLedger" element={<TransactionLedger />} />
+          </Route>
           <Route path="ProductUpload" element={<ProductUpload />} />
           <Route path="MyProducts" element={<ProductManagement />} />
           <Route path="VersionControl" element={<VersionControlManager />} />
@@ -84,6 +88,7 @@ export default function App() {
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/vendors/:vendorId" element={<VendorShop />} />
         <Route path="/payment-result" element={<PaymentResult />} />
+        <Route path="/payout-result" element={<PayoutResult />} />
         <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
       </Routes>
 

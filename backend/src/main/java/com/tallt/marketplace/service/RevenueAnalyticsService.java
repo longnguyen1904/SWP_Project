@@ -8,7 +8,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import com.lowagie.text.Document;
+import com.lowagie.text.Font;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
+import java.io.ByteArrayOutputStream;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -251,6 +255,145 @@ public class RevenueAnalyticsService {
             params.add(productId);
         }
         sql.append(" GROUP BY t.Status");
+        return jdbcTemplate.queryForList(sql.toString(), params.toArray());
+    }
+    /**
+     * 📖 Lấy danh sách Sổ cái giao dịch (Transaction Ledger)
+     */
+    public List<Map<String, Object>> getLedgerTransactions(int vendorId, LocalDate startDate, LocalDate endDate, String search) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT 
+                wt.TransactionID AS transactionId,
+                o.OrderID AS orderId,
+                p.ProductName AS productName,
+                u.FullName AS customerName,
+                u.Email AS customerEmail,
+                DATE_FORMAT(wt.CreatedAt, '%d/%m/%Y %H:%i') AS transactionDate,
+                o.TotalAmount AS grossAmount,
+                wt.Amount AS netAmount,
+                (o.TotalAmount - wt.Amount) AS platformFee
+            FROM WalletTransactions wt
+            JOIN Wallets w ON wt.WalletID = w.WalletID
+            JOIN Vendors v ON w.UserID = v.UserID
+            JOIN Orders o ON wt.ReferenceID = o.OrderID
+            JOIN Products p ON o.ProductID = p.ProductID
+            JOIN Users u ON o.UserID = u.UserID
+            WHERE v.VendorID = ? 
+              AND wt.Type = 'SALE_REVENUE'
+              AND wt.CreatedAt >= ? AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
+        """);
+
+        List<Object> params = new ArrayList<>(List.of(vendorId, startDate, endDate));
+
+        if (search != null && !search.trim().isEmpty()) {
+            sql.append(" AND (p.ProductName LIKE ? OR o.OrderID LIKE ? OR u.FullName LIKE ?)");
+            String searchParam = "%" + search + "%";
+            params.addAll(List.of(searchParam, searchParam, searchParam));
+        }
+
+        sql.append(" ORDER BY wt.CreatedAt DESC");
+        return jdbcTemplate.queryForList(sql.toString(), params.toArray());
+    }
+
+    /**
+     * 📄 Tạo Hóa đơn điện tử PDF cho 1 giao dịch
+     */
+    public byte[] exportInvoicePdf(int vendorId, int transactionId) {
+        // 1. Lấy thông tin giao dịch
+        String sql = """
+            SELECT o.OrderID, p.ProductName, u.FullName, wt.CreatedAt, o.TotalAmount, wt.Amount
+            FROM WalletTransactions wt
+            JOIN Wallets w ON wt.WalletID = w.WalletID
+            JOIN Vendors v ON w.UserID = v.UserID
+            JOIN Orders o ON wt.ReferenceID = o.OrderID
+            JOIN Products p ON o.ProductID = p.ProductID
+            JOIN Users u ON o.UserID = u.UserID
+            WHERE v.VendorID = ? AND wt.TransactionID = ? AND wt.Type = 'SALE_REVENUE'
+        """;
+        
+        Map<String, Object> data = jdbcTemplate.queryForMap(sql, vendorId, transactionId);
+
+        // 2. Tạo PDF bằng OpenPDF
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Document document = new Document();
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Font titleFont = new Font(Font.HELVETICA, 20, Font.BOLD);
+            Font normalFont = new Font(Font.HELVETICA, 12, Font.NORMAL);
+            Font boldFont = new Font(Font.HELVETICA, 12, Font.BOLD);
+
+            Paragraph title = new Paragraph("ELECTRONIC INVOICE / RECEIPT", titleFont);
+            title.setAlignment(Paragraph.ALIGN_CENTER);
+            title.setSpacingAfter(20);
+            document.add(title);
+
+            document.add(new Paragraph("Transaction ID: TCK-" + transactionId, normalFont));
+            document.add(new Paragraph("Order ID: #" + data.get("OrderID"), normalFont));
+            document.add(new Paragraph("Date: " + data.get("CreatedAt"), normalFont));
+            document.add(new Paragraph("Customer: " + data.get("FullName"), normalFont));
+            
+            document.add(new Paragraph("\n--------------------------------------------------\n", normalFont));
+            document.add(new Paragraph("Product: " + data.get("ProductName"), boldFont));
+            document.add(new Paragraph("\nGross Amount (Customer Paid): " + data.get("TotalAmount") + " VND", normalFont));
+            
+            BigDecimal gross = (BigDecimal) data.get("TotalAmount");
+            BigDecimal net = (BigDecimal) data.get("Amount");
+            BigDecimal fee = gross.subtract(net);
+            
+            document.add(new Paragraph("Platform Fee Deducted: -" + fee + " VND", normalFont));
+            document.add(new Paragraph("\nNet Profit (Vendor Received): " + net + " VND", boldFont));
+            document.add(new Paragraph("\n--------------------------------------------------\n", normalFont));
+            
+            Paragraph footer = new Paragraph("Thank you for using Global Software Marketplace!", normalFont);
+            footer.setAlignment(Paragraph.ALIGN_CENTER);
+            document.add(footer);
+
+            document.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi tạo PDF: " + e.getMessage());
+        }
+    }
+    public List<Map<String, Object>> getLedgerTransactions(int vendorId, LocalDate startDate, LocalDate endDate, 
+                                                         String search, Integer productId, 
+                                                         Double minPrice, Double maxPrice, String sortBy) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT 
+                wt.TransactionID AS transactionId, o.OrderID AS orderId,
+                p.ProductName AS productName, u.FullName AS customerName,
+                u.Email AS customerEmail, wt.CreatedAt AS transactionDate,
+                o.TotalAmount AS grossAmount, wt.Amount AS netAmount,
+                (o.TotalAmount - wt.Amount) AS platformFee
+            FROM WalletTransactions wt
+            JOIN Orders o ON wt.ReferenceID = o.OrderID
+            JOIN Products p ON o.ProductID = p.ProductID
+            JOIN Users u ON o.UserID = u.UserID
+            JOIN Wallets w ON wt.WalletID = w.WalletID
+            JOIN Vendors v ON w.UserID = v.UserID
+            WHERE v.VendorID = ? AND wt.Type = 'SALE_REVENUE'
+              AND wt.CreatedAt >= ? AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
+        """);
+
+        List<Object> params = new ArrayList<>(List.of(vendorId, startDate, endDate));
+
+        if (search != null && !search.isEmpty()) {
+            sql.append(" AND (p.ProductName LIKE ? OR o.OrderID LIKE ? OR u.FullName LIKE ?)");
+            params.add("%" + search + "%"); params.add("%" + search + "%"); params.add("%" + search + "%");
+        }
+        if (productId != null) { sql.append(" AND p.ProductID = ?"); params.add(productId); }
+        if (minPrice != null) { sql.append(" AND o.TotalAmount >= ?"); params.add(minPrice); }
+        if (maxPrice != null) { sql.append(" AND o.TotalAmount <= ?"); params.add(maxPrice); }
+
+        // Xử lý sắp xếp
+        String orderSql = switch (sortBy) {
+            case "price_desc" -> " ORDER BY o.TotalAmount DESC";
+            case "price_asc" -> " ORDER BY o.TotalAmount ASC";
+            case "date_asc" -> " ORDER BY wt.CreatedAt ASC";
+            default -> " ORDER BY wt.CreatedAt DESC";
+        };
+        sql.append(orderSql);
+
         return jdbcTemplate.queryForList(sql.toString(), params.toArray());
     }
 }

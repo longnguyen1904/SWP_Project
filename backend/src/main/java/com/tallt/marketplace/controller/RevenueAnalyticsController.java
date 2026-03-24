@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -92,7 +93,7 @@ public class RevenueAnalyticsController {
         }
     }
 
-    // 🔥 API MỚI BỔ SUNG CHO TICKET STATUS
+    // API MỚI BỔ SUNG CHO TICKET STATUS
     @GetMapping("/ticket-status")
     public ResponseEntity<?> getTicketStatusDistribution(
             @RequestHeader(value = "Authorization", required = false) String token,
@@ -134,4 +135,52 @@ public class RevenueAnalyticsController {
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); 
         }
     }
+/**
+     * 📖 API Lấy danh sách Sổ cái giao dịch với bộ lọc nâng cao
+     */
+    @GetMapping("/ledger")
+    public ResponseEntity<?> getLedgerTransactions(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer productId,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(defaultValue = "date_desc") String sortBy) { // Mặc định sắp xếp ngày giảm dần
+        try {
+            // 1. Lấy VendorID từ Token
+            int vendorId = revenueService.getVendorIdFromToken(token);
+            
+            // 2. Gọi Service với đầy đủ các tham số lọc
+            List<Map<String, Object>> transactions = revenueService.getLedgerTransactions(
+                vendorId, startDate, endDate, search, productId, minPrice, maxPrice, sortBy
+            );
+            
+            return ResponseEntity.ok(transactions);
+        } catch (Exception e) { 
+            // Trả về lỗi 401 nếu token sai hoặc lỗi logic
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); 
+        }
+    }
+
+    // API Tải hóa đơn PDF
+@GetMapping("/export-invoice/{transactionId}")
+    public ResponseEntity<byte[]> exportInvoicePdf(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @PathVariable("transactionId") int transactionId) {
+        try {
+            int vendorId = revenueService.getVendorIdFromToken(token);
+            byte[] pdfBytes = revenueService.exportInvoicePdf(vendorId, transactionId);
+
+            return ResponseEntity.ok()
+                    // XÓA HOẶC COMMENT DÒNG CONTENT_DISPOSITION NÀY:
+                    // .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Invoice.pdf") 
+                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(null);
+        }
+    }
+    
 }
