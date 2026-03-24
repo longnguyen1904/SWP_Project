@@ -30,6 +30,7 @@ import WishlistPage from "./Page/WishlistPage";
 import RecentlyViewedPage from "./Page/RecentlyViewedPage";
 import AdminCommission from "./Page/AdminCommision.jsx";
 import AdminPayout from "./Page/AdminPayout.jsx";
+import PayoutResult from "./Page/PayoutResult.jsx";
 import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
 import CouponManagement from "./Page/CouponManagement";
 import VendorWallet from "./Page/VendorWallet.jsx";
@@ -84,6 +85,7 @@ export default function App() {
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/vendors/:vendorId" element={<VendorShop />} />
         <Route path="/payment-result" element={<PaymentResult />} />
+        <Route path="/payout-result" element={<PayoutResult />} />
         <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
       </Routes>
 
