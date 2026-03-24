@@ -32,6 +32,15 @@ public class User {
     @Column(name = "IsActive")
     private Boolean isActive = true;
 
+    @Column(name = "Otp")
+    private String otp;
+
+    @Column(name = "OtpExpiry")
+    private LocalDateTime otpExpiry;
+
+    @Column(name = "OtpAttempts")
+    private Integer otpAttempts = 0;
+
     @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

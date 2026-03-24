@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -25,16 +26,12 @@ public class UserProfileService {
     @Autowired
     private EmailService emailService;
 
-    // Characters used for random password generation
-    private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
-    private static final String DIGITS = "0123456789";
-    private static final String ALL_CHARS = UPPERCASE + LOWERCASE + DIGITS;
+    private static final int OTP_LENGTH = 6;
+    private static final int OTP_EXPIRY_MINUTES = 5;
+    private static final int MAX_OTP_ATTEMPTS = 5;
 
     /**
      * Update user profile
-     * - Update fullName
-     * - Change password (verify old password, hash new password)
      */
     @Transactional
     public Map<String, Object> updateProfile(Integer userId, UpdateProfileRequest request) {
@@ -48,21 +45,15 @@ public class UserProfileService {
 
         // Update password if provided
         if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
-            // Must provide old password
             if (request.getOldPassword() == null || request.getOldPassword().isBlank()) {
                 throw new AppException("Please enter old password");
             }
-
-            // Verify old password
             if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
                 throw new AppException("Old password is incorrect");
             }
-
-            // Old and new must differ
             if (request.getOldPassword().equals(request.getNewPassword())) {
                 throw new AppException("New password must be different from old password");
             }
-
             user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         }
 
@@ -95,78 +86,126 @@ public class UserProfileService {
     }
 
     /**
-     * Generate random password (8-10 characters)
-     * Ensures at least 1 uppercase, 1 lowercase, 1 digit
+     * Generate OTP (6 digits)
      */
-    private String generateRandomPassword() {
+    private String generateOtp() {
         SecureRandom random = new SecureRandom();
-
-        // Random length 8-10 characters
-        int length = 8 + random.nextInt(3);
-
-        StringBuilder password = new StringBuilder(length);
-
-        // Ensure at least 1 character of each type
-        password.append(UPPERCASE.charAt(random.nextInt(UPPERCASE.length())));
-        password.append(LOWERCASE.charAt(random.nextInt(LOWERCASE.length())));
-        password.append(DIGITS.charAt(random.nextInt(DIGITS.length())));
-
-        // Fill remaining with random characters
-        for (int i = 3; i < length; i++) {
-            password.append(ALL_CHARS.charAt(random.nextInt(ALL_CHARS.length())));
+        StringBuilder otp = new StringBuilder(OTP_LENGTH);
+        for (int i = 0; i < OTP_LENGTH; i++) {
+            otp.append(random.nextInt(10));
         }
-
-        // Shuffle character order randomly
-        char[] chars = password.toString().toCharArray();
-        for (int i = chars.length - 1; i > 0; i--) {
-            int j = random.nextInt(i + 1);
-            char temp = chars[i];
-            chars[i] = chars[j];
-            chars[j] = temp;
-        }
-
-        return new String(chars);
+        return otp.toString();
     }
 
     /**
-     * Forgot password - generate new password and send via email
+     * Forgot password – generate OTP and send via email
      * 1. Find user by email
-     * 2. Generate random password (8-10 chars, uppercase + lowercase + digits)
-     * 3. Hash new password with BCrypt and save to DB
-     * 4. Send new password via email to user
+     * 2. Generate 6-digit OTP
+     * 3. Save OTP + expiry (5 minutes) to DB
+     * 4. Send OTP via email
      */
     @Transactional
     public Map<String, Object> forgotPassword(String email) {
-        // Check email
         if (email == null || email.isBlank()) {
             throw new AppException("Please enter an email address");
         }
 
-        // Find user by email
         User user = userRepository.findByEmail(email);
         if (user == null) {
             throw new AppException("Email does not exist in the system");
         }
 
-        // Generate random password
-        String newPassword = generateRandomPassword();
-
-        // Hash password and update in DB
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        // Generate OTP and save
+        String otp = generateOtp();
+        user.setOtp(otp);
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
+        user.setOtpAttempts(0);
         userRepository.save(user);
 
-        // Send email with new password
+        // Send OTP via email
         String userName = user.getFullName() != null ? user.getFullName() : user.getUsername();
-        String subject = "Your New Password - Software Marketplace";
+        String subject = "Password Reset OTP - Software Marketplace";
         String body = "Hello " + userName + ",\n\n"
-                + "Your new password is: " + newPassword + "\n\n"
-                + "Please log in and change your password immediately to ensure security.\n"
-                + "If you did not request a password reset, please contact support immediately.\n\n"
+                + "Your OTP code is: " + otp + "\n\n"
+                + "This code will expire in " + OTP_EXPIRY_MINUTES + " minutes.\n"
+                + "If you did not request a password reset, please ignore this email.\n\n"
                 + "Best regards,\nSoftware Marketplace";
         emailService.sendEmail(email, subject, body);
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("message", "New password has been sent to email " + email);
+        result.put("message", "OTP has been sent to email " + email);
+        return result;
+    }
+
+    /**
+     * Verify OTP and reset password
+     * 1. Find user by email
+     * 2. Verify OTP is valid and not expired
+     * 3. Check attempt count (max 5)
+     * 4. If valid, hash new password and save
+     * 5. Clear OTP fields
+     */
+    @Transactional
+    public Map<String, Object> verifyOtpAndResetPassword(String email, String otp, String newPassword) {
+        if (email == null || email.isBlank()) {
+            throw new AppException("Please enter an email address");
+        }
+        if (otp == null || otp.isBlank()) {
+            throw new AppException("Please enter OTP code");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new AppException("Please enter new password");
+        }
+        if (newPassword.length() < 6) {
+            throw new AppException("Password must be at least 6 characters");
+        }
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new AppException("Email does not exist in the system");
+        }
+
+        // Check if OTP exists
+        if (user.getOtp() == null) {
+            throw new AppException("No OTP request found. Please request a new OTP.");
+        }
+
+        // Check max attempts
+        if (user.getOtpAttempts() != null && user.getOtpAttempts() >= MAX_OTP_ATTEMPTS) {
+            // Clear OTP on too many attempts
+            user.setOtp(null);
+            user.setOtpExpiry(null);
+            user.setOtpAttempts(0);
+            userRepository.save(user);
+            throw new AppException("Too many failed attempts. Please request a new OTP.");
+        }
+
+        // Check expiry
+        if (user.getOtpExpiry() == null || LocalDateTime.now().isAfter(user.getOtpExpiry())) {
+            user.setOtp(null);
+            user.setOtpExpiry(null);
+            user.setOtpAttempts(0);
+            userRepository.save(user);
+            throw new AppException("OTP has expired. Please request a new OTP.");
+        }
+
+        // Check OTP match
+        if (!otp.equals(user.getOtp())) {
+            user.setOtpAttempts((user.getOtpAttempts() != null ? user.getOtpAttempts() : 0) + 1);
+            userRepository.save(user);
+            int remaining = MAX_OTP_ATTEMPTS - user.getOtpAttempts();
+            throw new AppException("Invalid OTP. " + remaining + " attempts remaining.");
+        }
+
+        // OTP valid – reset password
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setOtp(null);
+        user.setOtpExpiry(null);
+        user.setOtpAttempts(0);
+        userRepository.save(user);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("message", "Password has been reset successfully");
         return result;
     }
 }

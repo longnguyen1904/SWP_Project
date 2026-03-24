@@ -37,6 +37,8 @@ export const authAPI = {
   register: (userData) => api.post("/api/auth/register", userData),
   login: (credentials) => api.post("/api/auth/login", credentials),
   forgotPassword: (email) => api.post("/api/auth/forgot-password", { email }),
+  verifyOtpAndResetPassword: (email, otp, newPassword) =>
+    api.post("/api/auth/verify-otp", { email, otp, newPassword }),
 };
 
 export const vendorAPI = {
@@ -148,7 +150,6 @@ export const uploadAPI = {
 export const profileAPI = {
   getProfile: () => api.get("/api/users/profile"),
   updateProfile: (data) => api.put("/api/users/profile", data),
-  forgotPassword: (email) => api.post("/api/users/forgot-password", { email }),
 };
 
 export default api;

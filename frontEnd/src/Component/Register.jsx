@@ -10,7 +10,11 @@ const Register = forwardRef(function Register(props, ref) {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showForgot, setShowForgot] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1=email, 2=OTP+newPassword
   const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMessage, setForgotMessage] = useState("");
   const [forgotError, setForgotError] = useState("");
@@ -66,8 +70,8 @@ const Register = forwardRef(function Register(props, ref) {
     }
   };
 
-  /* ===== Quên mật khẩu ===== */
-  const handleForgotPassword = async () => {
+  /* ===== Step 1: Gửi OTP ===== */
+  const handleSendOtp = async () => {
     if (!forgotEmail.trim()) {
       setForgotError("Vui lòng nhập email");
       return;
@@ -77,9 +81,44 @@ const Register = forwardRef(function Register(props, ref) {
     setForgotMessage("");
     try {
       await authAPI.forgotPassword(forgotEmail.trim());
-      setForgotMessage("Mật khẩu mới đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.");
+      setForgotMessage("Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.");
+      setForgotStep(2);
     } catch (err) {
-      setForgotError(err.response?.data?.message || "Không thể gửi mật khẩu mới. Vui lòng thử lại.");
+      setForgotError(err.response?.data?.message || "Không thể gửi OTP. Vui lòng thử lại.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  /* ===== Step 2: Xác minh OTP + Đặt mật khẩu mới ===== */
+  const handleVerifyOtp = async () => {
+    if (!forgotOtp.trim()) {
+      setForgotError("Vui lòng nhập mã OTP");
+      return;
+    }
+    if (!forgotNewPassword) {
+      setForgotError("Vui lòng nhập mật khẩu mới");
+      return;
+    }
+    if (forgotNewPassword.length < 6) {
+      setForgotError("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotError("Xác nhận mật khẩu không khớp");
+      return;
+    }
+    setForgotLoading(true);
+    setForgotError("");
+    setForgotMessage("");
+    try {
+      await authAPI.verifyOtpAndResetPassword(forgotEmail.trim(), forgotOtp.trim(), forgotNewPassword);
+      setForgotMessage("Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay.");
+      setTimeout(() => {
+        resetForgotState();
+      }, 2000);
+    } catch (err) {
+      setForgotError(err.response?.data?.message || "Xác minh OTP thất bại. Vui lòng thử lại.");
     } finally {
       setForgotLoading(false);
     }
@@ -87,7 +126,11 @@ const Register = forwardRef(function Register(props, ref) {
 
   const resetForgotState = () => {
     setShowForgot(false);
+    setForgotStep(1);
     setForgotEmail("");
+    setForgotOtp("");
+    setForgotNewPassword("");
+    setForgotConfirmPassword("");
     setForgotMessage("");
     setForgotError("");
   };
@@ -105,7 +148,7 @@ const Register = forwardRef(function Register(props, ref) {
     window.location.href = targetUrl;
   };
 
-  /* ===== Forgot password view ===== */
+  /* ===== Forgot password view – 2 steps ===== */
   if (showForgot) {
     return (
       <dialog ref={ref} className="result-modal">
@@ -115,30 +158,95 @@ const Register = forwardRef(function Register(props, ref) {
         <div className="login-form">
           <h2>Quên mật khẩu</h2>
           <p className="subtitle">
-            Nhập email để nhận mật khẩu mới
+            {forgotStep === 1
+              ? "Nhập email để nhận mã OTP"
+              : "Nhập mã OTP và mật khẩu mới"}
           </p>
 
           {forgotError && <div className="forgot-alert forgot-alert-error">{forgotError}</div>}
           {forgotMessage && <div className="forgot-alert forgot-alert-success">{forgotMessage}</div>}
 
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              value={forgotEmail}
-              onChange={(e) => setForgotEmail(e.target.value)}
-              required
-            />
-          </div>
-          <button
-            className="login-btn"
-            type="button"
-            onClick={handleForgotPassword}
-            disabled={forgotLoading}
-          >
-            {forgotLoading ? "Đang gửi..." : "Gửi mật khẩu mới"}
-          </button>
+          {forgotStep === 1 && (
+            <>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                className="login-btn"
+                type="button"
+                onClick={handleSendOtp}
+                disabled={forgotLoading}
+              >
+                {forgotLoading ? "Đang gửi..." : "Gửi mã OTP"}
+              </button>
+            </>
+          )}
+
+          {forgotStep === 2 && (
+            <>
+              <div className="form-group">
+                <label>Mã OTP</label>
+                <input
+                  type="text"
+                  placeholder="Nhập 6 số OTP"
+                  value={forgotOtp}
+                  onChange={(e) => setForgotOtp(e.target.value)}
+                  maxLength={6}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Mật khẩu mới</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={forgotNewPassword}
+                  onChange={(e) => setForgotNewPassword(e.target.value)}
+                  required
+                />
+                {forgotNewPassword && forgotNewPassword.length < 6 && (
+                  <span style={{ color: "#ff6b6b", fontSize: "0.8rem" }}>Tối thiểu 6 ký tự</span>
+                )}
+              </div>
+              <div className="form-group">
+                <label>Xác nhận mật khẩu</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={forgotConfirmPassword}
+                  onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                  required
+                />
+                {forgotConfirmPassword && forgotConfirmPassword !== forgotNewPassword && (
+                  <span style={{ color: "#ff6b6b", fontSize: "0.8rem" }}>Mật khẩu không khớp</span>
+                )}
+              </div>
+              <button
+                className="login-btn"
+                type="button"
+                onClick={handleVerifyOtp}
+                disabled={forgotLoading}
+              >
+                {forgotLoading ? "Đang xác minh..." : "Đặt lại mật khẩu"}
+              </button>
+
+              <p className="footer-text">
+                <span
+                  onClick={() => { setForgotStep(1); setForgotError(""); setForgotMessage(""); }}
+                  style={{ cursor: "pointer", color: "blue", fontWeight: "bold", fontSize: "0.85rem" }}
+                >
+                  ← Gửi lại OTP
+                </span>
+              </p>
+            </>
+          )}
 
           <p className="footer-text">
             <span

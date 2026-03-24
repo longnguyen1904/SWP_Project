@@ -50,7 +50,7 @@ public class AuthController {
     }
 
     /**
-     * Quên mật khẩu – sinh mật khẩu mới và gửi qua email
+     * Quên mật khẩu – gửi OTP qua email
      * POST /api/auth/forgot-password
      */
     @PostMapping("/forgot-password")
@@ -58,6 +58,21 @@ public class AuthController {
             @RequestBody Map<String, String> body) {
         String email = body.get("email");
         Map<String, Object> result = userProfileService.forgotPassword(email);
-        return ResponseEntity.ok(ApiResponse.success("Mật khẩu mới đã được gửi qua email", result));
+        return ResponseEntity.ok(ApiResponse.success("OTP đã được gửi qua email", result));
+    }
+
+    /**
+     * Xác minh OTP và đặt mật khẩu mới
+     * POST /api/auth/verify-otp
+     */
+    @PostMapping("/verify-otp")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyOtpAndResetPassword(
+            @RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String otp = body.get("otp");
+        String newPassword = body.get("newPassword");
+        Map<String, Object> result = userProfileService.verifyOtpAndResetPassword(email, otp, newPassword);
+        return ResponseEntity.ok(ApiResponse.success("Đặt lại mật khẩu thành công", result));
     }
 }
+
