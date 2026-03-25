@@ -90,14 +90,14 @@ public class VendorManagementService {
 
         else if (status == VendorStatus.SUSPENDED) {
 
-            if (rejectionNote != null && !rejectionNote.trim().isEmpty()) {
-                vendor.setRejectionNote(rejectionNote);
-            } else {
-                vendor.setRejectionNote(null);
-            }
-            // Clear identificationDoc to force vendor to re-submit
-            vendor.setIdentificationDoc(null);
+        if (rejectionNote != null && !rejectionNote.trim().isEmpty()) {
+            vendor.setRejectionNote(rejectionNote);
+        } else {
+            vendor.setRejectionNote(null);
         }
+    }
+
+        
 
         return vendorRepository.save(vendor);
     }

@@ -9,7 +9,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import com.tallt.marketplace.constant.MessageConstant;
@@ -19,54 +18,76 @@ import com.tallt.marketplace.dto.LoginRequest;
 import com.tallt.marketplace.dto.RegisterRequest;
 import com.tallt.marketplace.entity.Role;
 import com.tallt.marketplace.entity.User;
-import com.tallt.marketplace.entity.Vendor;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.RoleRepository;
 import com.tallt.marketplace.repository.UserRepository;
-import com.tallt.marketplace.repository.VendorRepository;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Service
 public class AuthService {
+
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final int LOCKOUT_DURATION_MINUTES = 5;
 
     @Autowired
     private UserRepository userRepository;
     @Autowired
     private RoleRepository roleRepository;
     @Autowired
-    private PasswordEncoder passwordEncoder; // Inject Bean vừa tạo
-    @Autowired
-    private VendorRepository vendorRepository;
+    private PasswordEncoder passwordEncoder;
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail());
 
-        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        if (user == null) {
             throw new AppException("Invalid email or password");
         }
 
-        // 👉 tạo token phiên đăng nhập
-        String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
-
-        // 👉 Kiểm tra vendor status (nếu là vendor)
-        String vendorStatus = null;
-        String suspendReason = null;
-        Optional<Vendor> vendorOpt = vendorRepository.findByUser_UserID(user.getUserID());
-        if (vendorOpt.isPresent()) {
-            Vendor vendor = vendorOpt.get();
-            vendorStatus = vendor.getStatus().name();
-            if (vendor.getStatus() == Vendor.VendorStatus.SUSPENDED) {
-                suspendReason = vendor.getRejectionNote();
-            }
+        // Check if account is locked
+        if (user.getLockoutUntil() != null && LocalDateTime.now().isBefore(user.getLockoutUntil())) {
+            long secondsLeft = ChronoUnit.SECONDS.between(LocalDateTime.now(), user.getLockoutUntil());
+            long minutesLeft = (secondsLeft / 60) + 1;
+            throw new AppException("Tài khoản bị khóa tạm thời. Thử lại sau " + minutesLeft + " phút.");
         }
+
+        // If lockout has expired, reset counters
+        if (user.getLockoutUntil() != null && LocalDateTime.now().isAfter(user.getLockoutUntil())) {
+            user.setFailedLoginAttempts(0);
+            user.setLockoutUntil(null);
+        }
+
+        // Check password
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            int attempts = (user.getFailedLoginAttempts() != null ? user.getFailedLoginAttempts() : 0) + 1;
+            user.setFailedLoginAttempts(attempts);
+
+            if (attempts >= MAX_FAILED_ATTEMPTS) {
+                user.setLockoutUntil(LocalDateTime.now().plusMinutes(LOCKOUT_DURATION_MINUTES));
+                userRepository.save(user);
+                throw new AppException("Sai mật khẩu " + MAX_FAILED_ATTEMPTS + " lần. Tài khoản bị khóa " + LOCKOUT_DURATION_MINUTES + " phút.");
+            }
+
+            userRepository.save(user);
+            int remaining = MAX_FAILED_ATTEMPTS - attempts;
+            throw new AppException("Sai mật khẩu. Còn " + remaining + " lần thử trước khi bị khóa.");
+        }
+
+        // Login success → reset lockout
+        user.setFailedLoginAttempts(0);
+        user.setLockoutUntil(null);
+        userRepository.save(user);
+
+        String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
 
         return new AuthResponse(
                 user.getEmail(),
                 user.getFullName(),
                 user.getRole().getRoleName(),
                 token,
-                user.getUserID(),
-                vendorStatus,
-                suspendReason);
+                user.getUserID()
+        );
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -119,7 +140,8 @@ public class AuthService {
                     "https://www.googleapis.com/oauth2/v3/userinfo",
                     HttpMethod.GET,
                     entity,
-                    Map.class);
+                    Map.class
+            );
 
             Map<String, Object> payload = response.getBody();
             if (payload == null || !payload.containsKey("email")) {
@@ -151,7 +173,8 @@ public class AuthService {
                     user.getFullName(),
                     user.getRole().getRoleName(),
                     token,
-                    user.getUserID());
+                    user.getUserID()
+            );
 
         } catch (Exception e) {
             throw new AppException("Failed to verify Google token: " + e.getMessage());

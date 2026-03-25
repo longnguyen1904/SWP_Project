@@ -255,33 +255,4 @@ public class VendorService {
         response.setDisplayName(displayName);
         return response;
     }
-    /**
-     * Vendor resubmit identification after being suspended
-     * - Status must be SUSPENDED
-     * - Updates identificationDoc, sets status back to PENDING
-     */
-    @Transactional
-    public Map<String, Object> resubmitIdentification(Integer userId, String identificationUrl) {
-        Vendor vendor = vendorRepository.findByUser_UserID(userId)
-                .orElseThrow(() -> new AppException("Vendor does not exist for this user"));
-
-        if (vendor.getStatus() != Vendor.VendorStatus.SUSPENDED) {
-            throw new AppException("Only suspended vendors can resubmit identification");
-        }
-
-        if (identificationUrl == null || identificationUrl.trim().isEmpty()) {
-            throw new AppException("Identification URL is required");
-        }
-
-        vendor.setIdentificationDoc(identificationUrl.trim());
-        vendor.setStatus(Vendor.VendorStatus.PENDING);
-        vendor.setRejectionNote(null);
-        vendorRepository.save(vendor);
-
-        return Map.of(
-                "vendorId", vendor.getVendorID(),
-                "status", vendor.getStatus().name(),
-                "message", "Identification resubmitted successfully. Waiting for admin approval."
-        );
-    }
 }
