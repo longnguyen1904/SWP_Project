@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -80,7 +81,6 @@ public class WalletService {
                 res.setAvailable(available);
                 res.setTransactions(transactions);
 
-                
                 res.setPage(page);
                 res.setSize(size);
                 res.setTotalPages(txPage.getTotalPages());
@@ -162,5 +162,24 @@ public class WalletService {
                 res.setCreatedAt(t.getCreatedAt());
                 res.setDescription(t.getDescription());
                 return res;
+        }
+
+        public Page<WalletTransactionResponse> getTransactions(
+                        Integer userId, int page, int size,
+                        LocalDate from, LocalDate to) {
+
+                Wallet wallet = walletRepository.findByUser_UserID(userId)
+                                .orElseThrow(() -> new AppException("Ví không tồn tại"));
+
+                Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+                LocalDateTime fromDt = from != null ? from.atStartOfDay() : LocalDateTime.of(2000, 1, 1, 0, 0);
+                LocalDateTime toDt = to != null ? to.atTime(23, 59, 59) : LocalDateTime.now();
+
+                Page<WalletTransaction> txPage = walletTransactionRepository
+                                .findByWallet_WalletIDAndCreatedAtBetween(
+                                                wallet.getWalletID(), fromDt, toDt, pageable);
+
+                return txPage.map(this::toTransactionResponse);
         }
 }

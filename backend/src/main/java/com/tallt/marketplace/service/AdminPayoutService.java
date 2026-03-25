@@ -31,7 +31,7 @@ public class AdminPayoutService {
     }
 
     public Page<AdminPayoutResponse> getPendingPayouts(Pageable pageable) {
-        return vendorPayoutRepository.findByStatus("PENDING", pageable)
+        return vendorPayoutRepository.findByStatus("PENDIN  G", pageable)
                 .map(this::toResponse);
     }
 
@@ -106,7 +106,8 @@ public class AdminPayoutService {
 
         // Validate admin wallet đủ tiền
         User admin = userRepository.findFirstByRole_RoleName("Admin");
-        if (admin == null) throw new AppException("Không tìm thấy Admin");
+        if (admin == null)
+            throw new AppException("Không tìm thấy Admin");
 
         Wallet adminWallet = walletRepository
                 .findByUser_UserID(admin.getUserID())
@@ -143,7 +144,8 @@ public class AdminPayoutService {
         String responseCode = params.get("vnp_ResponseCode");
         String txnRef = params.get("vnp_TxnRef");
 
-        if (txnRef == null || !txnRef.startsWith("PAYOUT_")) return false;
+        if (txnRef == null || !txnRef.startsWith("PAYOUT_"))
+            return false;
 
         // Parse payoutId từ "PAYOUT_123"
         Integer payoutId;
@@ -154,7 +156,8 @@ public class AdminPayoutService {
         }
 
         VendorPayout payout = vendorPayoutRepository.findById(payoutId).orElse(null);
-        if (payout == null) return false;
+        if (payout == null)
+            return false;
 
         // Idempotent: nếu đã xử lý rồi thì bỏ qua
         if (!"APPROVED_PENDING_PAYMENT".equals(payout.getStatus())) {
@@ -212,7 +215,8 @@ public class AdminPayoutService {
         BigDecimal netAmount = payout.getNetAmount();
 
         User admin = userRepository.findFirstByRole_RoleName("Admin");
-        if (admin == null) throw new AppException("Không tìm thấy Admin");
+        if (admin == null)
+            throw new AppException("Không tìm thấy Admin");
 
         Wallet adminWallet = walletRepository
                 .findByUser_UserID(admin.getUserID())
@@ -239,6 +243,8 @@ public class AdminPayoutService {
         feeTx.setAmount(platformFee);
         feeTx.setType(WalletTransaction.TransactionType.COMMISSION_FEE);
         feeTx.setReferenceID(payout.getPayoutID());
+        feeTx.setDescription("Phí hoa hồng từ payout #" + payout.getPayoutID() // ← THÊM
+                + " - " + vendor.getUser().getFullName()); // ← THÊM
         feeTx.setCreatedAt(LocalDateTime.now());
         walletTransactionRepository.save(feeTx);
 
@@ -256,6 +262,12 @@ public class AdminPayoutService {
         vendorTx.setAmount(netAmount);
         vendorTx.setType(WalletTransaction.TransactionType.DEPOSIT);
         vendorTx.setReferenceID(payout.getPayoutID());
+        vendorTx.setDescription(String.format(
+                "Nhận tiền Payout #%d (Gross: %.2f, Phí: %.2f, Thuế: %.2f)",
+                payout.getPayoutID(),
+                payout.getAmount(),
+                payout.getPlatformFee(),
+                payout.getTax()));
         vendorTx.setCreatedAt(LocalDateTime.now());
         walletTransactionRepository.save(vendorTx);
     }

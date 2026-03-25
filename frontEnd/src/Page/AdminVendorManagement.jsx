@@ -16,6 +16,12 @@ function AdminVendorManagement() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
+  // States cho Modal nhập lý do
+  const [showModal, setShowModal] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [tempStatus, setTempStatus] = useState("");
+  const [reason, setReason] = useState("");
+
   const colors = {
     bg: "#0f172a",
     card: "#1e293b",
@@ -26,6 +32,7 @@ function AdminVendorManagement() {
     error: "#ef4444",
     warning: "#f59e0b",
     border: "#334155",
+    modalOverlay: "rgba(0, 0, 0, 0.75)",
   };
 
   const statusStyle = (status) => {
@@ -41,10 +48,9 @@ function AdminVendorManagement() {
     }
   };
 
-  // FETCH
+  // FETCH VENDORS
   const fetchVendors = async (customPage = page) => {
     setLoading(true);
-    setMessage("");
     try {
       let url = `http://localhost:8081/api/admin/vendors?page=${customPage}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
       if (status) url += `&status=${status}`;
@@ -70,7 +76,7 @@ function AdminVendorManagement() {
     fetchVendors(0);
   }, []);
 
-  //SEARCH
+  // SEARCH BY ID
   const handleSearchById = async () => {
     if (!searchId) return;
     setLoading(true);
@@ -99,35 +105,36 @@ function AdminVendorManagement() {
     fetchVendors(0);
   };
 
-  //UPDATE STATUS
-  const handleUpdateStatus = async (vendorID, newStatus) => {
+  // MODAL LOGIC
+  const openReasonModal = (vendorID, nextStatus) => {
+    setSelectedVendor(vendorID);
+    setTempStatus(nextStatus);
+    setReason("");
+    setShowModal(true);
+  };
+
+  const handleConfirmStatus = async () => {
+    if (!reason.trim()) {
+      alert("Please provide a reason.");
+      return;
+    }
+    await executeUpdateStatus(selectedVendor, tempStatus, reason);
+    setShowModal(false);
+  };
+
+  // EXECUTE API CALL
+  const executeUpdateStatus = async (vendorID, newStatus, note = "") => {
     try {
-
-      let rejectionNote = "";
-
-      if (newStatus === "REJECTED") {
-        rejectionNote = prompt("Enter rejection reason:");
-        if (!rejectionNote) {
-          setMessage("Rejection reason is required");
-          setMessageType("error");
-          return;
-        }
-      }
-
-      const url =
-        newStatus === "REJECTED"
-          ? `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}&rejectionNote=${encodeURIComponent(rejectionNote)}`
-          : `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}`;
+      const url = note 
+        ? `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}&rejectionNote=${encodeURIComponent(note)}`
+        : `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}`;
 
       const res = await fetch(url, { method: "PUT" });
-
       if (!res.ok) throw new Error("Update failed");
 
       setMessage(`Vendor ${newStatus.toLowerCase()} successfully!`);
       setMessageType("success");
-
       fetchVendors(page);
-
     } catch (err) {
       setMessage(err.message);
       setMessageType("error");
@@ -141,23 +148,14 @@ function AdminVendorManagement() {
       padding: "40px 20px",
       backgroundColor: colors.bg,
       minHeight: "100vh",
-      color: colors.textMain
+      color: colors.textMain,
+      position: "relative"
     }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-
         <h2 style={{ marginBottom: "20px" }}>Vendor Management</h2>
 
         {/* FILTER BAR */}
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
-          marginBottom: "20px",
-          backgroundColor: colors.card,
-          padding: "15px",
-          borderRadius: "12px",
-          border: `1px solid ${colors.border}`
-        }}>
+        <div style={filterBarStyle(colors)}>
           <select value={status} onChange={e => setStatus(e.target.value)} style={selectStyle}>
             <option value="">All Status</option>
             <option value="PENDING">PENDING</option>
@@ -183,9 +181,7 @@ function AdminVendorManagement() {
             <option value="desc">DESC</option>
           </select>
 
-          <button onClick={() => fetchVendors(0)} style={btnPrimary}>
-            Apply
-          </button>
+          <button onClick={() => fetchVendors(0)} style={btnPrimary}>Apply</button>
 
           <div style={{ flexGrow: 1 }}></div>
 
@@ -196,36 +192,17 @@ function AdminVendorManagement() {
             onChange={e => setSearchId(e.target.value)}
             style={{ ...selectStyle, width: "120px" }}
           />
-
-          <button onClick={handleSearchById} style={btnSecondary}>
-            Search
-          </button>
-
-          <button onClick={handleReset} style={{ ...btnSecondary, color: colors.error }}>
-            Reset
-          </button>
+          <button onClick={handleSearchById} style={btnSecondary}>Search</button>
+          <button onClick={handleReset} style={{ ...btnSecondary, color: colors.error }}>Reset</button>
         </div>
 
         {/* MESSAGE */}
         {message && (
-          <div style={{
-            padding: "12px 16px",
-            marginBottom: "15px",
-            borderRadius: "8px",
-            border: `1px solid ${messageType === "success" ? colors.success : colors.error}`,
-            color: messageType === "success" ? colors.success : colors.error
-          }}>
-            {message}
-          </div>
+          <div style={messageStyle(messageType, colors)}>{message}</div>
         )}
 
         {/* TABLE */}
-        <div style={{
-          backgroundColor: colors.card,
-          borderRadius: "16px",
-          overflow: "hidden",
-          border: `1px solid ${colors.border}`
-        }}>
+        <div style={tableContainerStyle(colors)}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${colors.border}` }}>
@@ -233,185 +210,141 @@ function AdminVendorManagement() {
                 <th style={thStyle}>Company</th>
                 <th style={thStyle}>Full Name</th>
                 <th style={thStyle}>Type</th>
-                <th style={thStyle}>User ID</th>
                 <th style={thStyle}>Status</th>
-                <th style={thStyle}>Identification Doc</th>
-                <th style={thStyle}>Rejection Note</th>
+                <th style={thStyle}>Docs</th>
+                <th style={thStyle}>Note</th>
                 <th style={thStyle}>Actions</th>
               </tr>
             </thead>
-
             <tbody>
               {vendors.map(vendor => {
-                const style = statusStyle(vendor.status);
+                const sStyle = statusStyle(vendor.status);
                 return (
-                  <tr key={vendor.vendorID}
-                    style={{ borderBottom: `1px solid ${colors.border}` }}>
+                  <tr key={vendor.vendorID} style={{ borderBottom: `1px solid ${colors.border}` }}>
                     <td style={tdStyle}>{vendor.vendorID}</td>
                     <td style={tdStyle}>{vendor.companyName || "—"}</td>
                     <td style={tdStyle}>{vendor.user?.fullName || "N/A"}</td>
                     <td style={tdStyle}>{vendor.type}</td>
-                    <td style={tdStyle}>{vendor.user?.userID}</td>
                     <td style={tdStyle}>
-                      <span style={{
-                        padding: "4px 10px",
-                        borderRadius: "6px",
-                        fontSize: "11px",
-                        fontWeight: "700",
-                        backgroundColor: style.bg,
-                        color: style.color,
-                        border: `1px solid ${style.color}`
-                      }}>
-                        {vendor.status}
-                      </span>
+                      <span style={badgeStyle(sStyle)}>{vendor.status}</span>
                     </td>
                     <td style={tdStyle}>
                       {vendor.identificationDoc ? (
-                        <a
-                          href={vendor.identificationDoc}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            color: colors.accent,
-                            textDecoration: "underline",
-                            fontWeight: "600",
-                            cursor: "pointer"
-                          }}
-                        >
-                          View here
-                        </a>
+                        <a href={vendor.identificationDoc} target="_blank" rel="noreferrer" style={{ color: colors.accent }}>View</a>
                       ) : "—"}
                     </td>
                     <td style={tdStyle}>{vendor.rejectionNote || "—"}</td>
                     <td style={tdStyle}>
-                      {vendor.status === "PENDING" ? (
-                        <div style={{ display: "flex", gap: "6px" }}>
-                          <button
-                            onClick={() => handleUpdateStatus(vendor.vendorID, "APPROVED")}
-                            style={actionBtn(colors.success)}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleUpdateStatus(vendor.vendorID, "REJECTED")}
-                            style={actionBtn(colors.error)}
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      ) : vendor.status === "APPROVED" ? (
-                        <button
-                          onClick={() => handleUpdateStatus(vendor.vendorID, "SUSPENDED")}
-                          style={actionBtn(colors.warning)}
-                        >
-                          Suspend
-                        </button>
-                      ) : vendor.status === "SUSPENDED" ? (
-                        <button
-                          onClick={() => handleUpdateStatus(vendor.vendorID, "APPROVED")}
-                          style={actionBtn(colors.success)}
-                        >
-                          Unsuspend
-                        </button>
-                      ) : (
-                        <span style={{ color: colors.textMuted }}>Completed</span>
+                      {vendor.status === "PENDING" && (
+                        <>
+                          <button onClick={() => executeUpdateStatus(vendor.vendorID, "APPROVED")} style={actionBtn(colors.success)}>Approve</button>
+                          <button onClick={() => openReasonModal(vendor.vendorID, "REJECTED")} style={actionBtn(colors.error)}>Reject</button>
+                        </>
                       )}
+                      {vendor.status === "APPROVED" && (
+                        <button onClick={() => openReasonModal(vendor.vendorID, "SUSPENDED")} style={actionBtn(colors.warning)}>Suspend</button>
+                      )}
+                      {vendor.status === "SUSPENDED" && (
+                        <button onClick={() => executeUpdateStatus(vendor.vendorID, "APPROVED")} style={actionBtn(colors.success)}>Unsuspend</button>
+                      )}
+                      {vendor.status === "REJECTED" && <span style={{ color: colors.textMuted }}>Rejected</span>}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-
-          {loading && (
-            <div style={{ padding: "40px", textAlign: "center" }}>
-              ⏳ Loading...
-            </div>
-          )}
         </div>
 
         {/* PAGINATION */}
         {!loading && totalPages > 1 && (
           <div style={{ marginTop: "20px", textAlign: "center" }}>
-            <button
-              disabled={page === 0}
-              onClick={() => fetchVendors(page - 1)}
-              style={btnSecondary}
-            >
-              Previous
-            </button>
-
-            <span style={{ margin: "0 15px" }}>
-              Page {page + 1} / {totalPages}
-            </span>
-
-            <button
-              disabled={page + 1 === totalPages}
-              onClick={() => fetchVendors(page + 1)}
-              style={btnSecondary}
-            >
-              Next
-            </button>
+            <button disabled={page === 0} onClick={() => fetchVendors(page - 1)} style={btnSecondary}>Prev</button>
+            <span style={{ margin: "0 15px" }}>{page + 1} / {totalPages}</span>
+            <button disabled={page + 1 === totalPages} onClick={() => fetchVendors(page + 1)} style={btnSecondary}>Next</button>
           </div>
         )}
       </div>
+
+      {/* REASON MODAL */}
+      {showModal && (
+        <div style={modalOverlayStyle(colors)}>
+          <div style={modalContentStyle(colors)}>
+            <h3 style={{ marginBottom: "10px" }}>Confirm Action</h3>
+            <p style={{ color: colors.textMuted, fontSize: "14px", marginBottom: "15px" }}>
+              Please provide a reason for setting status to <strong>{tempStatus}</strong>:
+            </p>
+            <textarea
+              autoFocus
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Ex: Invalid business license / Violation of terms..."
+              style={textAreaStyle(colors)}
+              rows="4"
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+              <button onClick={() => setShowModal(false)} style={btnSecondary}>Cancel</button>
+              <button 
+                onClick={handleConfirmStatus} 
+                style={{ 
+                  ...btnPrimary, 
+                  backgroundColor: tempStatus === "REJECTED" ? colors.error : colors.warning,
+                  color: "#fff"
+                }}
+              >
+                Confirm {tempStatus}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-const thStyle = {
-  padding: "14px 16px",
-  fontSize: "12px",
-  color: "#94a3b8",
-  textTransform: "uppercase",
-  fontWeight: "600"
-};
-
-const tdStyle = {
-  padding: "14px 16px",
-  fontSize: "14px",
-  color: "#cbd5e1"
-};
-
-const selectStyle = {
-  backgroundColor: "#1e293b",
-  color: "#f8fafc",
-  border: "1px solid #334155",
-  padding: "8px 12px",
-  borderRadius: "6px",
-  fontSize: "13px"
-};
-
-const btnPrimary = {
-  backgroundColor: "#38bdf8",
-  color: "#0f172a",
-  border: "none",
-  padding: "8px 18px",
-  borderRadius: "6px",
-  fontWeight: "600",
-  fontSize: "13px",
-  cursor: "pointer"
-};
-
-const btnSecondary = {
-  backgroundColor: "transparent",
-  color: "#f8fafc",
-  border: "1px solid #334155",
-  padding: "8px 16px",
-  borderRadius: "6px",
-  fontSize: "13px",
-  cursor: "pointer"
-};
-
-const actionBtn = (color) => ({
-  marginRight: "6px",
-  background: "transparent",
-  border: `1px solid ${color}`,
-  color: color,
-  padding: "6px 10px",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontSize: "12px"
+// --- STYLES ---
+const filterBarStyle = (colors) => ({
+  display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px",
+  backgroundColor: colors.card, padding: "15px", borderRadius: "12px", border: `1px solid ${colors.border}`
 });
+
+const tableContainerStyle = (colors) => ({
+  backgroundColor: colors.card, borderRadius: "16px", overflow: "hidden", border: `1px solid ${colors.border}`
+});
+
+const messageStyle = (type, colors) => ({
+  padding: "12px 16px", marginBottom: "15px", borderRadius: "8px",
+  border: `1px solid ${type === "success" ? colors.success : colors.error}`,
+  color: type === "success" ? colors.success : colors.error
+});
+
+const badgeStyle = (sStyle) => ({
+  padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "700",
+  backgroundColor: sStyle.bg, color: sStyle.color, border: `1px solid ${sStyle.color}`
+});
+
+const modalOverlayStyle = (colors) => ({
+  position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+  backgroundColor: colors.modalOverlay, display: "flex", alignItems: "center", justifyContent: "center",
+  zIndex: 1000, backdropFilter: "blur(4px)"
+});
+
+const modalContentStyle = (colors) => ({
+  backgroundColor: colors.card, padding: "30px", borderRadius: "20px",
+  width: "450px", border: `1px solid ${colors.border}`, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)"
+});
+
+const textAreaStyle = (colors) => ({
+  width: "100%", backgroundColor: colors.bg, color: colors.textMain,
+  border: `1px solid ${colors.border}`, borderRadius: "10px", padding: "12px",
+  fontSize: "14px", outline: "none", resize: "none", boxSizing: "border-box"
+});
+
+const thStyle = { padding: "14px 16px", fontSize: "12px", color: "#94a3b8", textTransform: "uppercase", fontWeight: "600", textAlign: "left" };
+const tdStyle = { padding: "14px 16px", fontSize: "14px", color: "#cbd5e1" };
+const selectStyle = { backgroundColor: "#1e293b", color: "#f8fafc", border: "1px solid #334155", padding: "8px 12px", borderRadius: "6px", fontSize: "13px" };
+const btnPrimary = { backgroundColor: "#38bdf8", color: "#0f172a", border: "none", padding: "8px 18px", borderRadius: "6px", fontWeight: "600", cursor: "pointer" };
+const btnSecondary = { backgroundColor: "transparent", color: "#f8fafc", border: "1px solid #334155", padding: "8px 16px", borderRadius: "6px", cursor: "pointer" };
+const actionBtn = (color) => ({ marginRight: "6px", background: "transparent", border: `1px solid ${color}`, color: color, padding: "6px 10px", borderRadius: "6px", cursor: "pointer", fontSize: "12px" });
 
 export default AdminVendorManagement;
