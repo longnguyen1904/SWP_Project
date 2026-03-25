@@ -62,6 +62,9 @@ public class LicenseTierService {
         tier.setTierCode(request.getTierCode());
         licenseTierRepository.save(tier);
 
+        // Auto-update product basePrice = MIN(tier prices)
+        recalculateBasePrice(product);
+
         return toResponse(tier);
     }
 
@@ -104,6 +107,9 @@ public class LicenseTierService {
             tier.setTierCode(request.getTierCode());
         }
         licenseTierRepository.save(tier);
+
+        // Auto-update product basePrice = MIN(tier prices)
+        recalculateBasePrice(tier.getProduct());
 
         return toResponse(tier);
     }
@@ -169,6 +175,20 @@ public class LicenseTierService {
         }
 
         licenseTierRepository.delete(tier);
+
+        // Auto-update product basePrice = MIN(remaining tier prices)
+        recalculateBasePrice(tier.getProduct());
+    }
+
+    /**
+     * Recalculate product.basePrice = MIN(tier prices)
+     */
+    private void recalculateBasePrice(Product product) {
+        java.math.BigDecimal minPrice = licenseTierRepository.findMinPriceByProductId(product.getProductID());
+        if (minPrice != null) {
+            product.setBasePrice(minPrice);
+            productRepository.save(product);
+        }
     }
 
     private Product validateProductOwnership(Integer vendorId, Integer productId) {

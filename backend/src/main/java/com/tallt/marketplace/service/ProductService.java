@@ -903,6 +903,35 @@ public class ProductService {
         // Finally delete Product
         productRepository.delete(product);
     }
+
+    /**
+     * Deactivate product (APPROVED → INACTIVE)
+     * Product is hidden from marketplace but customer data is preserved.
+     */
+    @Transactional
+    public void deactivateProduct(Integer vendorId, Integer productId) {
+        Product product = getProductAndValidateOwner(vendorId, productId);
+        if (product.getStatus() != Product.ProductStatus.APPROVED) {
+            throw new AppException("Only approved products can be deactivated");
+        }
+        product.setStatus(Product.ProductStatus.INACTIVE);
+        productRepository.save(product);
+    }
+
+    /**
+     * Reactivate product (INACTIVE → APPROVED)
+     * Product becomes visible on marketplace again.
+     */
+    @Transactional
+    public void reactivateProduct(Integer vendorId, Integer productId) {
+        Product product = getProductAndValidateOwner(vendorId, productId);
+        if (product.getStatus() != Product.ProductStatus.INACTIVE) {
+            throw new AppException("Only inactive products can be reactivated");
+        }
+        product.setStatus(Product.ProductStatus.APPROVED);
+        productRepository.save(product);
+    }
+
     /**
      * Gửi email thông báo sản phẩm mới cho tất cả followers của vendor.
      * Non-blocking: exception không ảnh hưởng đến luồng approve.

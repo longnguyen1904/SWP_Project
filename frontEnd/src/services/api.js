@@ -51,6 +51,8 @@ export const vendorAPI = {
   getProduct: (productId) => api.get(`/api/vendor/products/${productId}`),
   updateProduct: (productId, data) => api.put(`/api/vendor/products/${productId}`, data),
   deleteProduct: (productId) => api.delete(`/api/vendor/products/${productId}`),
+  deactivateProduct: (productId) => api.put(`/api/vendor/products/${productId}/deactivate`),
+  reactivateProduct: (productId) => api.put(`/api/vendor/products/${productId}/reactivate`),
   uploadProductImage: (productId, imageData) =>
     api.post(`/api/vendor/products/${productId}/images`, imageData),
   deleteProductImage: (productId, imageId) =>

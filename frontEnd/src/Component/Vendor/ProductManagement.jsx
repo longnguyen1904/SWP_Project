@@ -140,11 +140,29 @@ const ProductManagement = () => {
     finally { setLoading(false); }
   };
 
+  const handleToggleActive = async (product) => {
+    const pid = getProductId(product);
+    const isDeactivating = product.status === "APPROVED";
+    if (!window.confirm(isDeactivating
+      ? "Deactivate this product? It will be hidden from the marketplace."
+      : "Reactivate this product? It will be visible on the marketplace again."
+    )) return;
+    setLoading(true); setError("");
+    try {
+      if (isDeactivating) await vendorAPI.deactivateProduct(pid);
+      else await vendorAPI.reactivateProduct(pid);
+      setSuccess(isDeactivating ? "Product deactivated!" : "Product reactivated!");
+      fetchProducts();
+    } catch (err) { setError(err.response?.data?.message || "Operation failed"); }
+    finally { setLoading(false); }
+  };
+
   const statusBadge = (status) => {
     switch (status) {
       case "APPROVED": return "badge-success";
       case "PENDING": return "badge-warning";
       case "REJECTED": return "badge-error";
+      case "INACTIVE": return "badge-default";
       default: return "badge-default";
     }
   };
@@ -155,6 +173,7 @@ const ProductManagement = () => {
       case "PENDING": return "Pending Review";
       case "REJECTED": return "Rejected";
       case "DRAFT": return "Draft";
+      case "INACTIVE": return "Inactive";
       default: return status ?? "";
     }
   };
@@ -225,7 +244,12 @@ const ProductManagement = () => {
                     {(product.status === "DRAFT" || product.status === "REJECTED") ? (
                       <button className="btn btn-primary btn-sm" onClick={() => navigate(`/Page/Vendor/ProductUpload?productId=${pid}`)}>Resume</button>
                     ) : product.status === "APPROVED" ? (
-                      <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(product)}>Edit</button>
+                      <>
+                        <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(product)}>Edit</button>
+                        <button className="btn btn-warning btn-sm" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24", border: "1px solid transparent" }} onClick={() => handleToggleActive(product)}>Deactivate</button>
+                      </>
+                    ) : product.status === "INACTIVE" ? (
+                      <button className="btn btn-primary btn-sm" onClick={() => handleToggleActive(product)}>Reactivate</button>
                     ) : null}
                     <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(product)}
                       disabled={product.status === "PENDING" || product.status === "APPROVED"}>Delete</button>

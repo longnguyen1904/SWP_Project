@@ -167,6 +167,32 @@ public class VendorProductController {
     }
 
     /**
+     * Deactivate product (stop selling)
+     * PUT /api/vendor/products/{productId}/deactivate
+     */
+    @PutMapping("/products/{productId}/deactivate")
+    public ResponseEntity<ApiResponse<Void>> deactivateProduct(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        productService.deactivateProduct(vendor.getVendorID(), productId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /**
+     * Reactivate product (resume selling)
+     * PUT /api/vendor/products/{productId}/reactivate
+     */
+    @PutMapping("/products/{productId}/reactivate")
+    public ResponseEntity<ApiResponse<Void>> reactivateProduct(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        productService.reactivateProduct(vendor.getVendorID(), productId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /**
      * Lấy chi tiết sản phẩm của Vendor (mọi status)
      * GET /api/vendor/products/{productId}
      */
