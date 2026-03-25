@@ -37,6 +37,8 @@ import CouponManagement from "./Page/CouponManagement";
 import VendorWallet from "./Page/VendorWallet.jsx";
 import HelpCenter from "./Page/HelpCenter.jsx";
 import ChatbotWidget from "./Component/ChatbotWidget.jsx";
+import FollowedVendors from "./Page/FollowedVendors";
+
 export default function App() {
   return (
     <div className="app snow">
