@@ -34,6 +34,8 @@ import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
 import TransactionLedger from "./Page/TransactionLedger.jsx";
 import CouponManagement from "./Page/CouponManagement";
 import VendorWallet from "./Page/VendorWallet.jsx";
+import HelpCenter from "./Page/HelpCenter.jsx";
+import ChatbotWidget from "./Component/ChatbotWidget.jsx";
 export default function App() {
   return (
     <div className="app snow">
@@ -53,6 +55,7 @@ export default function App() {
           <Route path="Profile" element={<ProfilePage />} />
           <Route path="CustomerTicketManagement" element={<CustomerTicketManagement />} />
           <Route path="CreateSupportTicket" element={<CreateSupportTicketWizard />} />
+          <Route path="HelpCenter" element={<HelpCenter />} />
         </Route>
 
 
@@ -89,7 +92,7 @@ export default function App() {
         <Route path="/payment-result" element={<PaymentResult />} />
         <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
       </Routes>
-
+      <ChatbotWidget />
     </div>
   );
 }
