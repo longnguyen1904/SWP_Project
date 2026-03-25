@@ -174,25 +174,28 @@ public class AdminReviewService {
                 List<VendorFollower> followers = followerRepository.findByVendor_VendorID(product.getVendor().getVendorID());
                 if (followers.isEmpty()) return;
 
-                String vendorName = product.getVendor().getCompanyName() != null ? product.getVendor().getCompanyName() : "Một Vendor";
+                String vendorName = product.getVendor().getCompanyName() != null
+                        ? product.getVendor().getCompanyName() : "A Vendor";
                 String productUrl = frontendBaseUrl + "/products/" + product.getProductID();
+
+                String subject = "New Product from " + vendorName + "!";
+                String title = "New Product Available";
+                String body = "<p>Hello,</p>"
+                        + "<p>Vendor <strong>" + vendorName + "</strong> that you follow has published a new product: "
+                        + "<strong>" + product.getProductName() + "</strong>.</p>"
+                        + "<p style='text-align:center;margin:24px 0;'>"
+                        + "<a href='" + productUrl + "' "
+                        + "style='display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);"
+                        + "color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;"
+                        + "font-size:16px;font-weight:600;'>View Product →</a></p>";
 
                 for (VendorFollower follower : followers) {
                         if (follower.getUser() != null && follower.getUser().getEmail() != null) {
-                                String userEmail = follower.getUser().getEmail();
-                                String subject = "Sản phẩm mới từ " + vendorName + "!";
-                                String body = "<html><body>"
-                                                + "<h2>Chào bạn,</h2>"
-                                                + "<p>Vendor <strong>" + vendorName + "</strong> mà bạn theo dõi vừa đăng tải sản phẩm mới: <strong>" + product.getProductName() + "</strong>.</p>"
-                                                + "<p>Hãy xem ngay tại đây: <a href='" + productUrl + "'>Xem sản phẩm</a></p>"
-                                                + "<br><p>Cảm ơn bạn đã đồng hành cùng chúng tôi!</p>"
-                                                + "</body></html>";
-                                
                                 try {
-                                        emailService.sendEmail(userEmail, subject, "Sản phẩm mới!", body);
-                                        System.out.println("[FollowerNotify] Đã gửi email cho " + userEmail);
+                                        emailService.sendEmail(follower.getUser().getEmail(), subject, title, body);
                                 } catch (Exception e) {
-                                        System.err.println("[FollowerNotify] Lỗi gửi email cho " + userEmail + ": " + e.getMessage());
+                                        System.err.println("[FollowerNotify] Failed to send email to "
+                                                + follower.getUser().getEmail() + ": " + e.getMessage());
                                 }
                         }
                 }

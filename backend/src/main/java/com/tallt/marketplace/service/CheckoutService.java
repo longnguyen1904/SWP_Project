@@ -90,6 +90,13 @@ public class CheckoutService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("Người dùng không tồn tại"));
 
+        // Prevent vendor from purchasing their own product
+        if (product.getVendor() != null
+                && product.getVendor().getUser() != null
+                && product.getVendor().getUser().getUserID().equals(userId)) {
+            throw new AppException("You cannot purchase your own product");
+        }
+
         // Kiểm tra License còn hiệu lực (check bảng Licenses, KHÔNG check Orders)
         String warning = null;
         boolean hasActiveLicense = licenseRepository
@@ -129,12 +136,12 @@ public class CheckoutService {
         order.setPaymentStatus(STATUS_PENDING);
         order.setCreatedAt(LocalDateTime.now());
 
-        orderRepository.save(order);
-
-        // Tăng lượt sử dụng coupon
+        // Save coupon code on order for deferred usage after payment
         if (couponCode != null && !couponCode.trim().isEmpty()) {
-            couponService.useCoupon(couponCode);
+            order.setCouponCode(couponCode.trim());
         }
+
+        orderRepository.save(order);
 
         // Tạo URL thanh toán VNPay
         String paymentUrl = vnPayService.createPaymentUrl(order, ipAddress);
@@ -182,6 +189,14 @@ public class CheckoutService {
 
             createLicense(order);
             creditAdminWallet(order);
+
+            // Only increment coupon usage after confirmed payment
+            if (order.getCouponCode() != null && !order.getCouponCode().isEmpty()) {
+                try {
+                    couponService.useCoupon(order.getCouponCode());
+                } catch (Exception ignored) {
+                }
+            }
 
             return true;
         } else {

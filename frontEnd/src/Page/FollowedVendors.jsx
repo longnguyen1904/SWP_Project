@@ -54,7 +54,7 @@ export default function FollowedVendors() {
       await customerAPI.followVendor(vendorId);
       setVendors((prev) => prev.filter((v) => v.vendorId !== vendorId));
     } catch {
-      alert("Không thể bỏ theo dõi. Vui lòng thử lại.");
+      alert("Unable to unfollow. Please try again.");
     } finally {
       setUnfollowingIds((prev) => {
         const next = new Set(prev);
@@ -67,7 +67,7 @@ export default function FollowedVendors() {
   if (loading) {
     return (
       <div className="wishlist-page">
-        <h2 className="wishlist-page__title">Vendor đang theo dõi</h2>
+        <h2 className="wishlist-page__title">Followed Vendors</h2>
         <div className="wishlist-page__loading">
           <div className="spinner"></div>
         </div>
@@ -78,7 +78,7 @@ export default function FollowedVendors() {
   return (
     <div className="wishlist-page">
       <h2 className="wishlist-page__title">
-        Vendor đang theo dõi
+        Followed Vendors
         {vendors.length > 0 && (
           <span className="wishlist-page__count">{vendors.length}</span>
         )}
@@ -104,16 +104,16 @@ export default function FollowedVendors() {
       {vendors.length === 0 ? (
         <div className="wishlist-page__empty">
           <div className="wishlist-page__empty-icon">👥</div>
-          <p>Bạn chưa theo dõi vendor nào.</p>
+          <p>You are not following any vendors yet.</p>
           <button className="btn btn--primary" onClick={() => navigate("/marketplace")}>
-            Khám phá Marketplace
+            Explore Marketplace
           </button>
         </div>
       ) : filteredVendors.length === 0 ? (
         <div className="wishlist-page__empty">
-          <p>Không tìm thấy vendor phù hợp.</p>
+          <p>No matching vendors found.</p>
           <button className="btn btn--outline" onClick={() => setSearchQuery("")}>
-            Xóa bộ lọc
+            Clear filter
           </button>
         </div>
       ) : (
@@ -123,8 +123,8 @@ export default function FollowedVendors() {
               <tr>
                 <th style={{ width: 60 }}></th>
                 <th>Vendor</th>
-                <th>Loại</th>
-                <th>Ngày theo dõi</th>
+                <th>Type</th>
+                <th>Followed Since</th>
                 <th></th>
               </tr>
             </thead>
@@ -162,11 +162,11 @@ export default function FollowedVendors() {
                       </span>
                     </td>
                     <td className="wishlist-table__category">
-                      {v.type === "COMPANY" ? "Doanh nghiệp" : "Cá nhân"}
+                      {v.type === "COMPANY" ? "Company" : "Individual"}
                     </td>
                     <td className="wishlist-table__category">
                       {v.followedAt
-                        ? new Date(v.followedAt).toLocaleDateString("vi-VN")
+                        ? new Date(v.followedAt).toLocaleDateString("en-US")
                         : "—"}
                     </td>
                     <td>
@@ -175,7 +175,7 @@ export default function FollowedVendors() {
                         onClick={() => handleUnfollow(v.vendorId)}
                         disabled={isRemoving}
                       >
-                        {isRemoving ? "..." : "Bỏ theo dõi"}
+                        {isRemoving ? "..." : "Unfollow"}
                       </button>
                     </td>
                   </tr>

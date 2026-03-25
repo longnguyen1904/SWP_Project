@@ -26,13 +26,17 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
     let timer;
     if (lockoutTimeLeft > 0) {
       timer = setInterval(() => {
-        setLockoutTimeLeft((prev) => prev - 1);
+        setLockoutTimeLeft((prev) => {
+          if (prev <= 1) {
+            setLoginError("");
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (lockoutTimeLeft === 0 && loginError.includes("bị khóa")) {
-      setLoginError("");
     }
     return () => clearInterval(timer);
-  }, [lockoutTimeLeft, loginError]);
+  }, [lockoutTimeLeft]);
 
   useEffect(() => {
     if (getToken()) ref?.current?.close();
@@ -41,6 +45,8 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (loginError) setLoginError("");
+    if (lockoutTimeLeft > 0) setLockoutTimeLeft(0);
   };
 
   const handleSubmit = async (e) => {
@@ -60,11 +66,20 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
       navigate("/");
     } catch (err) {
       console.error(err);
-      const msg = getApiErrorMessage(err, "Invalid email or password");
+      let msg = getApiErrorMessage(err, "Invalid email or password");
+      
+      // Ensure backend Vietnamese messages are translated
+      if (msg.includes("trước khi bị khóa") || msg.includes("lần thử")) {
+        const match = msg.match(/\d+/);
+        msg = match ? `Incorrect password. ${match[0]} attempts remaining.` : "Invalid email or password.";
+      } else if (msg === "Tài khoản không tồn tại" || msg.includes("Sai mật khẩu")) {
+        if (!msg.includes("bị khóa")) msg = "Invalid email or password.";
+      }
+
       setLoginError(msg);
 
-      const lockMatch = msg.match(/(\d+)\s*phút/i);
-      if (msg.toLowerCase().includes("bị khóa") && lockMatch) {
+      const lockMatch = msg.match(/(\d+)\s*(phút|minutes?)/i);
+      if ((msg.toLowerCase().includes("bị khóa") || msg.toLowerCase().includes("locked")) && lockMatch) {
         const minutes = parseInt(lockMatch[1], 10);
         setLockoutTimeLeft(minutes * 60);
       } else {
@@ -82,30 +97,30 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
 
   /* ===== Forgot Password: Step 1 – Send OTP ===== */
   const handleSendOtp = async () => {
-    if (!forgotEmail.trim()) { setForgotError("Vui lòng nhập email"); return; }
+    if (!forgotEmail.trim()) { setForgotError("Please enter your email"); return; }
     setForgotLoading(true); setForgotError(""); setForgotMessage("");
     try {
       await authAPI.forgotPassword(forgotEmail.trim());
-      setForgotMessage("Mã OTP đã được gửi đến email của bạn.");
+      setForgotMessage("OTP has been sent to your email.");
       setForgotStep(2);
     } catch (err) {
-      setForgotError(err.response?.data?.message || "Không thể gửi OTP.");
+      setForgotError(err.response?.data?.message || "Failed to send OTP.");
     } finally { setForgotLoading(false); }
   };
 
   /* ===== Forgot Password: Step 2 – Verify OTP + Reset ===== */
   const handleVerifyOtp = async () => {
-    if (!forgotOtp.trim()) { setForgotError("Vui lòng nhập mã OTP"); return; }
-    if (!forgotNewPassword) { setForgotError("Vui lòng nhập mật khẩu mới"); return; }
-    if (forgotNewPassword.length < 6) { setForgotError("Mật khẩu phải có ít nhất 6 ký tự"); return; }
-    if (forgotNewPassword !== forgotConfirmPassword) { setForgotError("Xác nhận mật khẩu không khớp"); return; }
+    if (!forgotOtp.trim()) { setForgotError("Please enter the OTP"); return; }
+    if (!forgotNewPassword) { setForgotError("Please enter a new password"); return; }
+    if (forgotNewPassword.length < 6) { setForgotError("Password must be at least 6 characters"); return; }
+    if (forgotNewPassword !== forgotConfirmPassword) { setForgotError("Passwords do not match"); return; }
     setForgotLoading(true); setForgotError(""); setForgotMessage("");
     try {
       await authAPI.verifyOtpAndResetPassword(forgotEmail.trim(), forgotOtp.trim(), forgotNewPassword);
-      setForgotMessage("Đặt lại mật khẩu thành công!");
+      setForgotMessage("Password reset successful!");
       setTimeout(() => resetForgotState(), 2000);
     } catch (err) {
-      setForgotError(err.response?.data?.message || "Xác minh OTP thất bại.");
+      setForgotError(err.response?.data?.message || "Failed to verify OTP.");
     } finally { setForgotLoading(false); }
   };
 
@@ -121,9 +136,9 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
       <dialog ref={ref} className="result-modal">
         <form method="dialog"><button className="close-btn" onClick={resetForgotState}>✕</button></form>
         <div className="login-form">
-          <h2>Quên mật khẩu</h2>
+          <h2>Forgot Password</h2>
           <p className="subtitle">
-            {forgotStep === 1 ? "Nhập email để nhận mã OTP" : "Nhập mã OTP và mật khẩu mới"}
+            {forgotStep === 1 ? "Enter your email to receive an OTP" : "Enter the OTP and your new password"}
           </p>
 
           {forgotError && <div className="forgot-alert forgot-alert-error">{forgotError}</div>}
@@ -137,7 +152,7 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
                   onChange={(e) => setForgotEmail(e.target.value)} required />
               </div>
               <button className="login-btn" type="button" onClick={handleSendOtp} disabled={forgotLoading}>
-                {forgotLoading ? "Đang gửi..." : "Gửi mã OTP"}
+                {forgotLoading ? "Sending..." : "Send OTP"}
               </button>
             </>
           )}
@@ -145,33 +160,33 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
           {forgotStep === 2 && (
             <>
               <div className="form-group">
-                <label>Mã OTP</label>
-                <input type="text" placeholder="Nhập 6 số OTP" value={forgotOtp}
+                <label>OTP Code</label>
+                <input type="text" placeholder="Enter 6-digit OTP" value={forgotOtp}
                   onChange={(e) => setForgotOtp(e.target.value)} maxLength={6} required />
               </div>
               <div className="form-group">
-                <label>Mật khẩu mới</label>
+                <label>New Password</label>
                 <input type="password" placeholder="••••••••" value={forgotNewPassword}
                   onChange={(e) => setForgotNewPassword(e.target.value)} required />
                 {forgotNewPassword && forgotNewPassword.length < 6 && (
-                  <span style={{ color: "#ff6b6b", fontSize: "0.8rem" }}>Tối thiểu 6 ký tự</span>
+                  <span style={{ color: "#ff6b6b", fontSize: "0.8rem" }}>At least 6 characters</span>
                 )}
               </div>
               <div className="form-group">
-                <label>Xác nhận mật khẩu</label>
+                <label>Confirm Password</label>
                 <input type="password" placeholder="••••••••" value={forgotConfirmPassword}
                   onChange={(e) => setForgotConfirmPassword(e.target.value)} required />
                 {forgotConfirmPassword && forgotConfirmPassword !== forgotNewPassword && (
-                  <span style={{ color: "#ff6b6b", fontSize: "0.8rem" }}>Mật khẩu không khớp</span>
+                  <span style={{ color: "#ff6b6b", fontSize: "0.8rem" }}>Passwords do not match</span>
                 )}
               </div>
               <button className="login-btn" type="button" onClick={handleVerifyOtp} disabled={forgotLoading}>
-                {forgotLoading ? "Đang xác minh..." : "Đặt lại mật khẩu"}
+                {forgotLoading ? "Verifying..." : "Reset Password"}
               </button>
               <p className="footer-text">
                 <span onClick={() => { setForgotStep(1); setForgotError(""); setForgotMessage(""); }}
                   style={{ cursor: "pointer", color: "#1a1a2e", fontWeight: "bold", fontSize: "0.85rem", textDecoration: "underline" }}>
-                  ← Gửi lại OTP
+                  ← Resend OTP
                 </span>
               </p>
             </>
@@ -180,7 +195,7 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
           <p className="footer-text">
             <span onClick={resetForgotState}
               style={{ cursor: "pointer", color: "#1a1a2e", fontWeight: "bold", textDecoration: "underline" }}>
-              ← Quay lại đăng nhập
+              ← Back to Login
             </span>
           </p>
         </div>
@@ -196,13 +211,7 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
         <h2>Welcome Back</h2>
         <p className="subtitle">Login to your account</p>
 
-        {loginError && (
-          <div className="login-alert-error">
-            {lockoutTimeLeft > 0 
-              ? `Tài khoản bị khoá. Thử lại sau ${Math.floor(lockoutTimeLeft / 60).toString().padStart(2, '0')}:${(lockoutTimeLeft % 60).toString().padStart(2, '0')}` 
-              : loginError}
-          </div>
-        )}
+
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -214,17 +223,24 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
             <label>Password</label>
             <input type="password" name="password" placeholder="••••••••"
               value={formData.password} onChange={handleChange} required />
+            {loginError && (
+              <div className="login-alert-error">
+                {lockoutTimeLeft > 0 
+                  ? `Account locked. Try again in ${Math.floor(lockoutTimeLeft / 60).toString().padStart(2, '0')}:${(lockoutTimeLeft % 60).toString().padStart(2, '0')}` 
+                  : loginError}
+              </div>
+            )}
           </div>
 
           <p className="forgot-password-link">
             <span onClick={() => setShowForgot(true)}
               style={{ cursor: "pointer", color: "white", fontWeight: "bold", fontSize: "0.9rem", textDecoration: "underline" }}>
-              Quên mật khẩu?
+              Forgot password?
             </span>
           </p>
 
           <button className="login-btn" type="submit" disabled={lockoutTimeLeft > 0}>
-            {lockoutTimeLeft > 0 ? "Bị khoá..." : "Log In"}
+            {lockoutTimeLeft > 0 ? "Locked..." : "Log In"}
           </button>
         </form>
 

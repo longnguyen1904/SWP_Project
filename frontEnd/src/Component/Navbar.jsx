@@ -53,7 +53,14 @@ export default function Navbar() {
       setRole(getRole());
     };
     window.addEventListener("authChanged", updateAuth);
-    return () => window.removeEventListener("authChanged", updateAuth);
+    
+    const handleOpenLogin = () => loginDialog.current?.showModal();
+    window.addEventListener("openLoginModal", handleOpenLogin);
+
+    return () => {
+      window.removeEventListener("authChanged", updateAuth);
+      window.removeEventListener("openLoginModal", handleOpenLogin);
+    };
   }, []);
 
   return (

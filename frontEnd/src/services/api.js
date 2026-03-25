@@ -131,6 +131,12 @@ export const customerAPI = {
     api.get(`/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`),
   getCouponsForProduct: (productId) =>
     api.get(`/api/coupons/product/${productId}`),
+  followVendor: (vendorId) =>
+    api.post(`/api/vendors/${vendorId}/follow`),
+  checkFollowVendor: (vendorId) =>
+    api.get(`/api/vendors/${vendorId}/follow/check`),
+  getMyFollowedVendors: () =>
+    api.get("/api/follow/my-vendors"),
 };
 
 export const couponAPI = {

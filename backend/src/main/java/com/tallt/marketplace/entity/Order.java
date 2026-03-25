@@ -54,5 +54,8 @@ public class Order {
     @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "CouponCode")
+    private String couponCode;
+
     
 }

@@ -6,7 +6,6 @@ import ReviewSection from "../Component/Customer/ReviewSection";
 import RelatedProducts from "../Component/Customer/RelatedProducts";
 import CheckoutModal from "../Component/Customer/CheckoutModal";
 import WishlistButton from "../Component/Customer/WishlistButton";
-import { saveRecentlyViewed } from "../Component/Customer/RecentlyViewed";
 import useProductDetail from "../services/useProductDetail";
 import { customerAPI } from "../services/api";
 import { unwrapResponse } from "../services/apiHelpers";
@@ -43,10 +42,6 @@ const ProductDetail = () => {
     latestVersion,
     refetchReviewsAndProduct,
   } = useProductDetail(productId);
-
-  useEffect(() => {
-    if (product) saveRecentlyViewed(product);
-  }, [product]);
 
   useEffect(() => {
     if (productId) {

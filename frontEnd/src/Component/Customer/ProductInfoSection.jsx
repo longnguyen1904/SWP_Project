@@ -1,13 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import StarRating from "./StarRating";
-import WishlistButton from "./WishlistButton";
 import { formatPrice } from "../../services/formatters";
 import { customerAPI } from "../../services/api";
 
 const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, latestVersion }) => {
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [trialLoading, setTrialLoading] = useState(false);
+  const [wished, setWished] = useState(false);
+  const [wishBusy, setWishBusy] = useState(false);
+
+  useEffect(() => {
+    if (!productId) return;
+    let cancelled = false;
+    customerAPI.checkWishlist(productId)
+      .then((res) => {
+        if (cancelled) return;
+        const data = res?.data?.data ?? res?.data;
+        setWished(Boolean(data));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [productId]);
 
   if (!product) return null;
 
@@ -15,6 +29,19 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, lates
   const selectedTier = tiers[selectedTierIndex] ?? null;
 
   const handleBuyClick = () => {
+    const user = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("user") || "{}");
+      } catch {
+        return {};
+      }
+    })();
+
+    if (!user.userID && !user.userId) {
+      alert("You are not logged in. Please log in to complete this purchase.");
+      return;
+    }
+
     if (onBuyNow && selectedTier) {
       onBuyNow(selectedTier);
     }
@@ -29,7 +56,7 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, lates
       }
     })();
     if (!user.userID && !user.userId) {
-      alert("Please log in to start a trial.");
+      alert("You are not logged in. Please log in to start a trial.");
       return;
     }
 
@@ -100,7 +127,6 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, lates
 
       {latestVersion && (
         <div className="product-info__version">
-          <span className="product-info__version-icon">📦</span>
           <span className="product-info__version-badge">
             v{latestVersion.versionNumber}
           </span>
@@ -120,9 +146,29 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, lates
       <div className="product-info__divider" />
 
       {/* ── Section 3: Price & Purchase ── */}
-      <div className="product-info__price-row">
-        <p className="product-info__price">{formatPrice(product.basePrice)}</p>
-        {productId && <WishlistButton productId={productId} size={26} />}
+      <div className="product-info__price-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '24px' }}>
+        <p className="product-info__price" style={{ margin: 0 }}>{formatPrice(product.basePrice)}</p>
+        {productId && (
+          <button
+            className="btn btn--outline"
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (wishBusy) return;
+              setWished(prev => !prev);
+              setWishBusy(true);
+              try {
+                await customerAPI.toggleWishlist(productId);
+              } catch {
+                setWished(prev => !prev);
+              } finally {
+                setWishBusy(false);
+              }
+            }}
+            disabled={wishBusy}
+          >
+            {wished ? "Remove from Wishlist" : "Add to Wishlist"}
+          </button>
+        )}
       </div>
 
       {tiers.length > 0 && (
