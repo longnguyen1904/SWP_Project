@@ -17,8 +17,22 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMessage, setForgotMessage] = useState("");
   const [forgotError, setForgotError] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
 
   const [formData, setFormData] = useState({ email: "", password: "" });
+
+  useEffect(() => {
+    let timer;
+    if (lockoutTimeLeft > 0) {
+      timer = setInterval(() => {
+        setLockoutTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (lockoutTimeLeft === 0 && loginError.includes("bị khóa")) {
+      setLoginError("");
+    }
+    return () => clearInterval(timer);
+  }, [lockoutTimeLeft, loginError]);
 
   useEffect(() => {
     if (getToken()) ref?.current?.close();
@@ -46,7 +60,16 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
       navigate("/");
     } catch (err) {
       console.error(err);
-      alert(getApiErrorMessage(err, "Invalid email or password"));
+      const msg = getApiErrorMessage(err, "Invalid email or password");
+      setLoginError(msg);
+
+      const lockMatch = msg.match(/(\d+)\s*phút/i);
+      if (msg.toLowerCase().includes("bị khóa") && lockMatch) {
+        const minutes = parseInt(lockMatch[1], 10);
+        setLockoutTimeLeft(minutes * 60);
+      } else {
+        setLockoutTimeLeft(0);
+      }
     }
   };
 
@@ -173,6 +196,14 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
         <h2>Welcome Back</h2>
         <p className="subtitle">Login to your account</p>
 
+        {loginError && (
+          <div className="login-alert-error">
+            {lockoutTimeLeft > 0 
+              ? `Tài khoản bị khoá. Thử lại sau ${Math.floor(lockoutTimeLeft / 60).toString().padStart(2, '0')}:${(lockoutTimeLeft % 60).toString().padStart(2, '0')}` 
+              : loginError}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email</label>
@@ -192,7 +223,9 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
             </span>
           </p>
 
-          <button className="login-btn" type="submit">Log In</button>
+          <button className="login-btn" type="submit" disabled={lockoutTimeLeft > 0}>
+            {lockoutTimeLeft > 0 ? "Bị khoá..." : "Log In"}
+          </button>
         </form>
 
         <button type="button" className="google-btn" onClick={handleGoogleLogin}>
