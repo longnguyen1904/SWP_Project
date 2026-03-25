@@ -8,6 +8,8 @@ import com.tallt.marketplace.entity.LicenseTier;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.LicenseTierRepository;
+import com.tallt.marketplace.repository.LicenseRepository;
+import com.tallt.marketplace.repository.OrderRepository;
 import com.tallt.marketplace.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -28,6 +30,12 @@ public class LicenseTierService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private LicenseRepository licenseRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     /**
      * Create License Tier for product
@@ -139,11 +147,25 @@ public class LicenseTierService {
     @Transactional
     public void deleteLicenseTier(Integer vendorId, Integer tierId) {
         LicenseTier tier = licenseTierRepository.findById(tierId)
-                .orElseThrow(() -> new AppException("License Tier không tồn tại"));
+                .orElseThrow(() -> new AppException("License Tier does not exist"));
 
         // Check Vendor is the owner of the product
         if (!tier.getProduct().getVendor().getVendorID().equals(vendorId)) {
             throw new AppException("You do not have permission to perform this action on this license tier");
+        }
+
+        // Check for active licenses or orders referencing this tier
+        boolean hasLicenses = licenseRepository.existsByTier_TierID(tierId);
+        boolean hasOrders = orderRepository.existsByTier_TierID(tierId);
+        if (hasLicenses || hasOrders) {
+            throw new AppException("Cannot delete this tier because it has active licenses or orders.");
+        }
+
+        // Check minimum tier count
+        Integer productId = tier.getProduct().getProductID();
+        long tierCount = licenseTierRepository.countByProduct_ProductID(productId);
+        if (tierCount <= 1) {
+            throw new AppException("Cannot delete the last license tier. A product must have at least one tier.");
         }
 
         licenseTierRepository.delete(tier);

@@ -136,6 +136,12 @@ public class ProductService {
     public Map<String, Object> uploadProductImage(Integer vendorId, Integer productId, ProductImageRequest request) {
         Product product = getProductAndValidateOwner(vendorId, productId);
 
+        // Check max 10 images per product
+        long imageCount = productImageRepository.findByProduct_ProductIDOrderBySortOrderAsc(productId).size();
+        if (imageCount >= 10) {
+            throw new AppException("Maximum 10 images per product. Please delete existing images first.");
+        }
+
         ProductImage image = new ProductImage();
         image.setProduct(product);
         image.setImageUrl(request.getImageUrl());
@@ -871,11 +877,17 @@ public class ProductService {
     @Transactional
     public void deleteProduct(Integer vendorId, Integer productId) {
         Product product = getProductAndValidateOwner(vendorId, productId);
+
+        // Block deletion if product has completed orders (protects customer purchases)
+        long completedOrders = orderRepository.countCompletedByProductId(productId);
+        if (completedOrders > 0) {
+            throw new AppException("Cannot delete product with " + completedOrders + " completed order(s). Customers have already purchased this product.");
+        }
         
-        // Xóa các bản ghi con theo đúng thứ tự FK
-        // 1. License (tham chiếu Order + Product + LicenseTier)
+        // Delete child records in FK order
+        // 1. License (references Order + Product + LicenseTier)
         licenseRepository.deleteByProduct_ProductID(productId);
-        // 2. Order (tham chiếu Product + LicenseTier)
+        // 2. Order (references Product + LicenseTier)
         orderRepository.deleteByProduct_ProductID(productId);
         // 3. Review
         reviewRepository.deleteByProduct_ProductID(productId);
@@ -885,10 +897,10 @@ public class ProductService {
         productImageRepository.deleteByProduct_ProductID(productId);
         // 6. ProductVersion
         productVersionRepository.deleteByProduct_ProductID(productId);
-        // 7. LicenseTier (sau khi License + Order đã xóa)
+        // 7. LicenseTier (after License + Order deleted)
         licenseTierRepository.deleteByProduct_ProductID(productId);
         
-        // Cuối cùng xóa Product
+        // Finally delete Product
         productRepository.delete(product);
     }
     /**

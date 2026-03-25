@@ -161,7 +161,6 @@ public class VendorProductController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Vendor vendor = vendorService.getVendorByUserId(userId);
-        System.out.println("Hello World");
         PageResponse<ProductResponse> result = productService.getVendorProducts(vendor.getVendorID(), search, null, status, page, size, sortBy, sortDir);
         return ResponseEntity.ok(ApiResponse.success(result));
         
@@ -285,6 +284,20 @@ public class VendorProductController {
         Vendor vendor = vendorService.getVendorByUserId(userId);
         ProductVersionResponse result = productVersionService.updateVersion(vendor.getVendorID(), productId, versionId, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật phiên bản thành công", result));
+    }
+
+    /**
+     * Delete a version
+     * DELETE /api/vendor/products/{productId}/versions/{versionId}
+     */
+    @DeleteMapping("/products/{productId}/versions/{versionId}")
+    public ResponseEntity<ApiResponse<Void>> deleteProductVersion(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId,
+            @PathVariable Integer versionId) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        productVersionService.deleteVersion(vendor.getVendorID(), productId, versionId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // ==================== LICENSE TIERS ====================

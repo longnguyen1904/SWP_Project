@@ -2,6 +2,7 @@ package com.tallt.marketplace.dto.vendor;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 /**
@@ -10,18 +11,18 @@ import lombok.Data;
 @Data
 public class VendorRegisterRequest {
 
-    @NotNull(message = "Loại vendor không được để trống (INDIVIDUAL hoặc COMPANY)")
+    @NotNull(message = "Vendor type is required (INDIVIDUAL or COMPANY)")
     private String type;
 
     private String companyName;
 
-    /** Mô tả doanh nghiệp / sản phẩm dự định bán (tùy chọn). */
+    /** Business description / planned products (optional). */
     private String description;
 
+    @NotBlank(message = "Tax code is required")
+    @Pattern(regexp = "^\\d{10,13}$", message = "Tax code must be 10-13 digits")
     private String taxCode;
 
-
-
-    @NotBlank(message = "Link tài liệu xác thực không được để trống")
+    @NotBlank(message = "Identification document URL is required")
     private String identificationDoc;
 }

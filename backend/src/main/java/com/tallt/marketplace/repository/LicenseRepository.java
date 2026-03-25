@@ -41,4 +41,6 @@ public interface LicenseRepository extends JpaRepository<License, Integer> {
             Integer userId, Integer productId, LocalDateTime now);
 
     void deleteByProduct_ProductID(Integer productId);
+
+    boolean existsByTier_TierID(Integer tierId);
 }
