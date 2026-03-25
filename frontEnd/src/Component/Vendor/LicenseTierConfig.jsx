@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { vendorAPI } from "../../services/api";
+import useVendorProducts from "../../services/useVendorProducts";
 import "../../Style/Vendor.css";
 
 const TIER_PRESETS = [
+  { label: "Standard", code: "STD" },
   { label: "Personal", code: "PER" },
   { label: "Business", code: "BIZ" },
   { label: "Enterprise", code: "ENT" },
 ];
 
 const LicenseTierConfig = () => {
-  const [products, setProducts] = useState([]);
+  const { products, loading: productsLoading } = useVendorProducts();
   const [selectedProductId, setSelectedProductId] = useState("");
   const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,21 +31,8 @@ const LicenseTierConfig = () => {
   });
   const [formErrors, setFormErrors] = useState({});
 
-  useEffect(() => { fetchProducts(); }, []);
   useEffect(() => { if (selectedProductId) fetchTiers(); }, [selectedProductId]);
   useEffect(() => { if (success) { const t = setTimeout(() => setSuccess(""), 4000); return () => clearTimeout(t); } }, [success]);
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const res = await vendorAPI.getVendorProducts({ size: 100 });
-      const data = res.data?.data ?? res.data;
-      const content = data?.content ?? data?.products ?? (Array.isArray(data) ? data : []);
-      setProducts(Array.isArray(content) ? content : []);
-    } catch (err) {
-      setError(err.response?.data?.message || "Cannot load product list");
-    } finally { setLoading(false); }
-  };
 
   const fetchTiers = async () => {
     if (!selectedProductId) return;
@@ -123,7 +112,8 @@ const LicenseTierConfig = () => {
   };
 
   const getProductName = () => {
-    const p = products.find((p) => (p.productId ?? p.id) === selectedProductId);
+    const numId = Number(selectedProductId);
+    const p = products.find((p) => (p.productId ?? p.id) === numId);
     return p?.productName ?? p?.name ?? "";
   };
 

@@ -13,10 +13,8 @@ const ProductManagement = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-  const [editFormData, setEditFormData] = useState({ productName: "", description: "", basePrice: "", guideDocumentUrl: "" });
+  const [editFormData, setEditFormData] = useState({ productName: "", description: "", basePrice: "", guideDocumentUrl: "", hasTrial: false, trialDurationDays: 7 });
   const [editImages, setEditImages] = useState([]);
-  const [newImageUrl, setNewImageUrl] = useState("");
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [imagesToAdd, setImagesToAdd] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -24,15 +22,19 @@ const ProductManagement = () => {
   const [uploading, setUploading] = useState(false);
   const imageInputRef = useRef(null);
 
-  useEffect(() => { fetchProducts(); }, []);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => { fetchProducts(); }, [page]);
 
   const fetchProducts = async () => {
     setLoading(true); setError("");
     try {
-      const response = await vendorAPI.getVendorProducts({});
+      const response = await vendorAPI.getVendorProducts({ page, size: 12 });
       const data = response.data?.data ?? response.data;
       const content = data?.content ?? data?.products ?? (Array.isArray(data) ? data : []);
       setProducts(Array.isArray(content) ? content : []);
+      setTotalPages(data?.totalPages ?? 1);
     } catch (err) { setError(err.response?.data?.message || "Failed to fetch products"); setProducts([]); }
     finally { setLoading(false); }
   };
@@ -50,8 +52,10 @@ const ProductManagement = () => {
       description: product.description,
       basePrice: product.basePrice ?? product.price,
       guideDocumentUrl: product.guideDocumentUrl ?? "",
+      hasTrial: product.hasTrial ?? false,
+      trialDurationDays: product.trialDurationDays ?? 7,
     });
-    setImagesToDelete([]); setImagesToAdd([]); setNewImageUrl("");
+    setImagesToDelete([]); setImagesToAdd([]);
     setSelectedFile(null); setPreview(null); setUploading(false);
     try {
       const res = await vendorAPI.getProduct(getProductId(product));
@@ -66,10 +70,9 @@ const ProductManagement = () => {
     setEditImages((prev) => prev.filter((img) => (img.imageId ?? img.id) !== imageId));
   };
 
-  const handleAddNewImage = () => {
-    if (!newImageUrl.trim()) return;
-    setImagesToAdd((prev) => [...prev, { imageUrl: newImageUrl.trim(), isPrimary: false, sortOrder: prev.length }]);
-    setNewImageUrl("");
+  const handleAddNewImage = (url) => {
+    if (!url || !url.trim()) return;
+    setImagesToAdd((prev) => [...prev, { imageUrl: url.trim(), isPrimary: false, sortOrder: prev.length }]);
   };
 
   const handleLocalFileSelect = (event) => {
@@ -106,6 +109,13 @@ const ProductManagement = () => {
 
   const handleEditSubmit = async () => {
     if (!selectedProduct) return;
+    // Validate required fields
+    if (!editFormData.productName || !editFormData.productName.trim()) {
+      setError("Product name is required"); return;
+    }
+    if (!editFormData.basePrice || parseFloat(editFormData.basePrice) <= 0) {
+      setError("Price must be greater than 0"); return;
+    }
     setLoading(true); setError("");
     try {
       const pid = getProductId(selectedProduct);
@@ -205,6 +215,11 @@ const ProductManagement = () => {
                       <strong>Rejection reason:</strong> {product.rejectionNote}
                     </div>
                   )}
+                  {product.status === "PENDING" && (
+                    <div className="alert alert-info" style={{ marginBottom: 8 }}>
+                      This product is under admin review. You cannot edit or delete it until a decision is made.
+                    </div>
+                  )}
                   <div className="product-card-actions">
                     <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/products/${pid}`)}>View</button>
                     {(product.status === "DRAFT" || product.status === "REJECTED") ? (
@@ -213,7 +228,7 @@ const ProductManagement = () => {
                       <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(product)}>Edit</button>
                     ) : null}
                     <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(product)}
-                      disabled={product.status === "PENDING"}>Delete</button>
+                      disabled={product.status === "PENDING" || product.status === "APPROVED"}>Delete</button>
                   </div>
                 </div>
               );
@@ -250,6 +265,24 @@ const ProductManagement = () => {
                     onChange={(e) => setEditFormData({ ...editFormData, guideDocumentUrl: e.target.value })} />
                   <span className="form-hint">Link to user guide document (optional)</span>
                 </div>
+              </div>
+
+              {/* Trial Settings */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <input type="checkbox" checked={editFormData.hasTrial}
+                      onChange={(e) => setEditFormData({ ...editFormData, hasTrial: e.target.checked })} />
+                    Enable Trial
+                  </label>
+                </div>
+                {editFormData.hasTrial && (
+                  <div className="form-group">
+                    <label className="form-label">Trial Duration (days)</label>
+                    <input className="form-input" type="number" value={editFormData.trialDurationDays} min="1"
+                      onChange={(e) => setEditFormData({ ...editFormData, trialDurationDays: Number(e.target.value) })} />
+                  </div>
+                )}
               </div>
 
               {/* Image Management */}
@@ -299,12 +332,6 @@ const ProductManagement = () => {
 
               {uploading && <div className="progress-bar mb-16"><div className="progress-bar-fill" /></div>}
 
-              <span className="form-hint mb-8" style={{ display: "block" }}>Or paste image URL directly:</span>
-              <div className="flex-gap">
-                <input className="form-input" style={{ flex: 1 }} placeholder="https://..." value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)} />
-                <button className="btn btn-secondary btn-sm" onClick={handleAddNewImage} disabled={!newImageUrl.trim()}>Add</button>
-              </div>
             </div>
             <div className="vendor-modal-footer">
               <button className="btn btn-secondary" onClick={() => setEditDialogOpen(false)}>Cancel</button>

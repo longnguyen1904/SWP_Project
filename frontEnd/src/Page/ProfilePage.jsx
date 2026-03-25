@@ -59,8 +59,9 @@ export default function ProfilePage() {
 
       try {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
-        user.fullName = fullName.trim();
+        if (fullName.trim()) user.fullName = fullName.trim();
         localStorage.setItem("user", JSON.stringify(user));
+        window.dispatchEvent(new Event("authChanged"));
       } catch {}
 
       fetchProfile();
