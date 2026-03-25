@@ -150,4 +150,8 @@ export const profileAPI = {
   resetPassword: (data) => api.post("/api/users/reset-password", data),
 };
 
+export const licenseAPI = {
+  getSessions: (licenseKey) => api.get(`/api/v1/licenses/${licenseKey}/sessions`),
+};
+
 export default api;

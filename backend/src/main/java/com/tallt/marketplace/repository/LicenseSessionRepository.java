@@ -12,4 +12,5 @@ public interface LicenseSessionRepository extends JpaRepository<LicenseSession, 
     Optional<LicenseSession> findByLicenseAndDeviceIdentifier(License license, String deviceIdentifier);
     int countByLicenseAndIsActiveTrue(License license);
     java.util.List<LicenseSession> findByLicenseAndIsActiveTrueOrderByLastActiveAsc(License license);
+    java.util.List<LicenseSession> findByLicense_LicenseKey(String licenseKey);
 }
