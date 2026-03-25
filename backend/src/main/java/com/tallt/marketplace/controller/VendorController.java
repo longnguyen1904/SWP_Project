@@ -82,8 +82,20 @@ public class VendorController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         PageResponse<ProductResponse> result = productService.getVendorStorefrontProducts(
-                vendorId, search, categoryId, hasTrial, minPrice, maxPrice, tag, page, size, sortBy, sortDir
-        );
+                vendorId, search, categoryId, hasTrial, minPrice, maxPrice, tag, page, size, sortBy, sortDir);
         return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    /**
+     * Vendor resubmit identification after being suspended
+     * POST /api/vendors/resubmit-identification
+     */
+    @PostMapping("/resubmit-identification")
+    public ResponseEntity<ApiResponse<?>> resubmitIdentification(
+            @RequestHeader("X-User-Id") Integer userId,
+            @RequestBody java.util.Map<String, String> body) {
+        String identificationUrl = body.get("identificationUrl");
+        var result = vendorService.resubmitIdentification(userId, identificationUrl);
+        return ResponseEntity.ok(ApiResponse.success("Identification resubmitted successfully", result));
     }
 }

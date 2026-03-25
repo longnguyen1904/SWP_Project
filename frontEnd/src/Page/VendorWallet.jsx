@@ -95,7 +95,7 @@ export default function VendorWallet() {
           <div style={{ ...valueStyle, color: C.accent }}>{fmt(wallet.balance)}</div>
         </div>
         <div style={cardStyle}>
-          <div style={labelStyle}>Khả dụng</div>
+          <div style={labelStyle}>Doanh thu</div>
           <div style={{ ...valueStyle, color: C.info }}>{fmt(wallet.available)}</div>
         </div>
         <div style={cardStyle}>
