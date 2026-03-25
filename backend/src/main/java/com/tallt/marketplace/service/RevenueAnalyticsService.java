@@ -51,18 +51,18 @@ public class RevenueAnalyticsService {
 
     /**
      * 📊 Lấy Tổng quan Dashboard (Doanh thu, Đơn hàng, Rating, Tickets)
+     * ĐÃ CHUYỂN: Query trực tiếp từ bảng Orders thay vì WalletTransactions
      */
     public Map<String, Object> getDashboardSummary(int vendorId, LocalDate startDate, LocalDate endDate, Integer productId) {
 
-        // 1. Tính Doanh thu và Đơn hàng
+        // 1. Tính Doanh thu và Đơn hàng — LẤY TỪ ORDERS
         StringBuilder sql = new StringBuilder("""
-            SELECT COALESCE(SUM(wt.Amount), 0) AS totalRevenue, COUNT(wt.TransactionID) AS totalOrders
-            FROM WalletTransactions wt
-            JOIN Wallets w ON wt.WalletID = w.WalletID
-            JOIN Vendors v ON w.UserID = v.UserID
-            JOIN Orders o ON wt.ReferenceID = o.OrderID
-            WHERE v.VendorID = ? AND wt.Type = 'SALE_REVENUE'
-              AND wt.CreatedAt >= ? AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
+            SELECT COALESCE(SUM(o.totalAmount), 0) AS totalRevenue, COUNT(o.OrderID) AS totalOrders
+            FROM Orders o
+            JOIN Products p ON o.ProductID = p.ProductID
+            WHERE p.VendorID = ?
+              AND UPPER(o.paymentStatus) IN ('PAID','COMPLETED','SUCCESS')
+              AND o.CreatedAt >= ? AND o.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
         """);
         List<Object> params = new ArrayList<>(List.of(vendorId, startDate, endDate));
         if (productId != null) {
@@ -94,7 +94,7 @@ public class RevenueAnalyticsService {
         Double vendorAvgRating = ((Number) revResult.get("avgRating")).doubleValue();
         long totalReviews = ((Number) revResult.get("totalReviews")).longValue();
 
-        // 3. Tính Tổng số Ticket (Dùng LEFT JOIN theo yêu cầu)
+        // 3. Tính Tổng số Ticket
         StringBuilder ticketSql = new StringBuilder("""
             SELECT COUNT(t.TicketID) AS totalTickets
             FROM SupportTickets t 
@@ -123,51 +123,45 @@ public class RevenueAnalyticsService {
 
     /**
      * 📈 Doanh thu theo ngày (Cho biểu đồ Line Chart)
-     */
-/**
-     * 📈 Doanh thu theo ngày (Cho biểu đồ Line Chart) - CÓ HỖ TRỢ LỌC THEO SẢN PHẨM
+     * ĐÃ CHUYỂN: Query trực tiếp từ bảng Orders
      */
     public List<Map<String, Object>> getDailyRevenue(int vendorId, LocalDate startDate, LocalDate endDate, Integer productId) {
         StringBuilder sql = new StringBuilder("""
-            SELECT DATE(wt.CreatedAt) AS date, SUM(wt.Amount) AS revenue
-            FROM WalletTransactions wt 
-            JOIN Wallets w ON wt.WalletID = w.WalletID 
-            JOIN Vendors v ON w.UserID = v.UserID
-            JOIN Orders o ON wt.ReferenceID = o.OrderID
-            WHERE v.VendorID = ? AND wt.Type = 'SALE_REVENUE' 
-              AND wt.CreatedAt >= ? AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
+            SELECT DATE(o.CreatedAt) AS date, SUM(o.totalAmount) AS revenue
+            FROM Orders o
+            JOIN Products p ON o.ProductID = p.ProductID
+            WHERE p.VendorID = ?
+              AND UPPER(o.paymentStatus) IN ('PAID','COMPLETED','SUCCESS')
+              AND o.CreatedAt >= ? AND o.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
         """);
         
         List<Object> params = new ArrayList<>(List.of(vendorId, startDate, endDate));
         
-        // Nếu Frontend có gửi productId lên thì nối thêm điều kiện WHERE
         if (productId != null) {
             sql.append(" AND o.ProductID = ?");
             params.add(productId);
         }
         
-        sql.append(" GROUP BY DATE(wt.CreatedAt) ORDER BY DATE(wt.CreatedAt)");
+        sql.append(" GROUP BY DATE(o.CreatedAt) ORDER BY DATE(o.CreatedAt)");
         
         return jdbcTemplate.queryForList(sql.toString(), params.toArray());
     }
 
     /**
-     * 🏆 Lấy danh sách Top Sản phẩm 
-     * Lưu ý: Câu lệnh gốc của bạn dùng bảng phụ thuộc vào giao dịch thành công (WalletTransactions) 
-     * nên nếu sản phẩm chưa phát sinh doanh thu sẽ không hiển thị.
+     * 🏆 Lấy danh sách Top Sản phẩm
+     * ĐÃ CHUYỂN: Query trực tiếp từ bảng Orders thay vì WalletTransactions
      */
     public List<Map<String, Object>> getTopProducts(int vendorId, LocalDate startDate, LocalDate endDate) {
         String sql = """
-            SELECT p.ProductID AS productId, p.ProductName AS productName, COALESCE(c.CategoryName, 'Chưa phân loại') AS categoryName,
-                   SUM(wt.Amount) AS revenue, COUNT(wt.TransactionID) AS quantity
-            FROM WalletTransactions wt 
-            JOIN Wallets w ON wt.WalletID = w.WalletID 
-            JOIN Vendors v ON w.UserID = v.UserID
-            JOIN Orders o ON wt.ReferenceID = o.OrderID 
-            JOIN Products p ON o.ProductID = p.ProductID 
+            SELECT p.ProductID AS productId, p.ProductName AS productName, 
+                   COALESCE(c.CategoryName, 'Chưa phân loại') AS categoryName,
+                   SUM(o.totalAmount) AS revenue, COUNT(o.OrderID) AS quantity
+            FROM Orders o
+            JOIN Products p ON o.ProductID = p.ProductID
             LEFT JOIN Categories c ON p.CategoryID = c.CategoryID
-            WHERE v.VendorID = ? AND wt.Type = 'SALE_REVENUE' 
-              AND wt.CreatedAt >= ? AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
+            WHERE p.VendorID = ?
+              AND UPPER(o.paymentStatus) IN ('PAID','COMPLETED','SUCCESS')
+              AND o.CreatedAt >= ? AND o.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
             GROUP BY p.ProductID, p.ProductName, c.CategoryName 
             ORDER BY revenue DESC LIMIT 50
         """;
