@@ -171,10 +171,10 @@ public class ProductVersionService {
             throw new AppException("Version does not belong to this product");
         }
 
-        // Prevent deleting the only version of an approved product
+        // Prevent deleting the only version of a product (at least one version must remain)
         long versionCount = productVersionRepository.countByProduct_ProductID(productId);
-        if (versionCount <= 1 && product.getStatus() == Product.ProductStatus.APPROVED) {
-            throw new AppException("Cannot delete the only version of an approved product");
+        if (versionCount <= 1) {
+            throw new AppException("Cannot delete the only version of a product");
         }
 
         productVersionRepository.delete(version);

@@ -197,7 +197,7 @@ const VersionControlManager = () => {
                           {v.scanStatus === "INFECTED" && <span style={{ color: "#ff4d4d", fontSize: 12, marginLeft: 6 }}>⚠ File may be unsafe</span>}
                         </td>
                         <td>{v.createdAt ? new Date(v.createdAt).toLocaleString("vi-VN") : "—"}</td>
-                        <td className="actions" style={{ display: "flex", gap: 4 }}>
+                        <td className="actions">
                           <button className="btn-icon primary" onClick={() => openEditDialog(v)} title="Edit">Edit</button>
                           <button className="btn btn-danger btn-sm" onClick={() => handleDeleteVersion(v.versionId)} title="Delete">Delete</button>
                         </td>

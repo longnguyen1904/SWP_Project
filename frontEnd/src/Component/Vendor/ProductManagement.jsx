@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { vendorAPI, uploadAPI } from "../../services/api";
 import "../../Style/Vendor.css";
-import "../../Style/ProductManagement.css";
 
 const ProductManagement = () => {
   const navigate = useNavigate();
@@ -240,19 +239,22 @@ const ProductManagement = () => {
                     </div>
                   )}
                   <div className="product-card-actions">
-                    <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/products/${pid}`)}>View</button>
+                    {product.status === "APPROVED" && (
+                      <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/products/${pid}`)}>View</button>
+                    )}
                     {(product.status === "DRAFT" || product.status === "REJECTED") ? (
                       <button className="btn btn-primary btn-sm" onClick={() => navigate(`/Page/Vendor/ProductUpload?productId=${pid}`)}>Resume</button>
                     ) : product.status === "APPROVED" ? (
                       <>
                         <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(product)}>Edit</button>
-                        <button className="btn btn-warning btn-sm" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24", border: "1px solid transparent" }} onClick={() => handleToggleActive(product)}>Deactivate</button>
+                        <button className="btn btn-warning btn-sm" onClick={() => handleToggleActive(product)}>Deactivate</button>
                       </>
                     ) : product.status === "INACTIVE" ? (
                       <button className="btn btn-primary btn-sm" onClick={() => handleToggleActive(product)}>Reactivate</button>
                     ) : null}
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(product)}
-                      disabled={product.status === "PENDING" || product.status === "APPROVED"}>Delete</button>
+                    {product.status !== "PENDING" && product.status !== "APPROVED" && (
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(product)}>Delete</button>
+                    )}
                   </div>
                 </div>
               );

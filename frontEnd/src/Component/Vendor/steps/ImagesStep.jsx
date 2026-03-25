@@ -8,11 +8,12 @@ const formatFileSize = (bytes) => {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 };
 
-const ImagesStep = ({ images, setImages, imageUpload, setImageUpload, setError, setSuccess }) => {
+const ImagesStep = ({ images, setImages, setError, setSuccess }) => {
     const imageInputRef = useRef(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [imageUpload, setImageUpload] = useState({ imageUrl: "", isPrimary: false, sortOrder: 0 });
 
     const handleFileSelect = (event) => {
         const file = event.target.files[0];
