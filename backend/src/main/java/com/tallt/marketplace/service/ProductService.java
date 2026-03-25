@@ -831,8 +831,9 @@ public class ProductService {
         response.setIsApproved(product.getIsApproved());
         response.setHasTrial(product.getHasTrial());
         response.setTrialDurationDays(product.getTrialDurationDays());
-        response.setVendorName(product.getVendor().getCompanyName() != null
-                ? product.getVendor().getCompanyName()
+        String compName = product.getVendor().getCompanyName();
+        response.setVendorName(compName != null && !compName.isBlank()
+                ? compName
                 : product.getVendor().getUser().getFullName());
         response.setVendorId(product.getVendor().getVendorID());
         response.setCreatedAt(product.getCreatedAt());
@@ -902,8 +903,9 @@ public class ProductService {
             System.out.println("[FollowerNotify] Vendor " + vendorId + " has " + emails.size() + " follower(s)");
             if (emails.isEmpty()) return;
 
-            String vendorName = product.getVendor().getCompanyName() != null
-                    ? product.getVendor().getCompanyName()
+            String compName = product.getVendor().getCompanyName();
+            String vendorName = compName != null && !compName.isBlank()
+                    ? compName
                     : product.getVendor().getUser().getFullName();
 
             String subject = "New Product from " + vendorName + ": " + product.getProductName();

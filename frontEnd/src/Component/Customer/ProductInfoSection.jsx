@@ -62,10 +62,10 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, lates
         by{" "}
         {product.vendorId ? (
           <Link to={`/vendors/${product.vendorId}`} className="vendor-link">
-            {product.vendorName ?? "Vendor"}
+            {product.vendorName || "Vendor"}
           </Link>
         ) : (
-          <span>{product.vendorName ?? "Vendor"}</span>
+          <span>{product.vendorName || "Vendor"}</span>
         )}
       </p>
 

@@ -310,30 +310,6 @@ const VendorShop = () => {
               )}
             </>
           )}
-
-          {bestSellers.length === 0 && (
-            <>
-              <h2 className="vendor-shop__section-title">Sản phẩm của cửa hàng</h2>
-              <div className="vendor-shop__grid">
-                {products
-                  .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-                  .map((p) => renderCard(p, false))}
-              </div>
-              {products.length > PAGE_SIZE && (
-                <div className="vendor-shop__pagination">
-                  {Array.from({ length: Math.ceil(products.length / PAGE_SIZE) }, (_, i) => (
-                    <button
-                      key={i}
-                      className={`vendor-shop__page-btn ${currentPage === i + 1 ? "active" : ""}`}
-                      onClick={() => setCurrentPage(i + 1)}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
         </>
       )}
     </div>

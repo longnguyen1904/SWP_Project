@@ -4,8 +4,12 @@ import com.tallt.marketplace.dto.admin.AdminProductReviewDTO;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.entity.ProductVersion;
 import com.tallt.marketplace.exception.AppException;
+import com.tallt.marketplace.service.EmailService;
 import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.ProductVersionRepository;
+import com.tallt.marketplace.repository.VendorFollowerRepository;
+import com.tallt.marketplace.entity.VendorFollower;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -23,6 +27,11 @@ public class AdminReviewService {
         private final ProductRepository productRepository;
         private final ProductVersionRepository versionRepository;
         private final VirusTotalService virusTotalService;
+        private final EmailService emailService;
+        private final VendorFollowerRepository followerRepository;
+
+        @Value("${frontend.base-url:http://localhost:5173}")
+        private String frontendBaseUrl;
 
 
         public Page<AdminProductReviewDTO> getAllProductsForReview(
@@ -153,6 +162,39 @@ public class AdminReviewService {
 
                 productRepository.save(product);
 
+                // Gửi email thông báo cho followers
+                notifyFollowersOfNewProduct(product);
+
                 return "Product approved successfully.";
+        }
+
+        private void notifyFollowersOfNewProduct(Product product) {
+                if (product.getVendor() == null) return;
+
+                List<VendorFollower> followers = followerRepository.findByVendor_VendorID(product.getVendor().getVendorID());
+                if (followers.isEmpty()) return;
+
+                String vendorName = product.getVendor().getCompanyName() != null ? product.getVendor().getCompanyName() : "Một Vendor";
+                String productUrl = frontendBaseUrl + "/products/" + product.getProductID();
+
+                for (VendorFollower follower : followers) {
+                        if (follower.getUser() != null && follower.getUser().getEmail() != null) {
+                                String userEmail = follower.getUser().getEmail();
+                                String subject = "Sản phẩm mới từ " + vendorName + "!";
+                                String body = "<html><body>"
+                                                + "<h2>Chào bạn,</h2>"
+                                                + "<p>Vendor <strong>" + vendorName + "</strong> mà bạn theo dõi vừa đăng tải sản phẩm mới: <strong>" + product.getProductName() + "</strong>.</p>"
+                                                + "<p>Hãy xem ngay tại đây: <a href='" + productUrl + "'>Xem sản phẩm</a></p>"
+                                                + "<br><p>Cảm ơn bạn đã đồng hành cùng chúng tôi!</p>"
+                                                + "</body></html>";
+                                
+                                try {
+                                        emailService.sendEmail(userEmail, subject, "Sản phẩm mới!", body);
+                                        System.out.println("[FollowerNotify] Đã gửi email cho " + userEmail);
+                                } catch (Exception e) {
+                                        System.err.println("[FollowerNotify] Lỗi gửi email cho " + userEmail + ": " + e.getMessage());
+                                }
+                        }
+                }
         }
 }
