@@ -47,7 +47,7 @@ const BasicInfoStep = ({ productData, setProductData, categories }) => {
             <div className="form-group">
                 <label className="form-label">Guide Document URL</label>
                 <input className="form-input" value={productData.guideDocumentUrl} onChange={handleChange("guideDocumentUrl")} placeholder="https://example.com/guide.pdf" />
-                <span className="form-hint">Link tài liệu hướng dẫn sử dụng sản phẩm — Tùy chọn</span>
+                <span className="form-hint">Link to product user guide document — Optional</span>
             </div>
         </div>
     );

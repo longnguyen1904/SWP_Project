@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -25,21 +26,17 @@ public class UserProfileService {
     @Autowired
     private EmailService emailService;
 
-    // Ký tự dùng để sinh mật khẩu ngẫu nhiên
-    private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
-    private static final String DIGITS = "0123456789";
-    private static final String ALL_CHARS = UPPERCASE + LOWERCASE + DIGITS;
+    private static final int OTP_LENGTH = 6;
+    private static final int OTP_EXPIRY_MINUTES = 5;
+    private static final int MAX_OTP_ATTEMPTS = 5;
 
     /**
-     * Cập nhật thông tin cá nhân
-     * - Cập nhật fullName
-     * - Đổi mật khẩu (kiểm tra mật khẩu cũ, hash mật khẩu mới)
+     * Update user profile
      */
     @Transactional
     public Map<String, Object> updateProfile(Integer userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User không tồn tại"));
+                .orElseThrow(() -> new AppException("User does not exist"));
 
         // Update fullName if provided
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
@@ -48,21 +45,15 @@ public class UserProfileService {
 
         // Update password if provided
         if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
-            // Must provide old password
             if (request.getOldPassword() == null || request.getOldPassword().isBlank()) {
-                throw new AppException("Vui lòng nhập mật khẩu cũ");
+                throw new AppException("Please enter old password");
             }
-
-            // Verify old password
             if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
-                throw new AppException("Mật khẩu cũ không chính xác");
+                throw new AppException("Old password is incorrect");
             }
-
-            // Old and new must differ
             if (request.getOldPassword().equals(request.getNewPassword())) {
-                throw new AppException("Mật khẩu mới phải khác mật khẩu cũ");
+                throw new AppException("New password must be different from old password");
             }
-
             user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         }
 
@@ -72,16 +63,16 @@ public class UserProfileService {
         result.put("userId", user.getUserID());
         result.put("fullName", user.getFullName());
         result.put("email", user.getEmail());
-        result.put("message", "Cập nhật thông tin thành công");
+        result.put("message", "Profile updated successfully");
         return result;
     }
 
     /**
-     * Lấy thông tin cá nhân
+     * Get user profile
      */
     public Map<String, Object> getProfile(Integer userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User không tồn tại"));
+                .orElseThrow(() -> new AppException("User does not exist"));
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("userId", user.getUserID());
@@ -95,78 +86,126 @@ public class UserProfileService {
     }
 
     /**
-     * Sinh mật khẩu ngẫu nhiên (8-10 ký tự)
-     * Đảm bảo chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 chữ số
+     * Generate OTP (6 digits)
      */
-    private String generateRandomPassword() {
+    private String generateOtp() {
         SecureRandom random = new SecureRandom();
-
-        // Độ dài ngẫu nhiên 8-10 ký tự
-        int length = 8 + random.nextInt(3);
-
-        StringBuilder password = new StringBuilder(length);
-
-        // Đảm bảo ít nhất 1 ký tự mỗi loại
-        password.append(UPPERCASE.charAt(random.nextInt(UPPERCASE.length())));
-        password.append(LOWERCASE.charAt(random.nextInt(LOWERCASE.length())));
-        password.append(DIGITS.charAt(random.nextInt(DIGITS.length())));
-
-        // Điền phần còn lại ngẫu nhiên
-        for (int i = 3; i < length; i++) {
-            password.append(ALL_CHARS.charAt(random.nextInt(ALL_CHARS.length())));
+        StringBuilder otp = new StringBuilder(OTP_LENGTH);
+        for (int i = 0; i < OTP_LENGTH; i++) {
+            otp.append(random.nextInt(10));
         }
-
-        // Trộn ngẫu nhiên thứ tự các ký tự
-        char[] chars = password.toString().toCharArray();
-        for (int i = chars.length - 1; i > 0; i--) {
-            int j = random.nextInt(i + 1);
-            char temp = chars[i];
-            chars[i] = chars[j];
-            chars[j] = temp;
-        }
-
-        return new String(chars);
+        return otp.toString();
     }
 
     /**
-     * Quên mật khẩu – sinh mật khẩu mới và gửi qua email
-     * 1. Tìm user theo email
-     * 2. Sinh mật khẩu ngẫu nhiên (8-10 ký tự, chữ hoa + chữ thường + số)
-     * 3. Hash mật khẩu mới bằng BCrypt và lưu vào DB
-     * 4. Gửi mật khẩu mới qua email cho user
+     * Forgot password – generate OTP and send via email
+     * 1. Find user by email
+     * 2. Generate 6-digit OTP
+     * 3. Save OTP + expiry (5 minutes) to DB
+     * 4. Send OTP via email
      */
     @Transactional
     public Map<String, Object> forgotPassword(String email) {
-        // Kiểm tra email
         if (email == null || email.isBlank()) {
-            throw new AppException("Vui lòng nhập email");
+            throw new AppException("Please enter an email address");
         }
 
-        // Tìm user theo email
         User user = userRepository.findByEmail(email);
         if (user == null) {
-            throw new AppException("Email không tồn tại trong hệ thống");
+            throw new AppException("Email does not exist in the system");
         }
 
-        // Sinh mật khẩu ngẫu nhiên
-        String newPassword = generateRandomPassword();
-
-        // Hash mật khẩu và cập nhật vào DB
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        // Generate OTP and save
+        String otp = generateOtp();
+        user.setOtp(otp);
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
+        user.setOtpAttempts(0);
         userRepository.save(user);
 
-        // Gửi email chứa mật khẩu mới
+        // Send OTP via email
         String userName = user.getFullName() != null ? user.getFullName() : user.getUsername();
-        String subject = "Mật khẩu mới của bạn - Software Marketplace";
-        String body = "Xin chào " + userName + ",\n\n"
-                + "Mật khẩu mới của bạn là: " + newPassword + "\n\n"
-                + "Vui lòng đăng nhập và đổi mật khẩu ngay để đảm bảo an toàn.\n"
-                + "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng liên hệ hỗ trợ ngay.\n\n"
-                + "Trân trọng,\nSoftware Marketplace";
+        String subject = "Password Reset OTP - Software Marketplace";
+        String body = "Hello " + userName + ",\n\n"
+                + "Your OTP code is: " + otp + "\n\n"
+                + "This code will expire in " + OTP_EXPIRY_MINUTES + " minutes.\n"
+                + "If you did not request a password reset, please ignore this email.\n\n"
+                + "Best regards,\nSoftware Marketplace";
         emailService.sendEmail(email, subject, body);
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("message", "Mật khẩu mới đã được gửi đến email " + email);
+        result.put("message", "OTP has been sent to email " + email);
+        return result;
+    }
+
+    /**
+     * Verify OTP and reset password
+     * 1. Find user by email
+     * 2. Verify OTP is valid and not expired
+     * 3. Check attempt count (max 5)
+     * 4. If valid, hash new password and save
+     * 5. Clear OTP fields
+     */
+    @Transactional
+    public Map<String, Object> verifyOtpAndResetPassword(String email, String otp, String newPassword) {
+        if (email == null || email.isBlank()) {
+            throw new AppException("Please enter an email address");
+        }
+        if (otp == null || otp.isBlank()) {
+            throw new AppException("Please enter OTP code");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new AppException("Please enter new password");
+        }
+        if (newPassword.length() < 6) {
+            throw new AppException("Password must be at least 6 characters");
+        }
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new AppException("Email does not exist in the system");
+        }
+
+        // Check if OTP exists
+        if (user.getOtp() == null) {
+            throw new AppException("No OTP request found. Please request a new OTP.");
+        }
+
+        // Check max attempts
+        if (user.getOtpAttempts() != null && user.getOtpAttempts() >= MAX_OTP_ATTEMPTS) {
+            // Clear OTP on too many attempts
+            user.setOtp(null);
+            user.setOtpExpiry(null);
+            user.setOtpAttempts(0);
+            userRepository.save(user);
+            throw new AppException("Too many failed attempts. Please request a new OTP.");
+        }
+
+        // Check expiry
+        if (user.getOtpExpiry() == null || LocalDateTime.now().isAfter(user.getOtpExpiry())) {
+            user.setOtp(null);
+            user.setOtpExpiry(null);
+            user.setOtpAttempts(0);
+            userRepository.save(user);
+            throw new AppException("OTP has expired. Please request a new OTP.");
+        }
+
+        // Check OTP match
+        if (!otp.equals(user.getOtp())) {
+            user.setOtpAttempts((user.getOtpAttempts() != null ? user.getOtpAttempts() : 0) + 1);
+            userRepository.save(user);
+            int remaining = MAX_OTP_ATTEMPTS - user.getOtpAttempts();
+            throw new AppException("Invalid OTP. " + remaining + " attempts remaining.");
+        }
+
+        // OTP valid – reset password
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setOtp(null);
+        user.setOtpExpiry(null);
+        user.setOtpAttempts(0);
+        userRepository.save(user);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("message", "Password has been reset successfully");
         return result;
     }
 }

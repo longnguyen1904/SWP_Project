@@ -13,6 +13,10 @@ import com.tallt.marketplace.entity.Wallet;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,27 +43,55 @@ public class VendorService {
     private WalletRepository walletRepository;
 
     /**
-     * Đăng ký trở thành Vendor
-     * - Kiểm tra User tồn tại & Role = Customer
-     * - Tạo bản ghi Vendors (IsVerified=0, IsActive=1)
-     * - Cập nhật Users.RoleID = 2 (Vendor)
-     * - Tạo Wallet cho Vendor
+     * Get current user's vendor registration status
+     */
+    public Map<String, Object> getMyVendorStatus(Integer userId) {
+        Optional<Vendor> vendorOpt = vendorRepository.findByUser_UserID(userId);
+        if (vendorOpt.isEmpty()) {
+            return Map.of("registered", false);
+        }
+        Vendor vendor = vendorOpt.get();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("registered", true);
+        result.put("vendorId", vendor.getVendorID());
+        result.put("status", vendor.getStatus().name());
+        result.put("rejectionNote", vendor.getRejectionNote());
+        result.put("companyName", vendor.getCompanyName());
+        result.put("createdAt", vendor.getCreatedAt());
+        result.put("verifiedAt", vendor.getVerifiedAt());
+        return result;
+    }
+
+    /**
+     * Register as a Vendor
+     * - Check User exists & Role = Customer
+     * - Create Vendors record (Status=PENDING)
+     * - Role remains CUSTOMER until Admin approves
+     * - Create Wallet for Vendor
      */
     @Transactional
     public VendorRegisterResponse registerVendor(Integer userId, VendorRegisterRequest request) {
-        // 1. Kiểm tra User tồn tại
+        // 1. Check User exists
         System.out.println("Hello World");
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User không tồn tại"));
+                .orElseThrow(() -> new AppException("User does not exist"));
 
-        // 2. Kiểm tra Role phải là Customer
+        // 2. Check Role must be Customer
         if (user.getRole().getRoleID() != RoleConstant.CUSTOMER) {
-            throw new AppException("Chỉ Customer mới có thể đăng ký làm Vendor");
+            throw new AppException("Only Customers can register as a Vendor");
         }
 
-        // 3. Kiểm tra chưa đăng ký Vendor
-        if (vendorRepository.existsByUser_UserID(userId)) {
-            throw new AppException("User đã đăng ký Vendor trước đó");
+        // 3. Check not already registered as Vendor
+        Optional<Vendor> existingVendor = vendorRepository.findByUser_UserID(userId);
+        if (existingVendor.isPresent()) {
+            Vendor existing = existingVendor.get();
+            if (existing.getStatus() == Vendor.VendorStatus.REJECTED) {
+                // Allow re-registration: delete old rejected record
+                vendorRepository.delete(existing);
+                vendorRepository.flush();
+            } else {
+                throw new AppException("User has already registered as a Vendor");
+            }
         }
 
         // 4. Validate type
@@ -67,16 +99,16 @@ public class VendorService {
         try {
             vendorType = Vendor.VendorType.valueOf(request.getType().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new AppException("Loại vendor không hợp lệ. Chỉ chấp nhận: INDIVIDUAL hoặc COMPANY");
+            throw new AppException("Invalid vendor type. Accepted values: INDIVIDUAL or COMPANY");
         }
 
-        // 5. Nếu COMPANY thì companyName bắt buộc
+        // 5. If COMPANY then companyName is required
         if (vendorType == Vendor.VendorType.COMPANY &&
                 (request.getCompanyName() == null || request.getCompanyName().isBlank())) {
-            throw new AppException("Tên công ty không được để trống khi loại vendor là COMPANY");
+            throw new AppException("Company name is required when vendor type is COMPANY");
         }
 
-        // 6. Tạo Vendor
+        // 6. Create Vendor
         Vendor vendor = new Vendor();
         vendor.setUser(user);
         vendor.setType(vendorType);
@@ -90,16 +122,14 @@ public class VendorService {
         vendor.setStatus(Vendor.VendorStatus.PENDING);
         vendorRepository.save(vendor);
 
-        // 7. Cập nhật Role thành Vendor
-        Role vendorRole = roleRepository.findById(RoleConstant.VENDOR)
-                .orElseThrow(() -> new AppException("Role Vendor không tồn tại trong hệ thống"));
-        user.setRole(vendorRole);
-        userRepository.save(user);
+        // Role remains unchanged (CUSTOMER) until Admin approves
 
-        // 8. Tạo Wallet cho Vendor
-        Wallet wallet = new Wallet();
-        wallet.setUser(user);
-        walletRepository.save(wallet);
+        // 7. Create Wallet for Vendor (only if not already exists)
+        if (walletRepository.findByUser_UserID(userId).isEmpty()) {
+            Wallet wallet = new Wallet();
+            wallet.setUser(user);
+            walletRepository.save(wallet);
+        }
 
         return new VendorRegisterResponse(
                 vendor.getVendorID(),
@@ -109,28 +139,28 @@ public class VendorService {
     }
 
     /**
-     * Admin duyệt/từ chối Vendor
-     * - Nếu approved: Status=APPROVED, VerifiedAt=now()
-     * - Nếu rejected: Status=REJECTED, lưu rejection note
+     * Admin approve/reject Vendor
+     * - If approved: Status=APPROVED, VerifiedAt=now()
+     * - If rejected: Status=REJECTED, save rejection note
      */
     @Transactional
     public Map<String, Object> verifyVendor(Integer vendorId, VendorVerifyRequest request) {
         Vendor vendor = vendorRepository.findById(vendorId)
-                .orElseThrow(() -> new AppException("Vendor không tồn tại"));
+                .orElseThrow(() -> new AppException("Vendor does not exist"));
 
         if (vendor.getStatus() == Vendor.VendorStatus.APPROVED) {
-            throw new AppException("Vendor đã được xác thực trước đó");
+            throw new AppException("Vendor has already been verified");
         }
 
         Vendor.VendorStatus newStatus;
         try {
             newStatus = Vendor.VendorStatus.valueOf(request.getStatus().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new AppException("Trạng thái không hợp lệ. Chỉ chấp nhận: APPROVED hoặc REJECTED");
+            throw new AppException("Invalid status. Accepted values: APPROVED or REJECTED");
         }
 
         if (newStatus != Vendor.VendorStatus.APPROVED && newStatus != Vendor.VendorStatus.REJECTED) {
-            throw new AppException("Trạng thái không hợp lệ. Chỉ chấp nhận: APPROVED hoặc REJECTED");
+            throw new AppException("Invalid status. Accepted values: APPROVED or REJECTED");
         }
 
         vendor.setStatus(newStatus);
@@ -149,7 +179,7 @@ public class VendorService {
     }
 
     /**
-     * Lấy danh sách Vendor với filter, search, paging, sort
+     * Get list of Vendors with filter, search, paging, sort
      */
     public PageResponse<Vendor> getVendors(String search, String status, String type,
                                            int page, int size, String sortBy, String sortDir) {
@@ -163,7 +193,7 @@ public class VendorService {
             try {
                 vendorType = Vendor.VendorType.valueOf(type.toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException("Loại vendor không hợp lệ");
+                throw new AppException("Invalid vendor type");
             }
         }
 
@@ -172,7 +202,7 @@ public class VendorService {
             try {
                 vendorStatus = Vendor.VendorStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException("Trạng thái vendor không hợp lệ. Chỉ chấp nhận: PENDING, APPROVED, REJECTED");
+                throw new AppException("Invalid vendor status. Accepted values: PENDING, APPROVED, REJECTED");
             }
         }
 
@@ -189,25 +219,25 @@ public class VendorService {
     }
 
     /**
-     * Lấy Vendor theo UserID
+     * Get Vendor by UserID
      */
     public Vendor getVendorByUserId(Integer userId) {
         return vendorRepository.findByUser_UserID(userId)
-                .orElseThrow(() -> new AppException("Vendor không tồn tại cho user này"));
+                .orElseThrow(() -> new AppException("Vendor does not exist for this user"));
     }
 
     /**
-     * Lấy Vendor theo VendorID
+     * Get Vendor by VendorID
      */
     public Vendor getVendorById(Integer vendorId) {
         return vendorRepository.findById(vendorId)
-                .orElseThrow(() -> new AppException("Vendor không tồn tại"));
+                .orElseThrow(() -> new AppException("Vendor does not exist"));
     }
 
     public VendorShopResponse getVendorShop(Integer vendorId) {
         Vendor vendor = getVendorById(vendorId);
         if (!Boolean.TRUE.equals(vendor.getIsActive())) {
-            throw new AppException("Vendor không tồn tại");
+            throw new AppException("Vendor does not exist");
         }
 
         VendorShopResponse response = new VendorShopResponse();
