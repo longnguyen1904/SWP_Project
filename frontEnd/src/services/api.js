@@ -63,6 +63,8 @@ export const vendorAPI = {
     api.get(`/api/vendor/products/${productId}/versions/${versionId}`),
   updateProductVersion: (productId, versionId, data) =>
     api.put(`/api/vendor/products/${productId}/versions/${versionId}`, data),
+  deleteProductVersion: (productId, versionId) =>
+    api.delete(`/api/vendor/products/${productId}/versions/${versionId}`),
   createLicenseTier: (productId, tierData) =>
     api.post(`/api/vendor/products/${productId}/license-tiers`, tierData),
   getLicenseTiers: (productId, params = {}) =>
