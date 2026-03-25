@@ -28,7 +28,7 @@
 }
 .vendor-page-subtitle {
   font-size: 14px;
-  color: #94a3b8;
+  color: #cbd5e1;
   margin: 8px 0 0;
 }
 
@@ -45,7 +45,7 @@
 
 /* Form controls */
 .form-group { margin-bottom: 20px; }
-.form-label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; color: #cbd5e1; }
+.form-label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; color: #f1f5f9; }
 .form-input, .form-select, .form-textarea {
   width: 100%; padding: 10px 14px; border-radius: 8px;
   border: 1px solid #334155; background: #1e293b; color: #f8fafc;
@@ -56,7 +56,7 @@
 .form-input:disabled, .form-select:disabled { opacity: 0.5; cursor: not-allowed; }
 .form-input.error { border-color: #ef4444; }
 .form-textarea { resize: vertical; min-height: 80px; font-family: inherit; }
-.form-hint { display: block; font-size: 12px; color: #64748b; margin-top: 4px; }
+.form-hint { display: block; font-size: 12px; color: #94a3b8; margin-top: 4px; }
 .form-error-text { display: block; font-size: 12px; color: #ef4444; margin-top: 4px; }
 .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
 .form-row > * { flex: 1; min-width: 200px; }
@@ -87,11 +87,11 @@
 .vendor-table { width: 100%; border-collapse: collapse; }
 .vendor-table th {
   text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600;
-  color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.05em;
   background: rgba(30, 41, 59, 0.5); border-bottom: 1px solid #334155;
 }
 .vendor-table td {
-  padding: 12px 16px; font-size: 14px; color: #e2e8f0;
+  padding: 12px 16px; font-size: 14px; color: #f1f5f9;
   border-bottom: 1px solid rgba(51, 65, 85, 0.4);
 }
 .vendor-table tr:hover td { background: rgba(30, 41, 59, 0.3); }
@@ -100,7 +100,7 @@
   border: 1px solid #1e293b; border-radius: 8px; overflow: hidden;
 }
 .table-empty {
-  padding: 40px; text-align: center; color: #64748b; font-size: 14px;
+  padding: 40px; text-align: center; color: #94a3b8; font-size: 14px;
 }
 
 /* Badges / Chips */
@@ -141,7 +141,7 @@
 .stepper { display: flex; align-items: center; margin-bottom: 32px; gap: 4px; }
 .stepper-step {
   display: flex; align-items: center; gap: 8px; font-size: 13px;
-  color: #64748b; font-weight: 500;
+  color: #94a3b8; font-weight: 500;
 }
 .stepper-step.active { color: #3b82f6; }
 .stepper-step.completed { color: #10b981; }
@@ -162,8 +162,8 @@
 }
 .drop-zone:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
 .drop-zone-icon { font-size: 40px; margin-bottom: 8px; opacity: 0.5; }
-.drop-zone-text { color: #94a3b8; font-size: 14px; }
-.drop-zone-hint { color: #64748b; font-size: 12px; margin-top: 4px; }
+.drop-zone-text { color: #cbd5e1; font-size: 14px; }
+.drop-zone-hint { color: #94a3b8; font-size: 12px; margin-top: 4px; }
 
 /* File preview row */
 .file-preview {
@@ -173,7 +173,7 @@
 }
 .file-preview-info { flex: 1; }
 .file-preview-name { font-size: 14px; color: #e2e8f0; }
-.file-preview-size { font-size: 12px; color: #64748b; }
+.file-preview-size { font-size: 12px; color: #94a3b8; }
 .file-preview.success { border-color: #10b981; }
 .file-preview.success .file-preview-name { color: #10b981; font-weight: 600; }
 
@@ -198,7 +198,7 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Loading state */
-.loading-center { display: flex; flex-direction: column; align-items: center; padding: 48px; gap: 12px; color: #94a3b8; }
+.loading-center { display: flex; flex-direction: column; align-items: center; padding: 48px; gap: 12px; color: #cbd5e1; }
 
 /* Section title */
 .section-title {
@@ -216,12 +216,12 @@
   padding: 8px 0; border-bottom: 1px solid rgba(51, 65, 85, 0.5);
 }
 .info-row:last-child { border-bottom: none; }
-.info-label { font-size: 13px; color: #94a3b8; font-weight: 500; }
-.info-value { font-size: 14px; color: #e2e8f0; font-weight: 500; }
+.info-label { font-size: 13px; color: #cbd5e1; font-weight: 500; }
+.info-value { font-size: 14px; color: #f8fafc; font-weight: 500; }
 
 /* Utility */
 .text-center { text-align: center; }
-.text-muted { color: #94a3b8; }
+.text-muted { color: #cbd5e1; }
 .mt-8 { margin-top: 8px; }
 .mt-16 { margin-top: 16px; }
 .mt-24 { margin-top: 24px; }
