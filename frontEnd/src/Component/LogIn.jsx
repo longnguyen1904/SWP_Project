@@ -18,25 +18,22 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
   const [forgotMessage, setForgotMessage] = useState("");
   const [forgotError, setForgotError] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
+  const [attemptData, setAttemptData] = useState({});
+  const [now, setNow] = useState(Date.now());
+  const MAX_ATTEMPTS = 5;
+  const LOCK_SECONDS = 300;
 
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    let timer;
-    if (lockoutTimeLeft > 0) {
-      timer = setInterval(() => {
-        setLockoutTimeLeft((prev) => {
-          if (prev <= 1) {
-            setLoginError("");
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, [lockoutTimeLeft]);
+  }, []);
+
+  const currentEmail = formData.email.trim().toLowerCase();
+  const currentData = attemptData[currentEmail] || { attempts: 0, lockUntil: 0 };
+  const lockoutTimeLeft = currentData.lockUntil > now ? Math.ceil((currentData.lockUntil - now) / 1000) : 0;
 
   useEffect(() => {
     if (getToken()) ref?.current?.close();
@@ -46,45 +43,51 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (loginError) setLoginError("");
-    if (lockoutTimeLeft > 0) setLockoutTimeLeft(0);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (lockoutTimeLeft > 0) {
+      setLoginError(`Account locked. Try again in ${lockoutTimeLeft}s.`);
+      return;
+    }
+
     try {
       const res = await authAPI.login({
         email: formData.email,
         password: formData.password,
       });
       const user = unwrapResponse(res);
+      setAttemptData((prev) => ({ ...prev, [currentEmail]: undefined }));
       setToken(user.token || "authenticated");
       if (user.roleName) localStorage.setItem("role", user.roleName);
       if (user.userID != null) localStorage.setItem("userId", String(user.userID));
+      if (user.vendorStatus) localStorage.setItem("vendorStatus", user.vendorStatus);
+      else localStorage.removeItem("vendorStatus");
+      if (user.suspendReason) localStorage.setItem("suspendReason", user.suspendReason);
+      else localStorage.removeItem("suspendReason");
       localStorage.setItem("user", JSON.stringify(user));
       window.dispatchEvent(new Event("authChanged"));
       ref?.current?.close();
       navigate("/");
     } catch (err) {
       console.error(err);
-      let msg = getApiErrorMessage(err, "Invalid email or password");
-      
-      // Ensure backend Vietnamese messages are translated
-      if (msg.includes("trước khi bị khóa") || msg.includes("lần thử")) {
-        const match = msg.match(/\d+/);
-        msg = match ? `Incorrect password. ${match[0]} attempts remaining.` : "Invalid email or password.";
-      } else if (msg === "Tài khoản không tồn tại" || msg.includes("Sai mật khẩu")) {
-        if (!msg.includes("bị khóa")) msg = "Invalid email or password.";
-      }
+      const newAttempts = currentData.attempts + 1;
+      const remaining = MAX_ATTEMPTS - newAttempts;
 
-      setLoginError(msg);
-
-      const lockMatch = msg.match(/(\d+)\s*(phút|minutes?)/i);
-      if ((msg.toLowerCase().includes("bị khóa") || msg.toLowerCase().includes("locked")) && lockMatch) {
-        const minutes = parseInt(lockMatch[1], 10);
-        setLockoutTimeLeft(minutes * 60);
+      let newLockUntil = 0;
+      if (remaining <= 0) {
+        newLockUntil = Date.now() + LOCK_SECONDS * 1000;
+        setLoginError(`Too many failed attempts. Account locked for ${LOCK_SECONDS}s.`);
       } else {
-        setLockoutTimeLeft(0);
+        setLoginError(`Invalid email or password. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`);
       }
+
+      setAttemptData((prev) => ({
+        ...prev,
+        [currentEmail]: { attempts: remaining <= 0 ? 0 : newAttempts, lockUntil: newLockUntil }
+      }));
     }
   };
 
@@ -221,9 +224,32 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input type="password" name="password" placeholder="••••••••"
-              value={formData.password} onChange={handleChange} required />
-            {loginError && (
+            <div style={{ position: 'relative' }}>
+              <input 
+                type={showPassword ? "text" : "password"} 
+                name="password" 
+                placeholder="••••••••"
+                value={formData.password} 
+                onChange={handleChange} 
+                required 
+                style={{ paddingRight: 75, width: '100%' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute', right: 2, top: 2, bottom: 2,
+                  background: 'transparent', border: 'none', borderRadius: 8,
+                  padding: '0 12px', cursor: 'pointer', fontSize: '0.82rem',
+                  display: 'flex', alignItems: 'center', gap: 5, color: '#555',
+                  fontWeight: 500
+                }}
+              >
+                <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                {showPassword ? 'Ẩn' : 'Hiện'}
+              </button>
+            </div>
+            {(loginError || lockoutTimeLeft > 0) && (
               <div className="login-alert-error">
                 {lockoutTimeLeft > 0 
                   ? `Account locked. Try again in ${Math.floor(lockoutTimeLeft / 60).toString().padStart(2, '0')}:${(lockoutTimeLeft % 60).toString().padStart(2, '0')}` 

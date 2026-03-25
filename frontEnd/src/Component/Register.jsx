@@ -26,6 +26,20 @@ const Register = forwardRef(function Register(props, ref) {
     roleID: 3, // Customer
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [attemptData, setAttemptData] = useState({});
+  const [now, setNow] = useState(Date.now());
+  const MAX_ATTEMPTS = 5;
+  const LOCK_SECONDS = 300;
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentEmail = formData.email.trim().toLowerCase();
+  const currentData = attemptData[currentEmail] || { attempts: 0, lockUntil: 0 };
+  const lockoutTimeLeft = currentData.lockUntil > now ? Math.ceil((currentData.lockUntil - now) / 1000) : 0;
 
   /* ===== Nếu đã có token thì đóng dialog ===== */
   useEffect(() => {
@@ -40,6 +54,7 @@ const Register = forwardRef(function Register(props, ref) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (loginError) setLoginError("");
   };
 
   /* ===== Password validation ===== */
@@ -55,12 +70,18 @@ const Register = forwardRef(function Register(props, ref) {
   /* ===== Login / Register bằng Email ===== */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoginError("");
+
+    if (lockoutTimeLeft > 0) {
+      setLoginError(`Account locked. Try again in ${lockoutTimeLeft}s.`);
+      return;
+    }
 
     // Validate password on register
     if (!isLogin) {
       const pwErrors = getPasswordErrors(formData.password);
       if (pwErrors.length > 0) {
-        alert("Password requirements:\n- " + pwErrors.join("\n- "));
+        setLoginError("Password requirements:\n- " + pwErrors.join("\n- "));
         return;
       }
     }
@@ -73,6 +94,7 @@ const Register = forwardRef(function Register(props, ref) {
       const user = unwrapResponse(res);
 
       if (isLogin) {
+        setAttemptData((prev) => ({ ...prev, [currentEmail]: undefined }));
         setToken(user.token || "authenticated");
         if (user.roleName) localStorage.setItem("role", user.roleName);
         if (user.userID != null) localStorage.setItem("userId", String(user.userID));
@@ -91,7 +113,25 @@ const Register = forwardRef(function Register(props, ref) {
       }
     } catch (err) {
       console.error(err);
-      alert(getApiErrorMessage(err, "Cannot connect to server (8081)"));
+      if (isLogin) {
+        const newAttempts = currentData.attempts + 1;
+        const remaining = MAX_ATTEMPTS - newAttempts;
+
+        let newLockUntil = 0;
+        if (remaining <= 0) {
+          newLockUntil = Date.now() + LOCK_SECONDS * 1000;
+          setLoginError(`Account temporarily locked. Try again in ${LOCK_SECONDS}s.`);
+        } else {
+          setLoginError(`Invalid email or password. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`);
+        }
+
+        setAttemptData((prev) => ({
+          ...prev,
+          [currentEmail]: { attempts: remaining <= 0 ? 0 : newAttempts, lockUntil: newLockUntil }
+        }));
+      } else {
+        setLoginError(getApiErrorMessage(err, "Cannot connect to server (8081)"));
+      }
     }
   };
 
@@ -358,19 +398,27 @@ const Register = forwardRef(function Register(props, ref) {
             })()}
           </div>
 
+          {(loginError || lockoutTimeLeft > 0) && (
+            <div style={{ color: '#ffffff', fontSize: '0.82rem', fontWeight: 'bold', marginTop: -4, marginBottom: 4 }}>
+              {lockoutTimeLeft > 0 
+                ? `Account locked. Try again in ${Math.floor(lockoutTimeLeft / 60).toString().padStart(2, '0')}:${(lockoutTimeLeft % 60).toString().padStart(2, '0')}` 
+                : loginError}
+            </div>
+          )}
+
           {isLogin && (
             <p className="forgot-password-link">
               <span
                 onClick={() => setShowForgot(true)}
                 style={{ cursor: "pointer", color: "white", fontWeight: "bold", fontSize: "0.9rem", textDecoration: "underline" }}
               >
-                Quên mật khẩu?
+                Forgot password?
               </span>
             </p>
           )}
 
-          <button className="login-btn" type="submit">
-            {isLogin ? "Log In" : "Sign Up"}
+          <button className="login-btn" type="submit" disabled={isLogin && lockoutTimeLeft > 0}>
+            {isLogin && lockoutTimeLeft > 0 ? "Locked..." : isLogin ? "Log In" : "Sign Up"}
           </button>
         </form>
 
