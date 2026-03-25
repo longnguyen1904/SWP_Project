@@ -15,6 +15,7 @@ export default function VendorTicketManagement() {
   const [replyFile, setReplyFile] = useState(null);
 
   const [filterStatus, setFilterStatus] = useState("Open");
+  const [filterContext, setFilterContext] = useState("ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -194,6 +195,13 @@ export default function VendorTicketManagement() {
 
   if (role !== "VENDOR" && role !== "ADMIN") return <div style={{ minHeight: "100vh", background: "transparent", color: "white", display: "flex", justifyContent: "center", alignItems: "center" }}><h2>🚫 Không có quyền truy cập</h2></div>;
 
+  const getTicketContext = (t) => {
+    const sub = (t.subject || '').toLowerCase();
+    if (!t.orderId || sub.startsWith('[pre-sale') || sub.startsWith('[feature') || sub.startsWith('[report')) return 'INQUIRY';
+    if (sub.startsWith('[payment') || sub.startsWith('[delivery') || sub.startsWith('[coupon')) return 'PAYMENT';
+    return 'PURCHASED';
+  };
+
   const filteredTickets = tickets
     .filter(t => {
       const matchStatus = isKanbanMode ? true : (filterStatus === "All" || t.status === filterStatus);
@@ -201,7 +209,8 @@ export default function VendorTicketManagement() {
       const ticketDate = new Date(t.createdAt).toISOString().split('T')[0];
       const matchStart = startDate ? ticketDate >= startDate : true;
       const matchEnd = endDate ? ticketDate <= endDate : true;
-      return matchStatus && matchSearch && matchStart && matchEnd;
+      const matchContext = filterContext === 'ALL' || getTicketContext(t) === filterContext;
+      return matchStatus && matchSearch && matchStart && matchEnd && matchContext;
     })
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -259,15 +268,15 @@ export default function VendorTicketManagement() {
 
   return (
     <div style={s.bg}>
-      <div style={{ ...s.panel, width: isKanbanMode ? "65%" : "35%", minWidth: "350px", height: "calc(100vh - 48px)", transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}>
+      <div style={{ ...s.panel, width: isKanbanMode ? "100%" : "35%", minWidth: "350px", height: "calc(100vh - 48px)", transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}>
         <div style={{ padding: "20px", borderBottom: "1px solid rgba(63, 63, 70, 0.4)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
             <h2 style={{ fontSize: "20px", fontWeight: "700", margin: 0, color: "#f9fafb" }}>Quản lý Ticket</h2>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={fetchTickets} style={{ ...s.btn, background: "rgba(39, 39, 42, 0.8)", color: "white", border: "1px solid rgba(82, 82, 91, 0.5)" }}>🔄 Làm mới</button>
-              {isKanbanMode && ( <button onClick={handleConfirmChanges} style={{ ...s.btn, background: "#10b981", color: "white" }}>Xác nhận</button> )}
+              <button onClick={fetchTickets} style={{ ...s.btn, background: "rgba(39, 39, 42, 0.8)", color: "white", border: "1px solid rgba(82, 82, 91, 0.5)" }}><i className="bi bi-arrow-clockwise me-1"></i> Làm mới</button>
+              {isKanbanMode && ( <button onClick={handleConfirmChanges} style={{ ...s.btn, background: "#10b981", color: "white" }}><i className="bi bi-check2-circle me-1"></i>Xác nhận</button> )}
               <button onClick={handleToggleKanban} style={{ ...s.btn, background: isKanbanMode ? "#f97316" : "rgba(39, 39, 42, 0.8)", color: isKanbanMode ? "white" : "#a1a1aa", border: `1px solid ${isKanbanMode ? "#f97316" : "rgba(82, 82, 91, 0.5)"}` }}>
-                {isKanbanMode ? "Đóng " : "🗂️ Xử lý ticket"}
+                {isKanbanMode ? <><i className="bi bi-x-lg me-1"></i>Đóng</> : <><i className="bi bi-kanban me-1"></i>Xử lý ticket</>}
               </button>
             </div>
           </div>
@@ -282,17 +291,39 @@ export default function VendorTicketManagement() {
           </div>
 
           {!isKanbanMode && (
-            <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-              {["All", "Open", "Resolved", "Closed"].map(st => (
-                <button key={st} onClick={() => setFilterStatus(st)}
-                  style={{
-                    flex: 1, padding: "6px 0", borderRadius: "6px", fontSize: "12px", cursor: "pointer", border: "none", fontWeight: "600",
-                    backgroundColor: filterStatus === st ? "#3b82f6" : "rgba(39, 39, 42, 0.8)", color: filterStatus === st ? "white" : "#a1a1aa"
-                  }}>
-                  {st}
-                </button>
-              ))}
-            </div>
+            <>
+              <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+                {["All", "Open", "Resolved", "Closed"].map(st => (
+                  <button key={st} onClick={() => setFilterStatus(st)}
+                    style={{
+                      flex: 1, padding: "6px 0", borderRadius: "6px", fontSize: "12px", cursor: "pointer", border: "none", fontWeight: "600",
+                      backgroundColor: filterStatus === st ? "#3b82f6" : "rgba(39, 39, 42, 0.8)", color: filterStatus === st ? "white" : "#a1a1aa"
+                    }}>
+                    {st}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: "6px", marginTop: "10px", flexWrap: "wrap" }}>
+                {[
+                  { id: 'ALL', label: 'Tất cả', icon: 'bi-grid-fill' },
+                  { id: 'PURCHASED', label: 'Đã mua', icon: 'bi-bag-check-fill' },
+                  { id: 'PAYMENT', label: 'Đang mua', icon: 'bi-credit-card-fill' },
+                  { id: 'INQUIRY', label: 'Hỏi đáp', icon: 'bi-chat-left-quote-fill' },
+                ].map(ctx => (
+                  <button key={ctx.id} onClick={() => setFilterContext(ctx.id)}
+                    style={{
+                      padding: "5px 12px", borderRadius: "6px", fontSize: "12px", cursor: "pointer",
+                      border: filterContext === ctx.id ? "1px solid #f97316" : "1px solid rgba(82, 82, 91, 0.4)",
+                      fontWeight: "600", display: "flex", alignItems: "center", gap: "5px",
+                      backgroundColor: filterContext === ctx.id ? "rgba(249,115,22,0.15)" : "rgba(39, 39, 42, 0.6)",
+                      color: filterContext === ctx.id ? "#f97316" : "#a1a1aa", transition: "0.2s"
+                    }}>
+                    <i className={`bi ${ctx.icon}`} style={{ fontSize: '11px' }}></i>
+                    {ctx.label}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
@@ -301,15 +332,15 @@ export default function VendorTicketManagement() {
           isKanbanMode ? (
             <div style={{ display: "flex", flex: 1, overflowX: "auto", overflowY: "hidden", backgroundColor: "rgba(24, 24, 27, 0.3)" }}>
               <div style={{ flex: 1, minWidth: "220px", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(63, 63, 70, 0.4)" }} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, "Open")}>
-                <div style={s.colHeader("#3b82f6")}><span style={{ color: "#3b82f6" }}>🟢 Đang xử lý</span><span style={s.badgeCount}>{openTickets.length}</span></div>
+                <div style={s.colHeader("#3b82f6")}><span style={{ color: "#3b82f6" }}><i className="bi bi-circle-fill me-1" style={{ fontSize: '8px' }}></i> Đang xử lý</span><span style={s.badgeCount}>{openTickets.length}</span></div>
                 <div style={{ flex: 1, overflowY: "auto", paddingBottom: "12px" }}>{openTickets.map(t => renderTicketCard(t, true))}</div>
               </div>
               <div style={{ flex: 1, minWidth: "220px", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(63, 63, 70, 0.4)" }} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, "Resolved")}>
-                <div style={s.colHeader("#f59e0b")}><span style={{ color: "#f59e0b" }}>🟡 Đã trả lời</span><span style={s.badgeCount}>{resolvedTickets.length}</span></div>
+                <div style={s.colHeader("#f59e0b")}><span style={{ color: "#f59e0b" }}><i className="bi bi-check-circle-fill me-1" style={{ fontSize: '10px' }}></i> Đã trả lời</span><span style={s.badgeCount}>{resolvedTickets.length}</span></div>
                 <div style={{ flex: 1, overflowY: "auto", paddingBottom: "12px" }}>{resolvedTickets.map(t => renderTicketCard(t, true))}</div>
               </div>
               <div style={{ flex: 1, minWidth: "220px", display: "flex", flexDirection: "column" }} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, "Closed")}>
-                <div style={s.colHeader("#71717a")}><span style={{ color: "#a1a1aa" }}>🔴 Đã đóng</span><span style={s.badgeCount}>{closedTickets.length}</span></div>
+                <div style={s.colHeader("#71717a")}><span style={{ color: "#a1a1aa" }}><i className="bi bi-lock-fill me-1" style={{ fontSize: '10px' }}></i> Đã đóng</span><span style={s.badgeCount}>{closedTickets.length}</span></div>
                 <div style={{ flex: 1, overflowY: "auto", paddingBottom: "12px" }}>{closedTickets.map(t => renderTicketCard(t, true))}</div>
               </div>
             </div>
@@ -322,10 +353,11 @@ export default function VendorTicketManagement() {
           )}
       </div>
 
-      <div style={{ ...s.panel, width: isKanbanMode ? "35%" : "65%", height: "calc(100vh - 48px)", transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}>
+      {!isKanbanMode && (
+      <div style={{ ...s.panel, flex: 1, height: "calc(100vh - 48px)", transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}>
         {!selectedTicket ? (
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "100%", color: "#71717a", backgroundColor: "rgba(24, 24, 27, 0.3)" }}>
-            <div style={{ fontSize: "64px", marginBottom: "16px", opacity: 0.2 }}>💬</div>
+            <div style={{ fontSize: "64px", marginBottom: "16px", opacity: 0.15 }}><i className="bi bi-chat-square-text"></i></div>
             <h3>Chọn một Ticket để bắt đầu hỗ trợ</h3>
           </div>
         ) : (
@@ -347,19 +379,18 @@ export default function VendorTicketManagement() {
                   onClick={handleShowInfoModal} 
                   style={{ ...s.btn, background: "rgba(39, 39, 42, 0.8)", border: "1px solid rgba(82, 82, 91, 0.5)", color: "white" }}
                 >
-                  ℹ️ Thông tin
+                  <i className="bi bi-info-circle me-1"></i> Thông tin
                 </button>
 
                 {selectedTicket.status === "Open" && (
                   <button onClick={handleResolveTicket}
-                    style={{ padding: "10px 20px", borderRadius: "8px", border: "none", backgroundColor: "#10b981", color: "white", fontWeight: "600", cursor: "pointer", boxShadow: "0 4px 14px 0 rgba(16, 185, 129, 0.39)" }}>
-                     Xác nhận đã trả lời
+                    style={{ padding: "10px 20px", borderRadius: "8px", border: "none", backgroundColor: "#10b981", color: "white", fontWeight: "600", cursor: "pointer", boxShadow: "0 4px 14px 0 rgba(16, 185, 129, 0.39)", transition: "0.2s" }}><i className="bi bi-check2-circle me-1"></i> Xác nhận đã trả lời
                   </button>
                 )}
                 
                 {selectedTicket.status === "Closed" && (
                   <span style={{ padding: "6px 12px", background: "rgba(113, 113, 122, 0.2)", borderRadius: "8px", color: "#a1a1aa", fontSize: "13px" }}>
-                    🔒 Khách đã đóng
+                    <i className="bi bi-lock-fill me-1"></i> Khách đã đóng
                   </span>
                 )}
               </div>
@@ -376,7 +407,7 @@ export default function VendorTicketManagement() {
 
                     {msg.messageContent && (
                       <div style={{
-                        maxWidth: isKanbanMode ? "90%" : "75%", padding: "12px 16px", borderRadius: "14px",
+                        maxWidth: "75%", padding: "12px 16px", borderRadius: "14px", wordBreak: "break-word",
                         backgroundColor: isMine ? "#3b82f6" : "rgba(63, 63, 70, 0.6)",
                         color: "white",
                         borderBottomRightRadius: isMine && !msg.attachmentUrl ? "4px" : "14px",
@@ -393,7 +424,7 @@ export default function VendorTicketManagement() {
                           <img src={msg.attachmentUrl} alt="attachment" style={{ maxWidth: "100%", maxHeight: "250px", display: "block", objectFit: "cover" }} />
                         ) : (
                           <a href={msg.attachmentUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", padding: "10px 14px", color: "white", textDecoration: "none", fontSize: "13px", backgroundColor: isMine ? "#3b82f6" : "rgba(63, 63, 70, 0.6)" }}>
-                            📎 {msg.isSending ? "Đang tải file lên..." : "Tải file đính kèm"}
+                            <i className="bi bi-paperclip me-1"></i> {msg.isSending ? "Đang tải file lên..." : "Tải file đính kèm"}
                           </a>
                         )}
                       </div>
@@ -406,22 +437,22 @@ export default function VendorTicketManagement() {
 
             <div style={{ padding: "16px", borderTop: "1px solid rgba(82, 82, 91, 0.5)", backgroundColor: "rgba(39, 39, 42, 0.3)" }}>
               {selectedTicket.status === "Closed" ? (
-                <div style={{ textAlign: "center", color: "#10b981", padding: "12px", background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px", fontWeight: "500" }}>🔒 Ticket này đã được đóng lại. Không thể nhắn thêm.</div>
+                <div style={{ textAlign: "center", color: "#10b981", padding: "12px", background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px", fontWeight: "500" }}><i className="bi bi-lock-fill me-1"></i> Ticket này đã được đóng lại. Không thể nhắn thêm.</div>
               ) : (
                 <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
                   <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "8px" }}>
                     {replyFile && (
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px", backgroundColor: "rgba(63, 63, 70, 0.6)", borderRadius: "6px", width: "max-content", fontSize: "12px" }}>
-                        <span style={{ color: "#3b82f6" }}>📎 {replyFile.name}</span>
-                        <button onClick={() => { setReplyFile(null); if (fileInputRef.current) fileInputRef.current.value = "" }} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "0" }}>✖</button>
+                        <span style={{ color: "#3b82f6" }}><i className="bi bi-paperclip me-1"></i>{replyFile.name}</span>
+                        <button onClick={() => { setReplyFile(null); if (fileInputRef.current) fileInputRef.current.value = "" }} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "0" }}><i className="bi bi-x-lg"></i></button>
                       </div>
                     )}
                     <textarea rows={isKanbanMode ? "3" : "2"} placeholder="Nhập hướng dẫn xử lý lỗi..." style={{ ...s.input, resize: "none", backgroundColor: "rgba(24, 24, 27, 0.8)", border: "1px solid rgba(82, 82, 91, 0.8)", fontSize: "13px" }} value={replyText} onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }} />
                   </div>
                   <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={(e) => setReplyFile(e.target.files[0])} />
                   <div style={{ display: "flex", flexDirection: isKanbanMode ? "column" : "row", gap: "10px" }}>
-                    <button onClick={() => fileInputRef.current?.click()} style={{ padding: "10px 14px", borderRadius: "8px", border: "1px solid rgba(82, 82, 91, 0.8)", backgroundColor: "rgba(24, 24, 27, 0.8)", color: "#a1a1aa", cursor: "pointer", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.backgroundColor = "rgba(63, 63, 70, 0.8)"} onMouseOut={e => e.currentTarget.style.backgroundColor = "rgba(24, 24, 27, 0.8)"}>📎</button>
-                    <button onClick={handleSendReply} disabled={!replyText.trim() && !replyFile} style={{ padding: "10px 20px", borderRadius: "8px", backgroundColor: (!replyText.trim() && !replyFile) ? "rgba(63, 63, 70, 0.6)" : "#3b82f6", color: (!replyText.trim() && !replyFile) ? "#a1a1aa" : "white", border: "none", cursor: (!replyText.trim() && !replyFile) ? "not-allowed" : "pointer", fontWeight: "600", transition: "0.2s" }}>Gửi 📤</button>
+                    <button onClick={() => fileInputRef.current?.click()} style={{ padding: "10px 14px", borderRadius: "8px", border: "1px solid rgba(82, 82, 91, 0.8)", backgroundColor: "rgba(24, 24, 27, 0.8)", color: "#a1a1aa", cursor: "pointer", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.backgroundColor = "rgba(63, 63, 70, 0.8)"} onMouseOut={e => e.currentTarget.style.backgroundColor = "rgba(24, 24, 27, 0.8)"}><i className="bi bi-paperclip" style={{ fontSize: '1.1rem' }}></i></button>
+                    <button onClick={handleSendReply} disabled={!replyText.trim() && !replyFile} style={{ padding: "10px 20px", borderRadius: "8px", backgroundColor: (!replyText.trim() && !replyFile) ? "rgba(63, 63, 70, 0.6)" : "#3b82f6", color: (!replyText.trim() && !replyFile) ? "#a1a1aa" : "white", border: "none", cursor: (!replyText.trim() && !replyFile) ? "not-allowed" : "pointer", fontWeight: "600", transition: "0.2s", boxShadow: (!replyText.trim() && !replyFile) ? "none" : "0 4px 14px rgba(59,130,246,0.3)" }}>Gửi <i className="bi bi-send-fill ms-1"></i></button>
                   </div>
                 </div>
               )}
@@ -430,6 +461,7 @@ export default function VendorTicketManagement() {
           </>
         )}
       </div>
+      )}
 
       {/* POPUP THÔNG TIN ĐƠN HÀNG KẾT HỢP CHI TIẾT SẢN PHẨM & VERSION */}
       {showInfoModal && selectedTicket && (
@@ -437,7 +469,7 @@ export default function VendorTicketManagement() {
           <div style={{ backgroundColor: "rgba(24, 24, 27, 0.95)", border: "1px solid rgba(82, 82, 91, 0.5)", borderRadius: "12px", width: "450px", padding: "24px", color: "white", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px", borderBottom: "1px solid rgba(63, 63, 70, 0.4)", paddingBottom: "12px" }}>
               <h3 style={{ margin: 0, fontSize: "18px", color: "#f9fafb" }}>Chi tiết Ticket & Đơn hàng</h3>
-              <button onClick={() => setShowInfoModal(false)} style={{ background: "none", border: "none", color: "#a1a1aa", cursor: "pointer", fontSize: "16px" }}>✖</button>
+              <button onClick={() => setShowInfoModal(false)} style={{ background: "none", border: "none", color: "#a1a1aa", cursor: "pointer", fontSize: "16px" }}><i className="bi bi-x-lg"></i></button>
             </div>
             
             {/* THÔNG TIN TICKET */}

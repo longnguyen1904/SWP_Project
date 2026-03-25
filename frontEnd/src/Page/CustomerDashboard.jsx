@@ -6,31 +6,30 @@ export default function CustomerDashboard() {
 
   return (
     <div className="d-flex" style={{ minHeight: "100vh", backgroundColor: "transparent" }}>
-      
+
       {/* ================= CUSTOMER SIDEBAR ================= */}
       <div
         className="text-white border-end border-secondary p-3 shadow-lg"
-        style={{ 
-          width: "280px", 
-          backgroundColor: "rgba(0, 0, 0, 0.8)", 
-          backdropFilter: "blur(15px)", 
-          zIndex: 10 
+        style={{
+          width: "280px",
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          backdropFilter: "blur(15px)",
+          zIndex: 10
         }}
       >
         <div className="d-flex align-items-center mb-4 px-2 pt-2">
           <div className="bg-info rounded-3 p-2 me-2 shadow-sm">
-             <i className="bi bi-person-badge-fill text-dark"></i>
+            <i className="bi bi-person-badge-fill text-dark"></i>
           </div>
           <h5 className="fw-bold mb-0 text-white" style={{ letterSpacing: "1px" }}>MY ACCOUNT</h5>
         </div>
 
         <ul className="nav nav-pills flex-column mb-auto">
           <li className="nav-item mb-2">
-            <NavLink 
-              to="/Page/Customer/PurchasedProducts" 
-              className={({ isActive }) => 
-                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
-                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+            <NavLink
+              to="/Page/Customer/PurchasedProducts"
+              className={({ isActive }) =>
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
                 }`
               }
             >
@@ -40,11 +39,10 @@ export default function CustomerDashboard() {
           </li>
 
           <li className="nav-item mb-2">
-            <NavLink 
-              to="/Page/Customer/Wishlist" 
-              className={({ isActive }) => 
-                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
-                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+            <NavLink
+              to="/Page/Customer/Wishlist"
+              className={({ isActive }) =>
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
                 }`
               }
             >
@@ -54,11 +52,10 @@ export default function CustomerDashboard() {
           </li>
 
           <li className="nav-item mb-2">
-            <NavLink 
-              to="/Page/Customer/RecentlyViewed" 
-              className={({ isActive }) => 
-                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
-                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+            <NavLink
+              to="/Page/Customer/RecentlyViewed"
+              className={({ isActive }) =>
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
                 }`
               }
             >
@@ -68,12 +65,11 @@ export default function CustomerDashboard() {
           </li>
 
 
-           <li className="nav-item mb-2">
-            <NavLink 
-              to="/Page/Customer/CustomerTicketManagement" 
-              className={({ isActive }) => 
-                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
-                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+          <li className="nav-item mb-2">
+            <NavLink
+              to="/Page/Customer/CustomerTicketManagement"
+              className={({ isActive }) =>
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
                 }`
               }
             >
@@ -81,12 +77,11 @@ export default function CustomerDashboard() {
               CustomerTicketManagement
             </NavLink>
           </li>
-                    <li className="nav-item mb-2">
-            <NavLink 
-              to="/Page/Customer/CreateSupportTicket" 
-              className={({ isActive }) => 
-                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
-                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+          <li className="nav-item mb-2">
+            <NavLink
+              to="/Page/Customer/CreateSupportTicket"
+              className={({ isActive }) =>
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
                 }`
               }
             >
@@ -95,11 +90,10 @@ export default function CustomerDashboard() {
             </NavLink>
           </li>
           <li className="nav-item mb-2">
-            <NavLink 
-              to="/Page/Customer/Profile" 
-              className={({ isActive }) => 
-                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${
-                  isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+            <NavLink
+              to="/Page/Customer/Profile"
+              className={({ isActive }) =>
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
                 }`
               }
             >
@@ -107,7 +101,18 @@ export default function CustomerDashboard() {
               Profile Settings
             </NavLink>
           </li>
-
+          <li className="nav-item mb-2">
+            <NavLink
+              to="/Page/Customer/HelpCenter"
+              className={({ isActive }) =>
+                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-info text-dark shadow fw-bold' : 'text-light opacity-75'
+                }`
+              }
+            >
+              <i className="bi bi-clock-history me-3"></i>
+              HelpCenter
+            </NavLink>
+          </li>
         </ul>
 
         <hr className="border-secondary opacity-50" />
@@ -143,9 +148,9 @@ export default function CustomerDashboard() {
 
         {/* ========== CONTENT ========== */}
         <div className="container-fluid p-4 overflow-auto" style={{ flex: 1 }}>
-           <div className="text-white">
-              <Outlet context={{ searchTerm }} />
-           </div>
+          <div className="text-white">
+            <Outlet context={{ searchTerm }} />
+          </div>
         </div>
 
       </div>

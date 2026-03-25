@@ -223,17 +223,17 @@ export default function CustomerTicketManagement() {
 
   return (
     <div style={s.bg}>
-      <div style={{ ...s.panel, width: isKanbanMode ? "65%" : "35%", minWidth: "320px", height: "calc(100vh - 48px)", transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}>
+      <div style={{ ...s.panel, width: isKanbanMode ? "100%" : "35%", minWidth: "320px", height: "calc(100vh - 48px)", transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}>
 
         <div style={{ padding: "20px", borderBottom: "1px solid rgba(63, 63, 70, 0.4)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
             <h2 style={{ fontSize: "20px", fontWeight: "700", margin: 0, color: "#f9fafb" }}>Lịch sử Hỗ trợ</h2>
 
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={fetchTickets} style={{ ...s.btn, background: "rgba(39, 39, 42, 0.8)", color: "white", border: "1px solid rgba(82, 82, 91, 0.5)" }}>🔄 Làm mới</button>
+              <button onClick={fetchTickets} style={{ ...s.btn, background: "rgba(39, 39, 42, 0.8)", color: "white", border: "1px solid rgba(82, 82, 91, 0.5)" }}><i className="bi bi-arrow-clockwise me-1"></i> Làm mới</button>
 
               {isKanbanMode && (
-                <button onClick={handleConfirmChanges} style={{ ...s.btn, background: "#10b981", color: "white" }}> Xác nhận</button>
+                <button onClick={handleConfirmChanges} style={{ ...s.btn, background: "#10b981", color: "white" }}><i className="bi bi-check2-circle me-1"></i> Xác nhận</button>
               )}
 
               {/* Sử dụng hàm handleToggleKanban mới tạo ở đây */}
@@ -241,7 +241,7 @@ export default function CustomerTicketManagement() {
                 onClick={handleToggleKanban}
                 style={{ ...s.btn, background: isKanbanMode ? "#f97316" : "rgba(39, 39, 42, 0.8)", color: isKanbanMode ? "white" : "#a1a1aa", border: `1px solid ${isKanbanMode ? "#f97316" : "rgba(82, 82, 91, 0.5)"}` }}
               >
-                {isKanbanMode ? "Đóng" : "🗂️ Xử lý ticket"}
+                {isKanbanMode ? <><i className="bi bi-x-lg me-1"></i>Đóng</> : <><i className="bi bi-kanban me-1"></i>Xử lý ticket</>}
               </button>
             </div>
           </div>
@@ -275,15 +275,15 @@ export default function CustomerTicketManagement() {
           isKanbanMode ? (
             <div style={{ display: "flex", flex: 1, overflowX: "auto", overflowY: "hidden", backgroundColor: "rgba(24, 24, 27, 0.3)" }}>
               <div style={{ flex: 1, minWidth: "220px", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(63, 63, 70, 0.4)" }} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, "Open")}>
-                <div style={s.colHeader("#f97316")}><span style={{ color: "#f97316" }}>🟢 Đang xử lý</span><span style={s.badgeCount}>{openTickets.length}</span></div>
+                <div style={s.colHeader("#f97316")}><span style={{ color: "#f97316" }}><i className="bi bi-circle-fill me-1" style={{ fontSize: '8px' }}></i> Đang xử lý</span><span style={s.badgeCount}>{openTickets.length}</span></div>
                 <div style={{ flex: 1, overflowY: "auto", paddingBottom: "12px" }}>{openTickets.map(t => renderTicketCard(t, true))}</div>
               </div>
               <div style={{ flex: 1, minWidth: "220px", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(63, 63, 70, 0.4)" }} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, "Resolved")}>
-                <div style={s.colHeader("#10b981")}><span style={{ color: "#10b981" }}>🟡 Đã trả lời</span><span style={s.badgeCount}>{resolvedTickets.length}</span></div>
+                <div style={s.colHeader("#10b981")}><span style={{ color: "#10b981" }}><i className="bi bi-check-circle-fill me-1" style={{ fontSize: '10px' }}></i> Đã trả lời</span><span style={s.badgeCount}>{resolvedTickets.length}</span></div>
                 <div style={{ flex: 1, overflowY: "auto", paddingBottom: "12px" }}>{resolvedTickets.map(t => renderTicketCard(t, true))}</div>
               </div>
               <div style={{ flex: 1, minWidth: "220px", display: "flex", flexDirection: "column" }} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, "Closed")}>
-                <div style={s.colHeader("#71717a")}><span style={{ color: "#a1a1aa" }}>🔴 Đã đóng</span><span style={s.badgeCount}>{closedTickets.length}</span></div>
+                <div style={s.colHeader("#71717a")}><span style={{ color: "#a1a1aa" }}><i className="bi bi-lock-fill me-1" style={{ fontSize: '10px' }}></i> Đã đóng</span><span style={s.badgeCount}>{closedTickets.length}</span></div>
                 <div style={{ flex: 1, overflowY: "auto", paddingBottom: "12px" }}>{closedTickets.map(t => renderTicketCard(t, true))}</div>
               </div>
             </div>
@@ -296,10 +296,11 @@ export default function CustomerTicketManagement() {
           )}
       </div>
 
+      {!isKanbanMode && (
       <div style={{ ...s.panel, flex: 1, height: "calc(100vh - 48px)", transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}>
         {!selectedTicket ? (
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "100%", color: "#71717a", backgroundColor: "rgba(24, 24, 27, 0.3)" }}>
-            <div style={{ fontSize: "64px", marginBottom: "16px", opacity: 0.2 }}>💬</div>
+            <div style={{ fontSize: "64px", marginBottom: "16px", opacity: 0.15 }}><i className="bi bi-chat-square-text"></i></div>
             <h3>Chọn một Ticket để xem phản hồi</h3>
           </div>
         ) : (
@@ -329,7 +330,7 @@ export default function CustomerTicketManagement() {
 
                     {msg.messageContent && (
                       <div style={{
-                        maxWidth: "75%", padding: "12px 16px", borderRadius: "12px",
+                        maxWidth: "75%", padding: "12px 16px", borderRadius: "12px", wordBreak: "break-word",
                         backgroundColor: isMine ? "#f97316" : "rgba(39, 39, 42, 0.8)",
                         color: "white",
                         borderBottomRightRadius: isMine && !msg.attachmentUrl ? "4px" : "12px",
@@ -351,7 +352,7 @@ export default function CustomerTicketManagement() {
                           <img src={msg.attachmentUrl} alt="attachment" style={{ maxWidth: "100%", maxHeight: "300px", display: "block", objectFit: "cover" }} />
                         ) : (
                           <a href={msg.attachmentUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", padding: "12px 16px", color: "white", textDecoration: "none", fontSize: "13px", backgroundColor: isMine ? "#f97316" : "rgba(39, 39, 42, 0.8)" }}>
-                            📎 {msg.isSending ? "Đang tải file lên..." : "Xem file đính kèm"}
+                            <i className="bi bi-paperclip me-1"></i> {msg.isSending ? "Đang tải file lên..." : "Xem file đính kèm"}
                           </a>
                         )}
                       </div>
@@ -370,21 +371,22 @@ export default function CustomerTicketManagement() {
                   <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "8px" }}>
                     {replyFile && (
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", backgroundColor: "rgba(39, 39, 42, 0.8)", borderRadius: "6px", width: "max-content", fontSize: "13px", border: "1px solid rgba(82, 82, 91, 0.5)" }}>
-                        <span style={{ color: "#f97316" }}>📎 {replyFile.name}</span>
-                        <button onClick={() => { setReplyFile(null); if (fileInputRef.current) fileInputRef.current.value = "" }} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "0" }}>✖</button>
+                        <span style={{ color: "#f97316" }}><i className="bi bi-paperclip me-1"></i>{replyFile.name}</span>
+                        <button onClick={() => { setReplyFile(null); if (fileInputRef.current) fileInputRef.current.value = "" }} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "0" }}><i className="bi bi-x-lg"></i></button>
                       </div>
                     )}
                     <textarea rows="2" placeholder="Nhắn tin cho shop..." style={{ ...s.input, resize: "none" }} value={replyText} onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }} />
                   </div>
                   <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={(e) => setReplyFile(e.target.files[0])} />
-                  <button onClick={() => fileInputRef.current?.click()} style={{ padding: "12px", borderRadius: "8px", border: "1px solid rgba(82, 82, 91, 0.5)", backgroundColor: "rgba(39, 39, 42, 0.8)", color: "#a1a1aa", cursor: "pointer" }}>📎</button>
-                  <button onClick={handleSendReply} disabled={!replyText.trim() && !replyFile} style={{ padding: "12px 24px", borderRadius: "8px", backgroundColor: (!replyText.trim() && !replyFile) ? "rgba(39, 39, 42, 0.8)" : "#f97316", color: (!replyText.trim() && !replyFile) ? "#71717a" : "white", border: "none", cursor: (!replyText.trim() && !replyFile) ? "not-allowed" : "pointer", fontWeight: "600" }}>Gửi 📤</button>
+                  <button onClick={() => fileInputRef.current?.click()} style={{ padding: "12px", borderRadius: "8px", border: "1px solid rgba(82, 82, 91, 0.5)", backgroundColor: "rgba(39, 39, 42, 0.8)", color: "#a1a1aa", cursor: "pointer", transition: "0.2s" }}><i className="bi bi-paperclip" style={{ fontSize: '1.1rem' }}></i></button>
+                  <button onClick={handleSendReply} disabled={!replyText.trim() && !replyFile} style={{ padding: "12px 24px", borderRadius: "8px", backgroundColor: (!replyText.trim() && !replyFile) ? "rgba(39, 39, 42, 0.8)" : "#f97316", color: (!replyText.trim() && !replyFile) ? "#71717a" : "white", border: "none", cursor: (!replyText.trim() && !replyFile) ? "not-allowed" : "pointer", fontWeight: "600", transition: "0.2s", boxShadow: (!replyText.trim() && !replyFile) ? "none" : "0 4px 14px rgba(249,115,22,0.3)" }}>Gửi <i className="bi bi-send-fill ms-1"></i></button>
                 </div>
               )}
             </div>
           </>
         )}
       </div>
+      )}
     </div>
   );
 }
