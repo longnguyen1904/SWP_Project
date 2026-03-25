@@ -80,7 +80,7 @@ const AdminPayout = () => {
 
     } catch (err) {
       setMessage({
-        text: "Admin wallet does not have enough balance for this payout",
+text: "Admin wallet does not have enough balance for this payout",
         type: "error",
       });
     } finally {

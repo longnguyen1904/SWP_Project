@@ -79,7 +79,7 @@ public class VendorManagementService {
             vendor.setRejectionNote(null); // clear nếu approve
         }
 
-        if (status == VendorStatus.REJECTED) {
+        else if (status == VendorStatus.REJECTED) {
 
             if (rejectionNote == null || rejectionNote.trim().isEmpty()) {
                 throw new RuntimeException("Rejection note is required");
@@ -88,26 +88,16 @@ public class VendorManagementService {
             vendor.setRejectionNote(rejectionNote);
         }
 
-        if (status == VendorStatus.SUSPENDED) {
-            Role userRole = roleRepository.findById(2).orElseThrow(() -> new RuntimeException("Role USER not found"));
+        else if (status == VendorStatus.SUSPENDED) {
 
-            User user = vendor.getUser();
-            user.setRole(userRole);
-            userRepository.save(user);
-
+        if (rejectionNote != null && !rejectionNote.trim().isEmpty()) {
+            vendor.setRejectionNote(rejectionNote);
+        } else {
             vendor.setRejectionNote(null);
         }
+    }
 
-        if (status == VendorStatus.SUSPENDED) {
-            Role userRole = roleRepository.findByRoleName("Customer")
-                    .orElseThrow(() -> new RuntimeException("Role Customer not found"));
-
-            User user = vendor.getUser();
-            user.setRole(userRole);
-            userRepository.save(user);
-
-            vendor.setRejectionNote(null);
-        }
+        
 
         return vendorRepository.save(vendor);
     }
