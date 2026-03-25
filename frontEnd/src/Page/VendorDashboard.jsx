@@ -325,7 +325,7 @@ export default function VendorDashboard() {
                             }
                         >
                             <i className="bi bi-ticket-perforated me-3"></i>
-                            Mã giảm giá
+                            Coupons
                         </NavLink>
                     </li>
                     <li className="nav-item mb-2">
@@ -337,7 +337,7 @@ export default function VendorDashboard() {
                             }
                         >
                             <i className="bi bi-wallet2 me-3"></i>
-                            Ví & Rút tiền
+                            Wallet & Payouts
                         </NavLink>
                     </li>
                     <li className="nav-item mb-2">

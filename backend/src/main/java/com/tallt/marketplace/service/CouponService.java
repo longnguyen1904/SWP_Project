@@ -59,7 +59,11 @@ public class CouponService {
         coupon.setIsActive(true);
 
         if (expiresAtStr != null && !expiresAtStr.isEmpty()) {
-            coupon.setExpiresAt(LocalDateTime.parse(expiresAtStr));
+            LocalDateTime expiresAt = LocalDateTime.parse(expiresAtStr);
+            if (expiresAt.isBefore(LocalDateTime.now())) {
+                throw new AppException("Expiry date must be in the future");
+            }
+            coupon.setExpiresAt(expiresAt);
         }
 
         if (productId != null) {

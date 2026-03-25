@@ -103,7 +103,6 @@ export default function FollowedVendors() {
 
       {vendors.length === 0 ? (
         <div className="wishlist-page__empty">
-          <div className="wishlist-page__empty-icon">👥</div>
           <p>You are not following any vendors yet.</p>
           <button className="btn btn--primary" onClick={() => navigate("/marketplace")}>
             Explore Marketplace

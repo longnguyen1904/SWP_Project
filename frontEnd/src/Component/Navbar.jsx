@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../public/logo_no_bg.png";
 import LogIn from "./LogIn";
 import Register from "./Register";
@@ -28,6 +28,7 @@ function isCustomer() {
   return getRole() === "CUSTOMER";
 }
 export default function Navbar() {
+  const navigate = useNavigate();
   const loginDialog = useRef();
   const registerDialog = useRef();
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
@@ -45,6 +46,7 @@ export default function Navbar() {
     logOut();
     setLoggedIn(false);
     setRole(null);
+    navigate("/marketplace");
   }
 
   useEffect(() => {
