@@ -166,4 +166,8 @@ export const profileAPI = {
   updateProfile: (data) => api.put("/api/users/profile", data),
 };
 
+export const licenseAPI = {
+  getSessions: (licenseKey) => api.get(`/api/v1/licenses/${licenseKey}/sessions`),
+};
+
 export default api;
