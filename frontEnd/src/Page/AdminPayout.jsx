@@ -63,24 +63,15 @@ const AdminPayout = () => {
         return;
       }
 
-      if (action === "approve") {
-        // Approve → backend trả JSON { paymentUrl: "..." }
-        const data = await res.json();
-        if (data.paymentUrl) {
-          // Redirect admin sang VNPay sandbox để thanh toán
-          window.location.href = data.paymentUrl;
-          return;
-        }
-      }
-
-      // Reject → plain text response
-      const responseText = await res.text();
-      setMessage({ text: responseText, type: "success" });
+      setMessage({
+        text: action === "approve" ? "Payout approved successfully" : "Payout rejected",
+        type: "success",
+      });
       await fetchData();
 
     } catch (err) {
       setMessage({
-text: "Admin wallet does not have enough balance for this payout",
+        text: "Admin wallet does not have enough balance for this payout",
         type: "error",
       });
     } finally {

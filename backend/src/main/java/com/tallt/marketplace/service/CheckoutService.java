@@ -38,6 +38,7 @@ public class CheckoutService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final VNPayService vnPayService;
     private final CouponService couponService;
+    private final CommissionService commissionService;
 
     public CheckoutService(
             OrderRepository orderRepository,
@@ -48,7 +49,8 @@ public class CheckoutService {
             WalletRepository walletRepository,
             WalletTransactionRepository walletTransactionRepository,
             VNPayService vnPayService,
-            CouponService couponService) {
+            CouponService couponService,
+            CommissionService commissionService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.licenseTierRepository = licenseTierRepository;
@@ -58,6 +60,7 @@ public class CheckoutService {
         this.walletTransactionRepository = walletTransactionRepository;
         this.vnPayService = vnPayService;
         this.couponService = couponService;
+        this.commissionService = commissionService;
     }
 
     /**
@@ -132,6 +135,24 @@ public class CheckoutService {
         order.setUnitPrice(tier.getPrice());
         order.setDiscountAmount(discountAmount);
         order.setTotalAmount(totalAmount);
+
+        // Tính toán các loại phí
+        BigDecimal commissionPercent = commissionService.getCurrentCommission();
+        BigDecimal platformFee = totalAmount.multiply(commissionPercent).divide(BigDecimal.valueOf(100));
+        
+        // Tính thuế theo loại Vendor (Cá nhân đóng 5% thuế nhà thầu/thu nhập, Công ty tự nộp thuế = 0%)
+        Vendor orderVendor = product.getVendor();
+        boolean isCompany = orderVendor.getType() != null 
+                && "COMPANY".equals(orderVendor.getType().name());
+        BigDecimal taxPercent = isCompany ? BigDecimal.ZERO : BigDecimal.valueOf(5);
+        BigDecimal taxAmount2 = totalAmount.multiply(taxPercent).divide(BigDecimal.valueOf(100));
+        
+        BigDecimal vendorNet = totalAmount.subtract(platformFee).subtract(taxAmount2);
+
+        order.setPlatformFee(platformFee);
+        order.setTaxAmount(taxAmount2);
+        order.setVendorNetAmount(vendorNet);
+
         order.setPaymentMethod("VNPay");
         order.setPaymentStatus(STATUS_PENDING);
         order.setCreatedAt(LocalDateTime.now());

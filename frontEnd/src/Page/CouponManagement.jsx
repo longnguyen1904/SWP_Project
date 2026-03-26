@@ -124,7 +124,7 @@ const CouponManagement = () => {
           <form onSubmit={handleCreate}>
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Coupon Code</label>
+                <label className="form-label" style={{color:"#fff"}}>Coupon Code</label>
                 <input
                   type="text"
                   className="form-input"
@@ -135,7 +135,7 @@ const CouponManagement = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Discount (%)</label>
+                <label className="form-label" style={{color:"#fff"}}>Discount (%)</label>
                 <input
                   type="number"
                   className="form-input"
@@ -148,7 +148,7 @@ const CouponManagement = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Max Uses</label>
+                <label className="form-label" style={{color:"#fff"}}>Max Uses</label>
                 <input
                   type="number"
                   className="form-input"
@@ -159,7 +159,7 @@ const CouponManagement = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Expiry Date</label>
+                <label className="form-label" style={{color:"#fff"}}>Expiry Date</label>
                 <input
                   type="date"
                   className="form-input"
@@ -170,7 +170,7 @@ const CouponManagement = () => {
             </div>
             <div className="form-row">
               <div className="form-group" style={{ flex: 2 }}>
-                <label className="form-label">Apply to Product</label>
+                <label className="form-label" style={{color:"#fff"}}>Apply to Product</label>
                 <select
                   className="form-select"
                   value={form.productId}
@@ -190,7 +190,7 @@ const CouponManagement = () => {
               </div>
               {form.productId && tiers.length > 0 && (
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Apply to Tier</label>
+                  <label className="form-label" style={{color:"#fff"}}>Apply to Tier</label>
                   <select
                     className="form-select"
                     value={form.tierId}

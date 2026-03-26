@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import api from "../services/api";
 import WalletHistory from "./WalletHistory";
 
@@ -13,7 +13,6 @@ const C = {
   card: "rgba(0,0,0,0.4)",
 };
 
-const TAX_RATE = 5;
 const PAGE_SIZE_WALLET = 5;
 const MIN_AMOUNT = 5000;
 const MAX_AMOUNT = 1_000_000_000;
@@ -25,13 +24,9 @@ export default function VendorWallet() {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
-  const [commission, setCommission] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const numAmount = parseFloat(amount) || 0;
-  const commissionFee = useMemo(() => (numAmount * commission) / 100, [numAmount, commission]);
-  const taxFee = useMemo(() => (numAmount * TAX_RATE) / 100, [numAmount]);
-  const netAmount = useMemo(() => numAmount - commissionFee - taxFee, [numAmount, commissionFee, taxFee]);
 
   const fetchWallet = useCallback(async () => {
     try {
@@ -40,15 +35,7 @@ export default function VendorWallet() {
     } catch (err) { console.error(err); }
   }, []);
 
-  const fetchCommission = useCallback(async () => {
-    try {
-      const res = await api.get("/api/admin/commission");
-      const rate = res.data?.data !== undefined ? Number(res.data.data) : Number(res.data);
-      setCommission(isNaN(rate) ? 0 : rate);
-    } catch (err) { console.error(err); }
-  }, []);
-
-  useEffect(() => { fetchWallet(); fetchCommission(); }, [fetchWallet, fetchCommission]);
+  useEffect(() => { fetchWallet(); }, [fetchWallet]);
 
   const handleRequestPayout = async (e) => {
     e.preventDefault();
@@ -106,10 +93,11 @@ export default function VendorWallet() {
           </form>
           {numAmount > 0 && (
             <div style={feeBoxStyle}>
-              <div style={feeRow}><span>Platform Fee ({commission}%):</span><span style={{ color: C.warning }}>-{fmt(commissionFee)}</span></div>
-              <div style={feeRow}><span>Tax (5%):</span><span style={{ color: C.warning }}>-{fmt(taxFee)}</span></div>
-              <div style={{ ...feeRow, fontWeight: "700", color: C.accent, borderTop: `1px solid ${C.border}`, paddingTop: "6px", marginTop: "4px" }}>
-                <span>Estimated Net Amount:</span><span>{fmt(netAmount)}</span>
+              <div style={{ ...feeRow, color: C.textMuted, fontSize: "11px", marginBottom: "4px" }}>
+                Platform fee & tax already deducted per order
+              </div>
+              <div style={{ ...feeRow, fontWeight: "700", color: C.accent }}>
+                <span>You will receive:</span><span>{fmt(numAmount)}</span>
               </div>
             </div>
           )}

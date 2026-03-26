@@ -36,9 +36,6 @@ public class WalletService {
         @Autowired
         private OrderRepository orderRepository;
 
-        @Autowired
-        private CommissionService commissionService;
-
         // GET WALLET
         public WalletResponse getVendorWallet(Integer userId, int page, int size) {
 
@@ -120,26 +117,15 @@ public class WalletService {
                         throw new AppException("Không đủ tiền rút");
                 }
 
-                // SNAPSHOT COMMISSION
-                BigDecimal percent = commissionService.getCurrentCommission();
-
-                BigDecimal fee = request.getAmount()
-                                .multiply(percent)
-                                .divide(BigDecimal.valueOf(100));
-
-                BigDecimal tax = request.getAmount()
-                                .multiply(BigDecimal.valueOf(5))
-                                .divide(BigDecimal.valueOf(100));
-
-                BigDecimal net = request.getAmount()
-                                .subtract(fee)
-                                .subtract(tax);
+                // Phí và thuế đã được tính và trừ per-order (lúc checkout),
+                // nên lúc rút tiền không cần tính lại.
+                BigDecimal net = request.getAmount();
 
                 VendorPayout payout = new VendorPayout();
                 payout.setVendor(vendor);
                 payout.setAmount(request.getAmount());
-                payout.setPlatformFee(fee);
-                payout.setTax(tax);
+                payout.setPlatformFee(BigDecimal.ZERO);
+                payout.setTax(BigDecimal.ZERO);
                 payout.setNetAmount(net);
                 payout.setPayoutDate(LocalDateTime.now());
                 payout.setStatus("PENDING");

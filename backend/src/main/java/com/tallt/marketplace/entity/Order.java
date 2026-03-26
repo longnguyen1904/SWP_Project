@@ -42,6 +42,15 @@ public class Order {
     @Column(name = "TotalAmount", nullable = false)
     private BigDecimal totalAmount;
 
+    @Column(name = "PlatformFee")
+    private BigDecimal platformFee = BigDecimal.ZERO;
+
+    @Column(name = "TaxAmount")
+    private BigDecimal taxAmount = BigDecimal.ZERO;
+
+    @Column(name = "VendorNetAmount")
+    private BigDecimal vendorNetAmount = BigDecimal.ZERO;
+
     @Column(name = "PaymentMethod")
     private String paymentMethod = "VNPay";
 
