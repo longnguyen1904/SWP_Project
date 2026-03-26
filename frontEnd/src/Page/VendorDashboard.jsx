@@ -1,5 +1,7 @@
-import React, { useState } from "react";
-import { Outlet, Link, NavLink } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Outlet, Link, NavLink, useNavigate } from "react-router-dom";
+import { vendorAPI, uploadAPI } from "../services/api";
+import { unwrapResponse, getApiErrorMessage } from "../services/apiHelpers";
 
 
 
@@ -12,11 +14,12 @@ const VS = {
 
 export default function VendorDashboard() {
     const [searchTerm, setSearchTerm] = useState("");
+    const navigate = useNavigate();
 
-    const [vendorStatus, setVendorStatus] = useState(null); // null = đang load
-    const [statusNote, setStatusNote] = useState(""); // lý do suspend hoặc reject
+    const [vendorStatus, setVendorStatus] = useState(null); // null = loading
+    const [statusNote, setStatusNote] = useState(""); // reason for suspension or rejection
 
-    // Upload / resubmit state — dùng chung cho cả SUSPENDED và REJECTED
+    // Upload / resubmit state — shared for SUSPENDED and REJECTED
     const [identificationUrl, setIdentificationUrl] = useState("");
     const [uploading, setUploading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -71,43 +74,48 @@ export default function VendorDashboard() {
         }
     };
 
-    // Dùng chung cho cả SUSPENDED và REJECTED
     const handleResubmit = async () => {
-    if (!identificationUrl.trim()) {
-        setSubmitError("Please upload or enter a verification document URL.");
-        return;
-    }
-    setSubmitting(true);
-    setSubmitError("");
-    setSubmitMessage("");
-    try {
-        await vendorAPI.resubmitIdentification({ identificationUrl: identificationUrl.trim() });
-        setSubmitMessage("Verification documents resubmitted successfully! Please wait for admin approval.");
+        if (!identificationUrl.trim()) {
+            setSubmitError("Please upload or enter a verification document URL.");
+            return;
+        }
+        setSubmitting(true);
+        setSubmitError("");
+        setSubmitMessage("");
+        try {
+            await vendorAPI.resubmitIdentification({ identificationUrl: identificationUrl.trim() });
+            setSubmitMessage("Verification documents resubmitted successfully! Please wait for Admin approval.");
 
-        localStorage.setItem("vendorStatus", VS.PENDING);
-        localStorage.removeItem("suspendReason");
-        localStorage.removeItem("rejectionNote");
+            localStorage.setItem("vendorStatus", VS.PENDING);
+            localStorage.removeItem("suspendReason");
+            localStorage.removeItem("rejectionNote");
 
-        setTimeout(() => {
-            setVendorStatus(VS.PENDING);
-        }, 1500);
-    } catch (err) {
-        setSubmitError(getApiErrorMessage(err, "Failed to resubmit verification documents."));
-    } finally {
-        setSubmitting(false);
-    }
-};
+            setTimeout(() => {
+                setVendorStatus(VS.PENDING);
+            }, 1500);
+        } catch (err) {
+            const detail =
+                err?.response?.data?.message ||
+                err?.response?.data?.error ||
+                err?.message ||
+                "Failed to resubmit documents.";
+            setSubmitError(`[${err?.response?.status ?? "ERR"}] ${detail}`);
+            console.error("resubmitIdentification error:", err?.response ?? err);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     // ===================== LOADING =====================
     if (vendorStatus === null) {
         return (
             <div style={overlayStyle}>
-                <p style={{ color: "#94a3b8", fontSize: "16px" }}>⏳ Đang kiểm tra trạng thái tài khoản...</p>
+                <p style={{ color: "#94a3b8", fontSize: "16px" }}>⏳ Checking account status...</p>
             </div>
         );
     }
 
-    // ===================== PENDING: CHỜ DUYỆT =====================
+    // ===================== PENDING: WAITING FOR APPROVAL =====================
     if (vendorStatus === VS.PENDING) {
         return (
             <div style={overlayStyle}>
@@ -116,11 +124,11 @@ export default function VendorDashboard() {
                         <span style={{ fontSize: "36px" }}>⏳</span>
                     </div>
                     <h2 style={{ color: "#38bdf8", marginBottom: "12px", fontSize: "24px", fontWeight: "700" }}>
-                        Waiting for Admin Approval
+                        Pending Admin Approval
                     </h2>
                     <p style={{ color: "#94a3b8", fontSize: "15px", lineHeight: "1.6", marginBottom: "24px" }}>
-                        Your application has been successfully submitted. Please wait for the Admin to review
-                        and activate your Vendor account.
+                        Your application has been submitted successfully. Please wait while our Admin team
+                        reviews and activates your Vendor account. You will be notified once a decision is made.
                     </p>
                     <div style={infoBannerStyle}>
                         <p style={{ color: "#7dd3fc", fontSize: "13px", margin: 0 }}>
@@ -133,22 +141,21 @@ export default function VendorDashboard() {
         );
     }
 
-    // ===================== SUSPENDED hoặc REJECTED: FORM NỘP LẠI =====================
-    // Dùng chung một UI, chỉ khác màu sắc và tiêu đề
+    // ===================== SUSPENDED or REJECTED: RESUBMIT FORM =====================
     if (vendorStatus === VS.SUSPENDED || vendorStatus === VS.REJECTED) {
         const isSuspended = vendorStatus === VS.SUSPENDED;
 
-        const accentColor = isSuspended ? "#f59e0b" : "#ef4444";
-        const iconBg = isSuspended ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)";
-        const iconBorder = isSuspended ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.3)";
-        const icon = isSuspended ? "⚠️" : "❌";
-        const title = isSuspended
+        const accentColor   = isSuspended ? "#f59e0b" : "#ef4444";
+        const iconBg        = isSuspended ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)";
+        const iconBorder    = isSuspended ? "rgba(245,158,11,0.3)"  : "rgba(239,68,68,0.3)";
+        const icon          = isSuspended ? "⚠️" : "❌";
+        const title         = isSuspended
             ? "Vendor Account Suspended"
             : "Vendor Application Rejected";
-        const description = isSuspended
-            ? "Your vendor account has been temporarily suspended by the administrator. Please provide valid verification documents to be reviewed for reactivation."
-            : "Unfortunately, your vendor application has been rejected. Please provide valid verification documents to be reviewed again.";
-        const noteLabel = isSuspended ? "Suspension reason:" : "Rejection reason:";
+        const description   = isSuspended
+            ? "Your vendor account has been suspended by an administrator. Please provide updated verification documents to be considered for reactivation."
+            : "Unfortunately, your Vendor application was rejected. Please provide valid verification documents to be reviewed again.";
+        const noteLabel     = isSuspended ? "Reason for suspension:" : "Reason for rejection:";
 
         return (
             <div style={overlayStyle}>
@@ -176,10 +183,9 @@ export default function VendorDashboard() {
                         </div>
                     )}
 
-                    {/* Upload documents */}
                     <div style={{ textAlign: "left", marginBottom: "16px" }}>
                         <label style={{ color: "#e2e8f0", fontSize: "14px", fontWeight: "600", display: "block", marginBottom: "8px" }}>
-                            Verification Documents (ID/Business License) <span style={{ color: "#ef4444" }}>*</span>
+                            Verification Documents (ID Card/Business License) <span style={{ color: "#ef4444" }}>*</span>
                         </label>
                         <input
                             type="file"
@@ -192,9 +198,7 @@ export default function VendorDashboard() {
                                 fontSize: "14px", marginBottom: "10px", boxSizing: "border-box"
                             }}
                         />
-                        <div style={{ color: "#64748b", fontSize: "12px", marginBottom: "8px" }}>
-                            Or paste a direct URL:
-                        </div>
+                        <div style={{ color: "#64748b", fontSize: "12px", marginBottom: "8px" }}>Or paste direct URL:</div>
                         <input
                             type="text"
                             placeholder="https://example.com/identification.jpg"
@@ -210,33 +214,15 @@ export default function VendorDashboard() {
                     </div>
 
                     {uploading && (
-                        <p style={{ color: "#38bdf8", fontSize: "14px", marginBottom: "12px" }}>
-                            ⏳ Uploading...
-                        </p>
+                        <p style={{ color: "#38bdf8", fontSize: "14px", marginBottom: "12px" }}>⏳ Uploading...</p>
                     )}
                     {submitError && (
-                        <div style={{
-                            backgroundColor: "rgba(239,68,68,0.1)",
-                            border: "1px solid rgba(239,68,68,0.3)",
-                            borderRadius: "8px",
-                            padding: "10px 14px",
-                            marginBottom: "12px",
-                            color: "#ef4444",
-                            fontSize: "14px"
-                        }}>
+                        <div style={{ backgroundColor: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "8px", padding: "10px 14px", marginBottom: "12px", color: "#ef4444", fontSize: "14px" }}>
                             {submitError}
                         </div>
                     )}
                     {submitMessage && (
-                        <div style={{
-                            backgroundColor: "rgba(34,197,94,0.1)",
-                            border: "1px solid rgba(34,197,94,0.3)",
-                            borderRadius: "8px",
-                            padding: "10px 14px",
-                            marginBottom: "12px",
-                            color: "#22c55e",
-                            fontSize: "14px"
-                        }}>
+                        <div style={{ backgroundColor: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: "8px", padding: "10px 14px", marginBottom: "12px", color: "#22c55e", fontSize: "14px" }}>
                             ✅ {submitMessage}
                         </div>
                     )}
@@ -253,19 +239,10 @@ export default function VendorDashboard() {
                             marginBottom: "12px", transition: "all 0.2s"
                         }}
                     >
-                        {submitting ? "Submitting..." : "Resubmit Verification Documents"}
+                        {submitting ? "Sending..." : "Resubmit Verification Documents"}
                     </button>
 
-                    <Link
-                        to="/"
-                        style={{
-                            display: "block",
-                            color: "#94a3b8",
-                            fontSize: "14px",
-                            textDecoration: "none",
-                            marginTop: "8px"
-                        }}
-                    >
+                    <Link to="/" style={{ display: "block", color: "#94a3b8", fontSize: "14px", textDecoration: "none", marginTop: "8px" }}>
                         ← Back to Home
                     </Link>
                 </div>
@@ -288,146 +265,36 @@ export default function VendorDashboard() {
                 </div>
 
                 <ul className="nav nav-pills flex-column mb-auto">
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/RevenueDashboard"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-graph-up me-3"></i>
-                            Revenue Dashboard
-                        </NavLink>
-                    </li>
-                                      <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/QualityAnalyticsDashboard"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-graph-up me-3"></i>
-                            Quality Analytics Dashboard
-                        </NavLink>
-                    </li>
-
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/VendorTicketManagement"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-box-seam me-3"></i>
-                            Vendor Ticket Management
-                        </NavLink>
-                    </li>
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/MyProducts"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-box-seam me-3"></i>
-                            My Products
-                        </NavLink>
-                    </li>
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/ProductUpload"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-cloud-upload me-3"></i>
-                            Upload Product
-                        </NavLink>
-                    </li>
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/VersionControl"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-clock-history me-3"></i>
-                            Version Control
-                        </NavLink>
-                    </li>
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/LicenseTiers"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-layers me-3"></i>
-                            License Tiers
-                        </NavLink>
-                    </li>
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/CouponManagement"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-ticket-perforated me-3"></i>
-                            Mã giảm giá
-                        </NavLink>
-                    </li>
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/Wallet"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-wallet2 me-3"></i>
-                            Ví & Rút tiền
-                        </NavLink>
-                    </li>
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/FollowedVendors"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-people me-3"></i>
-                            Followed Vendors
-                        </NavLink>
-                    </li>
-                    <li className="nav-item mb-2">
-                        <NavLink
-                            to="/Page/Vendor/Profile"
-                            className={({ isActive }) =>
-                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
-                                }`
-                            }
-                        >
-                            <i className="bi bi-person-gear me-3"></i>
-                            Profile Settings
-                        </NavLink>
-                    </li>
+                    {[
+                        { to: "/Page/Vendor/RevenueDashboard",          icon: "bi-graph-up",          label: "Revenue Dashboard" },
+                        { to: "/Page/Vendor/QualityAnalyticsDashboard", icon: "bi-graph-up",          label: "Quality Analytics" },
+                        { to: "/Page/Vendor/VendorTicketManagement",    icon: "bi-box-seam",          label: "Ticket Management" },
+                        { to: "/Page/Vendor/MyProducts",                icon: "bi-box-seam",          label: "My Products" },
+                        { to: "/Page/Vendor/VersionControl",            icon: "bi-clock-history",     label: "Version Control" },
+                        { to: "/Page/Vendor/LicenseTiers",              icon: "bi-layers",            label: "License Tiers" },
+                        { to: "/Page/Vendor/CouponManagement",          icon: "bi-ticket-perforated", label: "Coupons" },
+                        { to: "/Page/Vendor/Wallet",                    icon: "bi-wallet2",           label: "Wallet & Payouts" },
+                        { to: "/Page/Vendor/Profile",                   icon: "bi-person-gear",       label: "Profile Settings" },
+                    ].map(({ to, icon, label }) => (
+                        <li key={to} className="nav-item mb-2">
+                            <NavLink
+                                to={to}
+                                className={({ isActive }) =>
+                                    `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? "bg-success text-white shadow" : "text-light opacity-75"}`
+                                }
+                            >
+                                <i className={`bi ${icon} me-3`}></i>
+                                {label}
+                            </NavLink>
+                        </li>
+                    ))}
                 </ul>
 
                 <hr className="border-secondary opacity-50" />
 
                 <div className="px-2 mt-auto pb-3">
                     <Link to="/" className="nav-link text-danger p-2 small d-flex align-items-center fw-bold bg-danger bg-opacity-10 rounded">
-                        <i className="bi bi-arrow-left-circle me-2"></i> Trở về cửa hàng
+                        <i className="bi bi-arrow-left-circle me-2"></i> Return to Store
                     </Link>
                 </div>
             </div>

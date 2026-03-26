@@ -44,6 +44,7 @@ export const authAPI = {
 export const vendorAPI = {
   registerVendor: (data) => api.post("/api/vendors/register", data),
   getMyVendorStatus: () => api.get("/api/vendors/my-status"),
+  resubmitIdentification: (data) => api.post("/api/vendors/resubmit-identification", data),
   getMe: () => api.get("/api/vendor/me"),
   createProduct: (productData) => api.post("/api/vendor/products", productData),
   getVendorProducts: (params = {}) => api.get("/api/vendor/products", { params }),

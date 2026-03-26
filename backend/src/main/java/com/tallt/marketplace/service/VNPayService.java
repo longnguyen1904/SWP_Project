@@ -2,6 +2,7 @@ package com.tallt.marketplace.service;
 
 import com.tallt.marketplace.config.VNPayConfig;
 import com.tallt.marketplace.entity.Order;
+import com.tallt.marketplace.entity.VendorPayout;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -17,6 +18,9 @@ import java.util.TreeMap;
  * Service xử lý VNPay: tạo URL thanh toán và xác minh callback.
  *
  * Trách nhiệm duy nhất (SRP): chỉ lo giao tiếp với VNPay API.
+ * Hỗ trợ 2 loại giao dịch:
+ *   - Checkout thông thường (Order của Customer)
+ *   - Admin Payout (chuyển tiền cho Vendor qua VNPay)
  */
 @Service
 public class VNPayService {
@@ -27,18 +31,19 @@ public class VNPayService {
         this.vnPayConfig = vnPayConfig;
     }
 
+    // ==================== CHECKOUT (Customer mua hàng) ====================
+
     /**
-     * Tạo URL thanh toán VNPay từ thông tin Order.
+     * Tạo URL thanh toán VNPay từ thông tin Order của Customer.
      *
      * @param order     đơn hàng đã lưu (có orderID, totalAmount)
-     * @param ipAddress IP của khách hàng (để VNPay ghi nhận)
+     * @param ipAddress IP của khách hàng
      * @return URL đầy đủ để redirect browser sang VNPay gateway
      */
     public String createPaymentUrl(Order order, String ipAddress) {
         // Quy đổi sang đơn vị VNPay (VND * 100, không có số thập phân)
         long amountInVNPay = order.getTotalAmount().longValue() * 100;
 
-        // Thời gian tạo + hết hạn (15 phút)
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
         String createDate = LocalDateTime.now().format(fmt);
         String expireDate = LocalDateTime.now().plusMinutes(15).format(fmt);
@@ -59,50 +64,31 @@ public class VNPayService {
         params.put("vnp_CreateDate", createDate);
         params.put("vnp_ExpireDate", expireDate);
 
-        // Build query string + tính HMAC
         String queryString = buildQueryString(params);
         String secureHash = hmacSHA512(vnPayConfig.getHashSecret(), queryString);
 
         return vnPayConfig.getPayUrl() + "?" + queryString + "&vnp_SecureHash=" + secureHash;
     }
 
-    /**
-     * Xác minh chữ ký số callback từ VNPay.
-     *
-     * @param params tất cả query params VNPay gửi về
-     * @return true nếu chữ ký hợp lệ
-     */
-    public boolean validateCallback(Map<String, String> params) {
-        String receivedHash = params.get("vnp_SecureHash");
-        if (receivedHash == null) return false;
-
-        // Loại bỏ vnp_SecureHash và vnp_SecureHashType trước khi tính lại
-        TreeMap<String, String> sortedParams = new TreeMap<>(params);
-        sortedParams.remove("vnp_SecureHash");
-        sortedParams.remove("vnp_SecureHashType");
-
-        String queryString = buildQueryString(sortedParams);
-        String calculatedHash = hmacSHA512(vnPayConfig.getHashSecret(), queryString);
-
-        return calculatedHash.equalsIgnoreCase(receivedHash);
-    }
+    // ==================== ADMIN PAYOUT (Admin chuyển tiền cho Vendor) ====================
 
     /**
-     * Tạo URL thanh toán VNPay cho Admin Payout (chuyển tiền cho vendor).
+     * Tạo URL thanh toán VNPay cho Admin Payout.
+     * TxnRef dùng prefix "PAYOUT_" để phân biệt với checkout thông thường.
      *
-     * @param payout    VendorPayout đã validate
+     * @param payout    VendorPayout đã được validate và đánh dấu PROCESSING
      * @param ipAddress IP của Admin
-     * @return URL đầy đủ để redirect browser sang VNPay gateway
+     * @return URL đầy đủ để redirect browser Admin sang VNPay gateway
      */
-    public String createPayoutPaymentUrl(com.tallt.marketplace.entity.VendorPayout payout, String ipAddress) {
-        // netAmount là số tiền vendor nhận, Admin phải trả qua VNPay
+    public String createPayoutPaymentUrl(VendorPayout payout, String ipAddress) {
+        // netAmount là số tiền vendor nhận — Admin thanh toán số này qua VNPay
         long amountInVNPay = payout.getNetAmount().longValue() * 100;
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
         String createDate = LocalDateTime.now().format(fmt);
         String expireDate = LocalDateTime.now().plusMinutes(15).format(fmt);
 
-        // Dùng prefix PAYOUT_ để phân biệt với checkout thông thường
+        // Dùng prefix PAYOUT_ để callback controller phân biệt loại giao dịch
         String txnRef = "PAYOUT_" + payout.getPayoutID();
 
         TreeMap<String, String> params = new TreeMap<>();
@@ -127,10 +113,34 @@ public class VNPayService {
         return vnPayConfig.getPayUrl() + "?" + queryString + "&vnp_SecureHash=" + secureHash;
     }
 
+    // ==================== CALLBACK VALIDATION ====================
+
+    /**
+     * Xác minh chữ ký số callback từ VNPay.
+     * Dùng chung cho cả checkout và payout callback.
+     *
+     * @param params tất cả query params VNPay gửi về
+     * @return true nếu chữ ký hợp lệ
+     */
+    public boolean validateCallback(Map<String, String> params) {
+        String receivedHash = params.get("vnp_SecureHash");
+        if (receivedHash == null) return false;
+
+        // Loại bỏ các field hash trước khi tính lại
+        TreeMap<String, String> sortedParams = new TreeMap<>(params);
+        sortedParams.remove("vnp_SecureHash");
+        sortedParams.remove("vnp_SecureHashType");
+
+        String queryString = buildQueryString(sortedParams);
+        String calculatedHash = hmacSHA512(vnPayConfig.getHashSecret(), queryString);
+
+        return calculatedHash.equalsIgnoreCase(receivedHash);
+    }
+
     // ==================== PRIVATE METHODS ====================
 
     /**
-     * Build query string từ TreeMap (đã sắp xếp alphabet).
+     * Build query string từ TreeMap (đã sắp xếp alphabet — yêu cầu của VNPay).
      */
     private String buildQueryString(TreeMap<String, String> params) {
         StringBuilder sb = new StringBuilder();
@@ -151,7 +161,8 @@ public class VNPayService {
     private String hmacSHA512(String key, String data) {
         try {
             Mac mac = Mac.getInstance("HmacSHA512");
-            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
+            SecretKeySpec secretKey = new SecretKeySpec(
+                    key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
             mac.init(secretKey);
             byte[] hash = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
 

@@ -16,7 +16,7 @@ spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: 123
+    password: root
   jpa:
     hibernate:
       ddl-auto: update
@@ -56,4 +56,4 @@ vnpay:
   version: "2.1.0"
   command: pay
   frontend-url: http://localhost:5173
-  payout-return-url: http://localhost:8081/api/admin/payouts/vnpay-return
+  payout-return-url: http://localhost:8081/api/admin/payouts/vnpay-payout-return

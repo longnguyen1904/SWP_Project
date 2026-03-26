@@ -86,4 +86,13 @@ public class VendorController {
         );
         return ResponseEntity.ok(ApiResponse.success(result));
     }
+    @PostMapping("/resubmit-identification")
+    public ResponseEntity<ApiResponse<?>> resubmitIdentification(
+            @RequestHeader("X-User-Id") Integer userId,
+            @RequestBody java.util.Map<String, String> body) {
+        String identificationUrl = body.get("identificationUrl");
+        var result = vendorService.resubmitIdentification(userId, identificationUrl);
+        return ResponseEntity.ok(ApiResponse.success("Identification resubmitted successfully", result));
+    }
+
 }

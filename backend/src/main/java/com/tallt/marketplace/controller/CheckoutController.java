@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * Controller xử lý checkout và callback VNPay.
+ * Controller xử lý checkout và callback VNPay cho Customer.
  *
  * Endpoints:
- * - POST /api/checkout/create → tạo Order + trả VNPay URL
- * - GET /api/checkout/vnpay-return → VNPay redirect callback
+ * - POST /api/checkout/create         → tạo Order + trả VNPay URL
+ * - GET  /api/checkout/vnpay-return   → VNPay redirect callback
  */
 @RestController
 @RequestMapping("/api/checkout")
@@ -48,7 +48,7 @@ public class CheckoutController {
     }
 
     /**
-     * VNPay redirect callback — xử lý kết quả thanh toán.
+     * VNPay redirect callback — xử lý kết quả thanh toán của Customer.
      * Thành công → /payment-result, Thất bại → quay lại trang sản phẩm.
      */
     @GetMapping("/vnpay-return")
@@ -72,7 +72,7 @@ public class CheckoutController {
                 .build();
     }
 
-    // ==================== PRIVATE METHODS ====================
+    // ==================== PRIVATE HELPERS ====================
 
     private String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
