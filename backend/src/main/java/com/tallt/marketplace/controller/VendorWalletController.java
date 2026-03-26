@@ -41,13 +41,7 @@ public class VendorWalletController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    /**
-     * Yêu cầu rút tiền
-     * POST /api/vendor/payouts
-     * - Tính available từ Orders - đã rút/pending
-     * - Tạo VendorPayout(PENDING)
-     * - Tiền cộng vào ví khi Admin approve
-     */
+
     @PostMapping("/payouts")
     public ResponseEntity<ApiResponse<Map<String, Object>>> requestPayout(
             @RequestHeader("X-User-Id") Integer userId,
