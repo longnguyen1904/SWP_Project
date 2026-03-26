@@ -80,7 +80,7 @@ const ChatbotWidget = () => {
       const reply = getBotReply(userMsg);
       setChatHistory(prev => [...prev, { sender: 'bot', text: reply }]);
       setIsTyping(false);
-    }, 1200 + Math.random() * 800);
+    }, 1500);
   };
 
   const handleQuickReply = (text) => {
@@ -90,7 +90,7 @@ const ChatbotWidget = () => {
       const reply = getBotReply(text);
       setChatHistory(prev => [...prev, { sender: 'bot', text: reply }]);
       setIsTyping(false);
-    }, 1200 + Math.random() * 800);
+    }, 1500);
   };
 
   return (

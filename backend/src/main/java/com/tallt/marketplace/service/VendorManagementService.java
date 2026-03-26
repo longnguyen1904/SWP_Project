@@ -138,9 +138,6 @@ public class VendorManagementService {
             }
             productRepository.saveAll(pendingProducts);
         }
-    }
-
-        
 
         return vendorRepository.save(vendor);
     }

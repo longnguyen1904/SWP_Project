@@ -19,7 +19,7 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
   const [forgotError, setForgotError] = useState("");
   const [loginError, setLoginError] = useState("");
   const [attemptData, setAttemptData] = useState({});
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const MAX_ATTEMPTS = 5;
   const LOCK_SECONDS = 300;
 
