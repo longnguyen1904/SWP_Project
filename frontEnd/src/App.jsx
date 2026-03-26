@@ -74,6 +74,7 @@ export default function App() {
           <Route path="QualityAnalyticsDashboard" element={<QualityAnalyticsDashboard />} />
           <Route path="CouponManagement" element={<CouponManagement />} />
           <Route path="Wallet" element={<VendorWallet />} />
+          <Route path="FollowedVendors" element={<FollowedVendors />} />
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />
