@@ -6,7 +6,6 @@ import com.tallt.marketplace.dto.vendor.VendorRegisterRequest;
 import com.tallt.marketplace.dto.vendor.VendorRegisterResponse;
 import com.tallt.marketplace.dto.vendor.VendorShopResponse;
 import com.tallt.marketplace.dto.vendor.VendorVerifyRequest;
-import com.tallt.marketplace.entity.Role;
 import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.entity.Vendor;
 import com.tallt.marketplace.entity.Wallet;
@@ -25,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 @Service
 public class VendorService {
@@ -134,8 +132,7 @@ public class VendorService {
         return new VendorRegisterResponse(
                 vendor.getVendorID(),
                 "PENDING_VERIFICATION",
-                "Vendor registration submitted successfully"
-        );
+                "Vendor registration submitted successfully");
     }
 
     /**
@@ -174,15 +171,14 @@ public class VendorService {
         return Map.of(
                 "vendorId", vendor.getVendorID(),
                 "status", vendor.getStatus().name(),
-                "note", request.getNote() != null ? request.getNote() : ""
-        );
+                "note", request.getNote() != null ? request.getNote() : "");
     }
 
     /**
      * Get list of Vendors with filter, search, paging, sort
      */
     public PageResponse<Vendor> getVendors(String search, String status, String type,
-                                           int page, int size, String sortBy, String sortDir) {
+            int page, int size, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
@@ -255,18 +251,18 @@ public class VendorService {
         response.setDisplayName(displayName);
         return response;
     }
-    /**
-     * Vendor resubmit identification after being suspended
-     * - Status must be SUSPENDED
-     * - Updates identificationDoc, sets status back to PENDING
-     */
+
+
+     //Vendor resubmit identification after being suspended
+
     @Transactional
     public Map<String, Object> resubmitIdentification(Integer userId, String identificationUrl) {
         Vendor vendor = vendorRepository.findByUser_UserID(userId)
                 .orElseThrow(() -> new AppException("Vendor does not exist for this user"));
 
-        if (vendor.getStatus() != Vendor.VendorStatus.SUSPENDED) {
-            throw new AppException("Only suspended vendors can resubmit identification");
+        if (vendor.getStatus() != Vendor.VendorStatus.SUSPENDED
+                && vendor.getStatus() != Vendor.VendorStatus.REJECTED) {
+            throw new AppException("Only suspended or rejected vendors can resubmit identification");
         }
 
         if (identificationUrl == null || identificationUrl.trim().isEmpty()) {
@@ -281,7 +277,6 @@ public class VendorService {
         return Map.of(
                 "vendorId", vendor.getVendorID(),
                 "status", vendor.getStatus().name(),
-                "message", "Identification resubmitted successfully. Waiting for admin approval."
-        );
+                "message", "Identification resubmitted successfully. Waiting for admin approval.");
     }
 }

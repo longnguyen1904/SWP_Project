@@ -125,7 +125,7 @@ function AdminVendorManagement() {
   // EXECUTE API CALL
   const executeUpdateStatus = async (vendorID, newStatus, note = "") => {
     try {
-      const url = note 
+      const url = note
         ? `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}&rejectionNote=${encodeURIComponent(note)}`
         : `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}`;
 
@@ -244,9 +244,7 @@ function AdminVendorManagement() {
                       {vendor.status === "APPROVED" && (
                         <button onClick={() => openReasonModal(vendor.vendorID, "SUSPENDED")} style={actionBtn(colors.warning)}>Suspend</button>
                       )}
-                      {vendor.status === "SUSPENDED" && (
-                        <button onClick={() => executeUpdateStatus(vendor.vendorID, "APPROVED")} style={actionBtn(colors.success)}>Unsuspend</button>
-                      )}
+                      {vendor.status === "SUSPENDED" && <span style={{ color: colors.textMuted }}>Suspended</span>}
                       {vendor.status === "REJECTED" && <span style={{ color: colors.textMuted }}>Rejected</span>}
                     </td>
                   </tr>
@@ -284,10 +282,10 @@ function AdminVendorManagement() {
             />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
               <button onClick={() => setShowModal(false)} style={btnSecondary}>Cancel</button>
-              <button 
-                onClick={handleConfirmStatus} 
-                style={{ 
-                  ...btnPrimary, 
+              <button
+                onClick={handleConfirmStatus}
+                style={{
+                  ...btnPrimary,
                   backgroundColor: tempStatus === "REJECTED" ? colors.error : colors.warning,
                   color: "#fff"
                 }}
