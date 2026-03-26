@@ -39,7 +39,6 @@ export default function VendorDashboard() {
 
                 setVendorStatus(data.status);
 
-                // Lưu lý do cho cả SUSPENDED lẫn REJECTED
                 if (data.status === VS.SUSPENDED || data.status === VS.REJECTED) {
                     setStatusNote(data.rejectionNote || "");
                 }
@@ -77,30 +76,30 @@ export default function VendorDashboard() {
 
     // Dùng chung cho cả SUSPENDED và REJECTED
     const handleResubmit = async () => {
-        if (!identificationUrl.trim()) {
-            setSubmitError("Vui lòng upload hoặc nhập URL giấy tờ xác minh.");
-            return;
-        }
-        setSubmitting(true);
-        setSubmitError("");
-        setSubmitMessage("");
-        try {
-            await vendorAPI.resubmitIdentification({ identificationUrl: identificationUrl.trim() });
-            setSubmitMessage("Đã gửi lại giấy tờ xác minh thành công! Vui lòng chờ Admin duyệt.");
+    if (!identificationUrl.trim()) {
+        setSubmitError("Please upload or enter a verification document URL.");
+        return;
+    }
+    setSubmitting(true);
+    setSubmitError("");
+    setSubmitMessage("");
+    try {
+        await vendorAPI.resubmitIdentification({ identificationUrl: identificationUrl.trim() });
+        setSubmitMessage("Verification documents resubmitted successfully! Please wait for admin approval.");
 
-            localStorage.setItem("vendorStatus", VS.PENDING);
-            localStorage.removeItem("suspendReason");
-            localStorage.removeItem("rejectionNote");
+        localStorage.setItem("vendorStatus", VS.PENDING);
+        localStorage.removeItem("suspendReason");
+        localStorage.removeItem("rejectionNote");
 
-            setTimeout(() => {
-                setVendorStatus(VS.PENDING);
-            }, 1500);
-        } catch (err) {
-            setSubmitError(getApiErrorMessage(err, "Không thể gửi lại giấy tờ xác minh."));
-        } finally {
-            setSubmitting(false);
-        }
-    };
+        setTimeout(() => {
+            setVendorStatus(VS.PENDING);
+        }, 1500);
+    } catch (err) {
+        setSubmitError(getApiErrorMessage(err, "Failed to resubmit verification documents."));
+    } finally {
+        setSubmitting(false);
+    }
+};
 
     // ===================== LOADING =====================
     if (vendorStatus === null) {

@@ -14,4 +14,5 @@ public class AdminProductReviewDTO {
     private String scanStatus;
     private String status;
     private String rejectionNote;
+    private String fileUrl;
 }

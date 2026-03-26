@@ -24,7 +24,6 @@ public class AdminReviewService {
         private final ProductVersionRepository versionRepository;
         private final VirusTotalService virusTotalService;
 
-
         public Page<AdminProductReviewDTO> getAllProductsForReview(
                         String status,
                         String keyword,
@@ -41,8 +40,6 @@ public class AdminReviewService {
                                 throw new AppException("Invalid status: " + status);
                         }
                 }
-
-
 
                 if (statusEnum != null && keyword != null && !keyword.isBlank()) {
 
@@ -65,7 +62,6 @@ public class AdminReviewService {
                         productPage = productRepository.findAll(pageable);
 
                 }
-
 
                 List<AdminProductReviewDTO> dtoList = productPage
                                 .getContent()
@@ -98,15 +94,13 @@ public class AdminReviewService {
                                                                         : null,
                                                         scanStatus,
                                                         product.getStatus().name(),
-                                                        product.getRejectionNote());
+                                                        product.getRejectionNote(),
+                                                        latestOpt.map(ProductVersion::getFileUrl).orElse(null));
 
-                                })
-                                .toList();
+                                }).toList();
 
                 return new PageImpl<>(dtoList, pageable, productPage.getTotalElements());
         }
-
-
 
         @Transactional
         public String reviewProduct(Integer productId) {
@@ -127,8 +121,6 @@ public class AdminReviewService {
 
                 boolean isMalicious = virusTotalService.isUrlMalicious(latestVersion.getFileUrl());
 
-
-
                 if (isMalicious) {
 
                         latestVersion.setScanStatus("MALICIOUS");
@@ -142,8 +134,6 @@ public class AdminReviewService {
 
                         return "Product rejected due to malicious download link.";
                 }
-
-
 
                 latestVersion.setScanStatus("CLEAN");
                 versionRepository.save(latestVersion);
