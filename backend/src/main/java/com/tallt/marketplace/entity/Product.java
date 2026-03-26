@@ -59,6 +59,6 @@ public class Product {
     }
 
     public enum ProductStatus {
-        DRAFT, PENDING, APPROVED, REJECTED
+        DRAFT, PENDING, APPROVED, REJECTED, INACTIVE
     }
 }

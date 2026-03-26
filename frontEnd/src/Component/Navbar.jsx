@@ -107,7 +107,6 @@ export default function Navbar() {
               </div>
 
               <div className="dropdown-content">
-                <Link to="/Page/ProfilePage" id="router-link">ProfileChange</Link>
                 {role === "CUSTOMER" && (
                   <>
                   <Link to="/Page/VendorRegistration" id="router-link">Become a Vendor</Link>
@@ -119,7 +118,6 @@ export default function Navbar() {
                   <>
                   <Link to="/Page/Customer" id="router-link">Dashboard</Link>
                     <Link to="/Page/Vendor" id="router-link">Vendor Dashboard</Link>
-                    <Link to="/Page/Vendor/ProductUpload" id="router-link">Upload Product</Link>
                    
                   </>
                 )}

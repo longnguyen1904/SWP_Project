@@ -29,6 +29,7 @@ public class UserProfileService {
     private static final int OTP_LENGTH = 6;
     private static final int OTP_EXPIRY_MINUTES = 5;
     private static final int MAX_OTP_ATTEMPTS = 5;
+    private static final int OTP_COOLDOWN_SECONDS = 60;
 
     /**
      * Update user profile
@@ -53,6 +54,9 @@ public class UserProfileService {
             }
             if (request.getOldPassword().equals(request.getNewPassword())) {
                 throw new AppException("New password must be different from old password");
+            }
+            if (request.getNewPassword().length() < 6) {
+                throw new AppException("Password must be at least 6 characters");
             }
             user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         }
@@ -115,9 +119,17 @@ public class UserProfileService {
             throw new AppException("Email does not exist in the system");
         }
 
-        // Generate OTP and save
+        // Rate limiting: reject if OTP was requested within the last 60 seconds
+        if (user.getOtpExpiry() != null) {
+            LocalDateTime lastRequested = user.getOtpExpiry().minusMinutes(OTP_EXPIRY_MINUTES);
+            if (LocalDateTime.now().isBefore(lastRequested.plusSeconds(OTP_COOLDOWN_SECONDS))) {
+                throw new AppException("Please wait at least 60 seconds before requesting a new OTP.");
+            }
+        }
+
+        // Generate OTP, hash before storing
         String otp = generateOtp();
-        user.setOtp(otp);
+        user.setOtp(passwordEncoder.encode(otp));
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
         user.setOtpAttempts(0);
         userRepository.save(user);
@@ -192,8 +204,8 @@ public class UserProfileService {
             throw new AppException("OTP has expired. Please request a new OTP.");
         }
 
-        // Check OTP match
-        if (!otp.equals(user.getOtp())) {
+        // Check OTP match (using hash comparison)
+        if (!passwordEncoder.matches(otp, user.getOtp())) {
             user.setOtpAttempts((user.getOtpAttempts() != null ? user.getOtpAttempts() : 0) + 1);
             userRepository.save(user);
             int remaining = MAX_OTP_ATTEMPTS - user.getOtpAttempts();

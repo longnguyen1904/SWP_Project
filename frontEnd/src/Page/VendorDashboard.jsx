@@ -291,29 +291,127 @@ export default function VendorDashboard() {
                 </div>
 
                 <ul className="nav nav-pills flex-column mb-auto">
-                    {[
-                        { to: "/Page/Vendor/RevenueDashboard", icon: "bi-graph-up", label: "Revenue Dashboard" },
-                        { to: "/Page/Vendor/QualityAnalyticsDashboard", icon: "bi-graph-up", label: "Quality Analytics Dashboard" },
-                        { to: "/Page/Vendor/VendorTicketManagement", icon: "bi-box-seam", label: "Vendor Ticket Management" },
-                        { to: "/Page/Vendor/MyProducts", icon: "bi-box-seam", label: "My Products" },
-                        { to: "/Page/Vendor/VersionControl", icon: "bi-clock-history", label: "Version Control" },
-                        { to: "/Page/Vendor/LicenseTiers", icon: "bi-layers", label: "License Tiers" },
-                        { to: "/Page/Vendor/CouponManagement", icon: "bi-ticket-perforated", label: "Mã giảm giá" },
-                        { to: "/Page/Vendor/Wallet", icon: "bi-wallet2", label: "Ví & Rút tiền" },
-                        { to: "/Page/Vendor/Profile", icon: "bi-person-gear", label: "Profile Settings" },
-                    ].map(({ to, icon, label }) => (
-                        <li key={to} className="nav-item mb-2">
-                            <NavLink
-                                to={to}
-                                className={({ isActive }) =>
-                                    `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? "bg-success text-white shadow" : "text-light opacity-75"}`
-                                }
-                            >
-                                <i className={`bi ${icon} me-3`}></i>
-                                {label}
-                            </NavLink>
-                        </li>
-                    ))}
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/RevenueDashboard"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-graph-up me-3"></i>
+                            Revenue Dashboard
+                        </NavLink>
+                    </li>
+                                      <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/QualityAnalyticsDashboard"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-graph-up me-3"></i>
+                            Quality Analytics Dashboard
+                        </NavLink>
+                    </li>
+
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/VendorTicketManagement"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-box-seam me-3"></i>
+                            Vendor Ticket Management
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/MyProducts"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-box-seam me-3"></i>
+                            My Products
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/ProductUpload"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-cloud-upload me-3"></i>
+                            Upload Product
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/VersionControl"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-clock-history me-3"></i>
+                            Version Control
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/LicenseTiers"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-layers me-3"></i>
+                            License Tiers
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/CouponManagement"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-ticket-perforated me-3"></i>
+                            Mã giảm giá
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/Wallet"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-wallet2 me-3"></i>
+                            Ví & Rút tiền
+                        </NavLink>
+                    </li>
+                    <li className="nav-item mb-2">
+                        <NavLink
+                            to="/Page/Vendor/Profile"
+                            className={({ isActive }) =>
+                                `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? 'bg-success text-white shadow' : 'text-light opacity-75'
+                                }`
+                            }
+                        >
+                            <i className="bi bi-person-gear me-3"></i>
+                            Profile Settings
+                        </NavLink>
+                    </li>
                 </ul>
 
                 <hr className="border-secondary opacity-50" />

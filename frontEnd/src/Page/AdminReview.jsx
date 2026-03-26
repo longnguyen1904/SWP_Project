@@ -193,7 +193,7 @@ function AdminReview() {
                     <td style={tdStyle}>#{p.productID}</td>
                     <td style={{ ...tdStyle, fontWeight: "600", color: colors.textMain }}>{p.productName}</td>
                     <td style={tdStyle}>ID: {p.vendorID}</td>
-                    <td style={tdStyle}>${p.basePrice}</td>
+                    <td style={tdStyle}>{Number(p.basePrice).toLocaleString("vi-VN")} VND</td>
                     <td style={tdStyle}>
                       <span style={badgeStyle(sStyle)}>{status}</span>
                     </td>

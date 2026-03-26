@@ -4,8 +4,11 @@ import com.tallt.marketplace.entity.LicenseTier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Repository
@@ -22,4 +25,7 @@ public interface LicenseTierRepository extends JpaRepository<LicenseTier, Intege
     boolean existsByProduct_ProductIDAndTierName(Integer productId, String tierName);
 
     boolean existsByProduct_ProductIDAndTierNameAndTierIDNot(Integer productId, String tierName, Integer tierId);
+
+    @Query("SELECT MIN(t.price) FROM LicenseTier t WHERE t.product.productID = :productId")
+    BigDecimal findMinPriceByProductId(@Param("productId") Integer productId);
 }

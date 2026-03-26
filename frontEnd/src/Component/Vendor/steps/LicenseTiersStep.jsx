@@ -17,7 +17,7 @@ const LicenseTiersStep = ({ licenseTiers, setLicenseTiers, tierForm, setTierForm
             <div className="form-row mb-16">
                 <div className="form-group"><label className="form-label">Tier Name</label><input className="form-input" placeholder="e.g., Basic" value={tierForm.tierName} onChange={handleChange("tierName")} /></div>
                 <div className="form-group"><label className="form-label">Tier Code</label><input className="form-input" placeholder="e.g., STD" value={tierForm.tierCode} onChange={handleChange("tierCode")} /></div>
-                <div className="form-group"><label className="form-label">Price ($)</label><input className="form-input" type="number" placeholder="0" value={tierForm.price} onChange={handleChange("price")} /></div>
+                <div className="form-group"><label className="form-label">Price (VND)</label><input className="form-input" type="number" placeholder="0" value={tierForm.price} onChange={handleChange("price")} step="1000" /></div>
                 <div className="form-group"><label className="form-label">Max Devices</label><input className="form-input" type="number" placeholder="1" value={tierForm.maxDevices} onChange={handleChange("maxDevices")} /></div>
                 <div className="form-group"><label className="form-label">Duration (days)</label><input className="form-input" type="number" placeholder="365" value={tierForm.durationDays} onChange={handleChange("durationDays")} /></div>
                 <div style={{ flex: 0, paddingTop: 24 }}><button className="btn btn-secondary" onClick={addTier} style={{ height: 42 }}>+ Add</button></div>
@@ -33,7 +33,7 @@ const LicenseTiersStep = ({ licenseTiers, setLicenseTiers, tierForm, setTierForm
                     <tbody>
                         {licenseTiers.map((tier) => (
                             <tr key={tier.id}>
-                                <td>{tier.tierName}</td><td>{tier.tierCode}</td><td>${tier.price}</td>
+                                <td>{tier.tierName}</td><td>{tier.tierCode}</td><td>{Number(tier.price).toLocaleString("vi-VN")} VND</td>
                                 <td>{tier.maxDevices}</td><td>{tier.durationDays} days</td>
                                 <td><button className="btn btn-danger btn-sm" onClick={() => removeTier(tier.id)}>Delete</button></td>
                             </tr>
