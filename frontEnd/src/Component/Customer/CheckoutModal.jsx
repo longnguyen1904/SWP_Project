@@ -31,7 +31,7 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
     setCouponError("");
     setCouponApplied(null);
     try {
-      const res = await customerAPI.validateCoupon(couponCode.trim(), productId);
+      const res = await customerAPI.validateCoupon(couponCode.trim(), productId, tierId);
       setCouponApplied(unwrapResponse(res));
     } catch (err) {
       setCouponError(getApiErrorMessage(err, "Invalid coupon code"));
@@ -59,6 +59,8 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
 
       if (data?.paymentUrl) {
         window.location.href = data.paymentUrl;
+      } else if (data?.orderId) {
+        window.location.href = `/payment-result?status=success&orderId=${data.orderId}`;
       } else {
         setError("Unable to create payment link. Please try again.");
       }
@@ -142,6 +144,7 @@ const CheckoutModal = ({ product, selectedTier, onClose }) => {
             {formatPrice(finalPrice)}
           </span>
         </div>
+        <p className="checkout-modal__vat-note">All prices are inclusive of VAT</p>
 
         {error && <div className="alert alert--error">{error}</div>}
 

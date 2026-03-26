@@ -45,8 +45,9 @@ public class CouponController {
     @GetMapping("/validate")
     public ResponseEntity<ApiResponse<Map<String, Object>>> validateCoupon(
             @RequestParam("code") String code,
-            @RequestParam("productId") Integer productId) {
-        Map<String, Object> result = couponService.validateCoupon(code, productId);
+            @RequestParam("productId") Integer productId,
+            @RequestParam(value = "tierId", required = false) Integer tierId) {
+        Map<String, Object> result = couponService.validateCoupon(code, productId, tierId);
         return ResponseEntity.ok(ApiResponse.success("Coupon hợp lệ", result));
     }
 

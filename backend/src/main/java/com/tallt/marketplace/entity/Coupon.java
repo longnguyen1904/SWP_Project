@@ -36,6 +36,10 @@ public class Coupon {
     @JoinColumn(name = "ProductID")
     private Product product;
 
+    @ManyToOne
+    @JoinColumn(name = "TierID")
+    private LicenseTier tier;
+
     @Column(name = "IsActive")
     private Boolean isActive = true;
 

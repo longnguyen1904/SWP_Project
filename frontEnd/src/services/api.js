@@ -127,8 +127,11 @@ export const customerAPI = {
     api.post(`/api/wishlists/toggle?productId=${productId}`),
   checkWishlist: (productId) =>
     api.get(`/api/wishlists/check?productId=${productId}`),
-  validateCoupon: (code, productId) =>
-    api.get(`/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`),
+  validateCoupon: (code, productId, tierId) => {
+    let url = `/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`;
+    if (tierId) url += `&tierId=${tierId}`;
+    return api.get(url);
+  },
   getCouponsForProduct: (productId) =>
     api.get(`/api/coupons/product/${productId}`),
   followVendor: (vendorId) =>

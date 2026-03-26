@@ -111,7 +111,7 @@ public class CheckoutService {
         BigDecimal discountAmount = BigDecimal.ZERO;
         String couponCode = request.getCouponCode();
         if (couponCode != null && !couponCode.trim().isEmpty()) {
-            Map<String, Object> couponInfo = couponService.validateCoupon(couponCode, product.getProductID());
+            Map<String, Object> couponInfo = couponService.validateCoupon(couponCode, product.getProductID(), request.getTierId());
             int percent = (Integer) couponInfo.get("discountPercent");
             discountAmount = tier.getPrice()
                     .multiply(BigDecimal.valueOf(percent))
@@ -142,6 +142,22 @@ public class CheckoutService {
         }
 
         orderRepository.save(order);
+
+        // Nếu totalAmount = 0 (coupon 100%), bỏ qua VNPay, hoàn tất ngay
+        if (totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            order.setPaymentStatus(STATUS_COMPLETED);
+            order.setTransactionRef("FREE_ORDER");
+            orderRepository.save(order);
+
+            createLicense(order);
+            creditAdminWallet(order);
+
+            if (order.getCouponCode() != null && !order.getCouponCode().isEmpty()) {
+                try { couponService.useCoupon(order.getCouponCode()); } catch (Exception ignored) {}
+            }
+
+            return new CheckoutResponse(order.getOrderID(), null, warning);
+        }
 
         // Tạo URL thanh toán VNPay
         String paymentUrl = vnPayService.createPaymentUrl(order, ipAddress);

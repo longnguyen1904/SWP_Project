@@ -7,7 +7,8 @@ const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "" });
+  const [form, setForm] = useState({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "", tierId: "" });
+  const [tiers, setTiers] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [products, setProducts] = useState([]);
@@ -38,6 +39,16 @@ const CouponManagement = () => {
     } catch { setProducts([]); }
   };
 
+  const fetchTiers = async (productId) => {
+    if (!productId) { setTiers([]); return; }
+    try {
+      const res = await vendorAPI.getLicenseTiers(productId);
+      const data = unwrapResponse(res);
+      const list = data?.content ?? data;
+      setTiers(Array.isArray(list) ? list : []);
+    } catch { setTiers([]); }
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setError("");
@@ -49,10 +60,12 @@ const CouponManagement = () => {
         maxUses: form.maxUses ? parseInt(form.maxUses) : null,
         expiresAt: form.expiresAt ? form.expiresAt + "T23:59:59" : null,
         productId: form.productId ? parseInt(form.productId) : null,
+        tierId: form.tierId ? parseInt(form.tierId) : null,
       };
       await couponAPI.createCoupon(body);
       setSuccess("Coupon created successfully!");
-      setForm({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "" });
+      setForm({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "", tierId: "" });
+      setTiers([]);
       setShowForm(false);
       fetchCoupons();
     } catch (err) {
@@ -161,7 +174,11 @@ const CouponManagement = () => {
                 <select
                   className="form-select"
                   value={form.productId}
-                  onChange={(e) => setForm({ ...form, productId: e.target.value })}
+                  onChange={(e) => {
+                    const pid = e.target.value;
+                    setForm({ ...form, productId: pid, tierId: "" });
+                    fetchTiers(pid);
+                  }}
                 >
                   <option value="">All my products</option>
                   {products.map((p) => (
@@ -171,6 +188,23 @@ const CouponManagement = () => {
                   ))}
                 </select>
               </div>
+              {form.productId && tiers.length > 0 && (
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">Apply to Tier</label>
+                  <select
+                    className="form-select"
+                    value={form.tierId}
+                    onChange={(e) => setForm({ ...form, tierId: e.target.value })}
+                  >
+                    <option value="">All tiers</option>
+                    {tiers.map((t) => (
+                      <option key={t.tierId ?? t.tierID} value={t.tierId ?? t.tierID}>
+                        {t.tierName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="form-group" style={{ flex: 0, alignSelf: "flex-end" }}>
                 <button type="submit" className="btn btn-primary">Create</button>
               </div>
@@ -192,6 +226,7 @@ const CouponManagement = () => {
                 <th>Code</th>
                 <th>Discount</th>
                 <th>Product</th>
+                <th>Tier</th>
                 <th>Used</th>
                 <th>Max</th>
                 <th>Expires</th>
@@ -214,6 +249,7 @@ const CouponManagement = () => {
                     <td><code style={{ color: "#fbbf24", fontSize: 14 }}>{c.code}</code></td>
                     <td>{c.discountPercent}%</td>
                     <td style={{ color: "#94a3b8" }}>{c.product?.productName ?? "All"}</td>
+                    <td style={{ color: "#94a3b8" }}>{c.tier?.tierName ?? "All"}</td>
                     <td>{c.currentUses ?? 0}</td>
                     <td>{c.maxUses ?? "∞"}</td>
                     <td>{formatDate(c.expiresAt)}</td>

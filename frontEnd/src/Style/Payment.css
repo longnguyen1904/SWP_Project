@@ -99,6 +99,13 @@
   color: var(--color-accent);
 }
 
+.checkout-modal__vat-note {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: right;
+  margin: -8px 0 0;
+}
+
 .checkout-modal__actions {
   display: flex;
   justify-content: flex-end;
