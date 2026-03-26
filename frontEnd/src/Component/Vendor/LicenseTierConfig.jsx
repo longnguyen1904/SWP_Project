@@ -119,7 +119,7 @@ const LicenseTierConfig = () => {
 
   const formatPrice = (price) => {
     if (price == null) return "—";
-    return `$${Number(price).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+    return `${Number(price).toLocaleString("vi-VN")} VND`;
   };
 
   return (
@@ -223,9 +223,9 @@ const LicenseTierConfig = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Price ($) *</label>
-                  <input className={`form-input ${formErrors.price ? "error" : ""}`} type="number" placeholder="9.99" value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })} min="0.01" step="0.01" />
+                  <label className="form-label">Price (VND) *</label>
+                  <input className={`form-input ${formErrors.price ? "error" : ""}`} type="number" placeholder="100000" value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })} min="1000" step="1000" />
                   {formErrors.price && <span className="form-error-text">{formErrors.price}</span>}
                 </div>
                 <div className="form-group">

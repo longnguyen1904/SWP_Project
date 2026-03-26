@@ -218,7 +218,7 @@ const ProductManagement = () => {
                   <p className="product-card-desc">
                     {product.description?.length > 100 ? `${product.description.substring(0, 100)}...` : product.description}
                   </p>
-                  <div className="product-card-price">${price}</div>
+                  <div className="product-card-price">{Number(price).toLocaleString("vi-VN")} VND</div>
                   {product.tags?.length > 0 && (
                     <div className="product-card-tags">
                       {product.tags.slice(0, 3).map((tag) => <span key={tag} className="badge badge-default">{tag}</span>)}
@@ -281,8 +281,8 @@ const ProductManagement = () => {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Price ($)</label>
-                  <input className="form-input" type="number" value={editFormData.basePrice} min="0" step="0.01"
+                  <label className="form-label">Price (VND)</label>
+                  <input className="form-input" type="number" value={editFormData.basePrice} min="0" step="1000"
                     onChange={(e) => setEditFormData({ ...editFormData, basePrice: e.target.value })} />
                 </div>
                 <div className="form-group">
