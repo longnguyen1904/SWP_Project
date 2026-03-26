@@ -286,7 +286,97 @@ const ChatbotWidget = () => {
       return "🤖 Tôi là Trợ Lý Ảo TALLT – chatbot hỗ trợ khách hàng tự động của TALLT Market! Tôi có thể giúp bạn:\n• 🛒 Hướng dẫn mua hàng & thanh toán\n• 🔑 Kích hoạt & quản lý License Key\n• 🐛 Xử lý lỗi phần mềm\n• 💰 Chính sách hoàn tiền\n• 📋 Tạo Ticket hỗ trợ\n\nHãy hỏi tôi bất cứ điều gì!";
     }
 
-    // ===== 32. CÂU HỎI THÔNG THƯỜNG (catch-all) =====
+    // ===== 33. TRẢ GÓP / ĐĂNG KÝ (SUBSCRIPTION) =====
+    if (lower.includes('trả góp') || lower.includes('thuê') || lower.includes('subscription') || lower.includes('đăng ký tháng') || lower.includes('trả theo tháng')) {
+      return "📅 Tùy thuộc vào thiết lập của Vendor, phần mềm có thể bán dạng mua đứt 1 lần (Lifetime) hoặc thuê bao gia hạn theo tháng/năm. Hiện tại TALLT Market thanh toán trả thẳng, chưa hỗ trợ trả góp qua thẻ tín dụng nhé!";
+    }
+
+    // ===== 34. HÓA ĐƠN / VAT / INVOICE =====
+    if (lower.includes('hóa đơn') || lower.includes('vat') || lower.includes('biên lai') || lower.includes('invoice') || lower.includes('xuất hóa đơn')) {
+      return "🧾 Đối với yêu cầu xuất hóa đơn VAT, bạn vui lòng liên hệ trực tiếp với Vendor (Nhà cung cấp) của phần mềm đó qua hệ thống Ticket để họ phát hành hóa đơn đỏ cho bạn, vì TALLT chỉ đóng vai trò nền tảng trung gian.";
+    }
+
+    // ===== 35. SCAM / GIAN LẬN / BÁO CÁO XẤU =====
+    if (lower.includes('lừa đảo') || lower.includes('báo cáo') || lower.includes('scam') || lower.includes('fake') || lower.includes('gian lận') || lower.includes('chứa virus') || lower.includes('report')) {
+      return "🚨 TALLT rất nghiêm khắc với các hành vi gian lận. Nếu bạn phát hiện phần mềm có chứa mã độc, lừa đảo, hoặc Vendor không cung cấp dịch vụ như cam kết: Vui lòng Tạo Ticket → Chọn chủ đề 'Báo cáo vi phạm (Scam)' để Admin khóa ngay tài khoản Vendor đó!";
+    }
+
+    // ===== 36. MOMO / ZALOPAY / PAYPAL =====
+    if (lower.includes('momo') || lower.includes('zalopay') || lower.includes('paypal') || lower.includes('mã thẻ') || lower.includes('visa') || lower.includes('mastercard')) {
+      return "💳 Hiện tại hệ thống TALLT Market hỗ trợ phương thức thanh toán cổng VNPay (hỗ trợ quét mã QR qua ứng dụng ngân hàng và thẻ ATM nội địa). Các cổng khác như Momo, ZaloPay hoặc PayPal đang được tích hợp thêm trong tương lai.";
+    }
+
+    // ===== 37. CHẾ ĐỘ OFFLINE / KHÔNG CÓ MẠNG =====
+    if (lower.includes('offline') || lower.includes('không có mạng') || lower.includes('không internet') || lower.includes('mất mạng') || lower.includes('cúp mạng')) {
+      return "🌐 Phần mềm trên nền tảng TALLT yêu cầu xác thực License qua Server của chúng tôi (sử dụng SDK TalltLicenseGuard). Do đó, bạn cần có kết nối Internet ít nhất 1 lần khi mở ứng dụng để phần mềm check Key. Một số phần mềm có thể hoạt động offline sau khi đã xác thực tùy thuộc vào Vendor.";
+    }
+
+    // ===== 38. MUA SỈ / SỐ LƯỢNG LỚN =====
+    if (lower.includes('mua nhiều') || lower.includes('mua sỉ') || lower.includes('số lượng lớn') || lower.includes('doanh nghiệp') || lower.includes('giá sỉ') || lower.includes('mua chung')) {
+      return "🏢 Bạn muốn mua phần mềm với số lượng lớn cho công ty/doanh nghiệp? Hãy tạo Ticket để nhắn tin trực tiếp với Vendor và xin mã giảm giá (Discount Coupon) cấu hình riêng cho doanh nghiệp của bạn nhé!";
+    }
+
+    // ===== 39. TẶNG QUÀ / CHUYỂN NHƯỢNG =====
+    if (lower.includes('tặng quà') || lower.includes('tặng') || lower.includes('gift') || lower.includes('gửi cho bạn') || lower.includes('chuyển nhượng')) {
+      return "🎁 TALLT hiện chưa ra mắt tính năng 'Mua tặng quà' (Gift). Tuy nhiên, bạn có thể mua bình thường, sau đó sao chép (copy) đoạn License Key đó gửi cho bạn bè để họ dán vào ứng dụng là được nhé!";
+    }
+
+    // ===== 40. HỢP TÁC / ĐỐI TÁC =====
+    if (lower.includes('hợp tác') || lower.includes('đối tác') || lower.includes('partnership') || lower.includes('affiliate') || lower.includes('tiếp thị liên kết')) {
+      return "🤝 Rất cảm ơn bạn đã quan tâm đến việc hợp tác cùng TALLT! Nếu bạn muốn đề xuất hợp tác Vendor lớn, hoặc chương trình Affiliate, vui lòng gửi email về `partner@tallt-market.com` để đội ngũ phát triển liên hệ lại nhé.";
+    }
+
+    // ===== 41. QUẢNG CÁO / ADS =====
+    if (lower.includes('quảng cáo') || lower.includes('ads') || lower.includes('chèn quảng cáo') || lower.includes('ẩn quảng cáo')) {
+      return "🚫 Platform TALLT Market đặc biệt nói KHÔNG với việc chèn quảng cáo vào góc màn hình người dùng. Các ứng dụng bán trên sàn cũng được yêu cầu không lạm dụng quảng cáo gây gián đoạn trải nghiệm của khách hàng.";
+    }
+
+    // ===== 42. MÃ NGUỒN MỞ / OPEN SOURCE =====
+    if (lower.includes('mã nguồn mở') || lower.includes('open source') || lower.includes('mã nguồn') || lower.includes('code') || lower.includes('source code')) {
+      return "📜 Đa số sản phẩm trên TALLT là phần mềm đã biên dịch nguyên bản (Compiled). Tuy nhiên, một số Vendor có cung cấp gói mua kèm mã nguồn mở (có giá trị cao hơn). Bạn hãy kiểm tra kỹ mô tả sản phẩm và EULA (thỏa thuận người dùng) nhé!";
+    }
+
+    // ===== 43. MÀN HÌNH XANH / DEAD / BSOD =====
+    if (lower.includes('màn hình xanh') || lower.includes('bsod') || lower.includes('chết máy') || lower.includes('đứng máy') || lower.includes('khởi động lại máy')) {
+      return "⚠️ Ops! Màn hình xanh (BSOD) thường xuất phát từ xung đột hệ điều hành (Driver) với tính năng cấp thấp của ứng dụng. Hãy tạo Ticket GẤP cho Vendor, kèm theo file ảnh chụp bằng điện thoại lỗi mã màn hình xanh để họ ra bản Patch bảo trì sớm nhất!";
+    }
+
+    // ===== 44.CỘNG ĐỒNG / FORUM / GROUP =====
+    if (lower.includes('cộng đồng') || lower.includes('group') || lower.includes('nhóm') || lower.includes('forum') || lower.includes('diễn đàn') || lower.includes('discord') || lower.includes('facebook')) {
+      return "🌐 TALLT có một cộng đồng hỗ trợ sôi nổi trên Discord và Nhóm Facebook dành cho cả Vendor lẫn Customer để thảo luận về phần mềm. Bạn kéo xuống thanh Footer (Dưới đáy trang web) để lấy link tham gia nhé!";
+    }
+
+    // ===== 45. CRACK / BẢN LẬU =====
+    if (lower.includes('crack') || lower.includes('bản lậu') || lower.includes('bypass') || lower.includes('hack') || lower.includes('cheat')) {
+      return "🛑 VI PHẠM: TALLT Market không cung cấp, không dung túng và quét sạch mã độc/phần mềm crack! Xin vui lòng mua bản quyền chính hãng để tôn trọng mồ hôi công sức của giới lập trình (Developer) cũng như bảo vệ máy tính của bạn khỏi mã độc tống tiền nhé.";
+    }
+
+    // ===== 46. TUYỂN DỤNG / JOB / VIỆC LÀM =====
+    if (lower.includes('tuyển dụng') || lower.includes('việc làm') || lower.includes('job') || lower.includes('hr') || lower.includes('ứng tuyển') || lower.includes('join us')) {
+      return "💼 TALLT luôn mở rộng cửa đón nhân tài IT chuyên môn cao (Backend Java, Frontend React, DevOps). Hãy theo dõi mục Career tại website chính thức công ty, hoặc gửi CV thẳng tới `hr@tallt-market.com` nhé!";
+    }
+
+    // ===== 47. LƯU TRỮ CLOUD / THẤT LẠC DỮ LIỆU =====
+    if (lower.includes('đám mây') || lower.includes('cloud') || lower.includes('lưu trữ') || lower.includes('mất dữ liệu') || lower.includes('backup') || lower.includes('sao lưu')) {
+      return "☁️ Đối với lưu trữ phần mềm: TALLT lưu trữ App Build an toàn qua Cloudinary/Server Backend. Đối với dữ liệu cá nhân bên trong phần mềm của bạn: Nó thuộc về Cloud/Local của Vendor phần mềm đó. TALLT không lưu trữ dữ liệu sinh ra từ App của bên thứ 3.";
+    }
+
+    // ===== 48. EVENT / LỄ HỘI / TẾT =====
+    if (lower.includes('event') || lower.includes('sự kiện') || lower.includes('lễ hội') || lower.includes('tết') || lower.includes('black friday') || lower.includes('giáng sinh')) {
+      return "🎉 Vào các dịp Lễ, Tết hoặc Black Friday, TALLT thường tổ chức các sự kiện hoàn tiền siêu khủng hoặc Flash Sale đồng giá toàn bộ sàn. Đừng quên đăng ký nhận bản tin qua Email để không bỏ lỡ đợt Sale nào nhé!";
+    }
+
+    // ===== 49. SAO KÊ / THUẾ / KẾ TOÁN =====
+    if (lower.includes('sao kê') || lower.includes('thuế') || lower.includes('kế toán') || lower.includes('tài lộc') || lower.includes('đối soát')) {
+      return "📊 Dành riêng cho Vendor: Hệ thống cung cấp Bảng kê giao dịch chi tiết từng miligiây. Vào mục Dashboard Analytics -> Kéo xuống Bảng kê -> Bấm Nút Xuất ZIP để tải file CSV & PDF đối soát với kế toán minh bạch 100%.";
+    }
+
+    // ===== 50. GÓP Ý TRỰC TIẾP CHO TALLT =====
+    if (lower.includes('góp ý') || lower.includes('idea') || lower.includes('đề xuất') || lower.includes('ngu') || lower.includes('kém') || lower.includes('chậm') || lower.includes('khen')) {
+      return "💌 Nếu hệ thống TALLT có bất kỳ tính năng nào chưa tốt (lag, chậm, UX/UI bất tiện...), xin đừng chần chừ mà hãy Email cho chúng tôi hoặc nhắn tin vào Chat box này kèm chữ 'GÓP Ý:'. Đội ngũ phát triển luôn túc trực để lắng nghe và tối ưu hệ thống hoàn hảo hơn!";
+    }
+
+    // ===== 51. CÂU HỎI THÔNG THƯỜNG (catch-all) =====
     return pick([
       "🤔 Xin lỗi, tôi chưa hiểu rõ câu hỏi của bạn. Bạn có thể thử hỏi về:\n• 🛒 Mua hàng / Thanh toán\n• 🔑 Kích hoạt License Key\n• 🐛 Lỗi phần mềm\n• 💰 Hoàn tiền\n• 📋 Tạo Ticket hỗ trợ\n• 👤 Tài khoản / Đăng ký\n\nHoặc tạo Ticket hỗ trợ để được tư vấn chi tiết hơn!",
       "🤖 Hmm, tôi chưa có câu trả lời cho câu hỏi này. Bạn hãy thử diễn đạt lại hoặc hỏi về các chủ đề: mua hàng, license, lỗi phần mềm, hoàn tiền, tài khoản. Hoặc tạo Ticket để nhân viên hỗ trợ trực tiếp nhé!",
