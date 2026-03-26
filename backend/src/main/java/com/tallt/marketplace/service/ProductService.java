@@ -136,6 +136,12 @@ public class ProductService {
     public Map<String, Object> uploadProductImage(Integer vendorId, Integer productId, ProductImageRequest request) {
         Product product = getProductAndValidateOwner(vendorId, productId);
 
+        // Check max 10 images per product
+        long imageCount = productImageRepository.findByProduct_ProductIDOrderBySortOrderAsc(productId).size();
+        if (imageCount >= 10) {
+            throw new AppException("Maximum 10 images per product. Please delete existing images first.");
+        }
+
         ProductImage image = new ProductImage();
         image.setProduct(product);
         image.setImageUrl(request.getImageUrl());
@@ -831,8 +837,9 @@ public class ProductService {
         response.setIsApproved(product.getIsApproved());
         response.setHasTrial(product.getHasTrial());
         response.setTrialDurationDays(product.getTrialDurationDays());
-        response.setVendorName(product.getVendor().getCompanyName() != null
-                ? product.getVendor().getCompanyName()
+        String compName = product.getVendor().getCompanyName();
+        response.setVendorName(compName != null && !compName.isBlank()
+                ? compName
                 : product.getVendor().getUser().getFullName());
         response.setVendorId(product.getVendor().getVendorID());
         response.setCreatedAt(product.getCreatedAt());
@@ -871,11 +878,17 @@ public class ProductService {
     @Transactional
     public void deleteProduct(Integer vendorId, Integer productId) {
         Product product = getProductAndValidateOwner(vendorId, productId);
+
+        // Block deletion if product has completed orders (protects customer purchases)
+        long completedOrders = orderRepository.countCompletedByProductId(productId);
+        if (completedOrders > 0) {
+            throw new AppException("Cannot delete product with " + completedOrders + " completed order(s). Customers have already purchased this product.");
+        }
         
-        // Xóa các bản ghi con theo đúng thứ tự FK
-        // 1. License (tham chiếu Order + Product + LicenseTier)
+        // Delete child records in FK order
+        // 1. License (references Order + Product + LicenseTier)
         licenseRepository.deleteByProduct_ProductID(productId);
-        // 2. Order (tham chiếu Product + LicenseTier)
+        // 2. Order (references Product + LicenseTier)
         orderRepository.deleteByProduct_ProductID(productId);
         // 3. Review
         reviewRepository.deleteByProduct_ProductID(productId);
@@ -885,12 +898,41 @@ public class ProductService {
         productImageRepository.deleteByProduct_ProductID(productId);
         // 6. ProductVersion
         productVersionRepository.deleteByProduct_ProductID(productId);
-        // 7. LicenseTier (sau khi License + Order đã xóa)
+        // 7. LicenseTier (after License + Order deleted)
         licenseTierRepository.deleteByProduct_ProductID(productId);
         
-        // Cuối cùng xóa Product
+        // Finally delete Product
         productRepository.delete(product);
     }
+
+    /**
+     * Deactivate product (APPROVED → INACTIVE)
+     * Product is hidden from marketplace but customer data is preserved.
+     */
+    @Transactional
+    public void deactivateProduct(Integer vendorId, Integer productId) {
+        Product product = getProductAndValidateOwner(vendorId, productId);
+        if (product.getStatus() != Product.ProductStatus.APPROVED) {
+            throw new AppException("Only approved products can be deactivated");
+        }
+        product.setStatus(Product.ProductStatus.INACTIVE);
+        productRepository.save(product);
+    }
+
+    /**
+     * Reactivate product (INACTIVE → APPROVED)
+     * Product becomes visible on marketplace again.
+     */
+    @Transactional
+    public void reactivateProduct(Integer vendorId, Integer productId) {
+        Product product = getProductAndValidateOwner(vendorId, productId);
+        if (product.getStatus() != Product.ProductStatus.INACTIVE) {
+            throw new AppException("Only inactive products can be reactivated");
+        }
+        product.setStatus(Product.ProductStatus.APPROVED);
+        productRepository.save(product);
+    }
+
     /**
      * Gửi email thông báo sản phẩm mới cho tất cả followers của vendor.
      * Non-blocking: exception không ảnh hưởng đến luồng approve.
@@ -902,8 +944,9 @@ public class ProductService {
             System.out.println("[FollowerNotify] Vendor " + vendorId + " has " + emails.size() + " follower(s)");
             if (emails.isEmpty()) return;
 
-            String vendorName = product.getVendor().getCompanyName() != null
-                    ? product.getVendor().getCompanyName()
+            String compName = product.getVendor().getCompanyName();
+            String vendorName = compName != null && !compName.isBlank()
+                    ? compName
                     : product.getVendor().getUser().getFullName();
 
             String subject = "New Product from " + vendorName + ": " + product.getProductName();

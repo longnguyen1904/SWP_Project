@@ -58,6 +58,11 @@ public class ProductVersionService {
     public ProductVersionResponse createVersion(Integer vendorId, Integer productId, ProductVersionRequest request) {
         Product product = validateProductOwnership(vendorId, productId);
 
+        // Block creating versions on PENDING products
+        if (product.getStatus() == Product.ProductStatus.PENDING) {
+            throw new AppException("Cannot add version while product is under review. Please wait for admin approval.");
+        }
+
         // Validate semantic version format
         validateSemver(request.getVersionNumber());
 
@@ -154,6 +159,28 @@ public class ProductVersionService {
     }
 
     /**
+     * Delete a version
+     */
+    @Transactional
+    public void deleteVersion(Integer vendorId, Integer productId, Integer versionId) {
+        Product product = validateProductOwnership(vendorId, productId);
+
+        ProductVersion version = productVersionRepository.findById(versionId)
+                .orElseThrow(() -> new AppException("Version does not exist"));
+        if (!version.getProduct().getProductID().equals(productId)) {
+            throw new AppException("Version does not belong to this product");
+        }
+
+        // Prevent deleting the only version of a product (at least one version must remain)
+        long versionCount = productVersionRepository.countByProduct_ProductID(productId);
+        if (versionCount <= 1) {
+            throw new AppException("Cannot delete the only version of a product");
+        }
+
+        productVersionRepository.delete(version);
+    }
+
+    /**
      * Get list of product versions with paging, sort
      */
     public PageResponse<ProductVersionResponse> getVersions(Integer productId,
@@ -240,7 +267,7 @@ public class ProductVersionService {
                     + "<a href='" + frontendBaseUrl + "/products/" + product.getProductID() + "' "
                     + "style='display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);"
                     + "color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;"
-                    + "font-size:16px;font-weight:600;'>Khám phá ngay →</a></p>";
+                    + "font-size:16px;font-weight:600;'>View Update →</a></p>";
 
             for (String email : emails) {
                 try {

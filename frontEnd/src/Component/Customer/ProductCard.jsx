@@ -29,9 +29,6 @@ const ProductCard = ({ product, onViewDetails }) => {
           alt={productName}
           onError={handleImgError}
         />
-        <div className="product-card__wishlist">
-          <WishlistButton productId={productId} size={20} />
-        </div>
       </div>
       <div className="product-card__body">
         <h3 className="product-card__name">{productName || "—"}</h3>

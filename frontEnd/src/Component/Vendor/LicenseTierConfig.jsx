@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { vendorAPI } from "../../services/api";
+import useVendorProducts from "../../services/useVendorProducts";
 import "../../Style/Vendor.css";
 
 const TIER_PRESETS = [
+  { label: "Standard", code: "STD" },
   { label: "Personal", code: "PER" },
   { label: "Business", code: "BIZ" },
   { label: "Enterprise", code: "ENT" },
 ];
 
 const LicenseTierConfig = () => {
-  const [products, setProducts] = useState([]);
+  const { products, loading: productsLoading } = useVendorProducts();
   const [selectedProductId, setSelectedProductId] = useState("");
   const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,21 +31,8 @@ const LicenseTierConfig = () => {
   });
   const [formErrors, setFormErrors] = useState({});
 
-  useEffect(() => { fetchProducts(); }, []);
   useEffect(() => { if (selectedProductId) fetchTiers(); }, [selectedProductId]);
   useEffect(() => { if (success) { const t = setTimeout(() => setSuccess(""), 4000); return () => clearTimeout(t); } }, [success]);
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const res = await vendorAPI.getVendorProducts({ size: 100 });
-      const data = res.data?.data ?? res.data;
-      const content = data?.content ?? data?.products ?? (Array.isArray(data) ? data : []);
-      setProducts(Array.isArray(content) ? content : []);
-    } catch (err) {
-      setError(err.response?.data?.message || "Cannot load product list");
-    } finally { setLoading(false); }
-  };
 
   const fetchTiers = async () => {
     if (!selectedProductId) return;
@@ -123,13 +112,14 @@ const LicenseTierConfig = () => {
   };
 
   const getProductName = () => {
-    const p = products.find((p) => (p.productId ?? p.id) === selectedProductId);
+    const numId = Number(selectedProductId);
+    const p = products.find((p) => (p.productId ?? p.id) === numId);
     return p?.productName ?? p?.name ?? "";
   };
 
   const formatPrice = (price) => {
     if (price == null) return "—";
-    return `$${Number(price).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+    return `${Number(price).toLocaleString("vi-VN")} VND`;
   };
 
   return (
@@ -233,9 +223,9 @@ const LicenseTierConfig = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Price ($) *</label>
-                  <input className={`form-input ${formErrors.price ? "error" : ""}`} type="number" placeholder="9.99" value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })} min="0.01" step="0.01" />
+                  <label className="form-label">Price (VND) *</label>
+                  <input className={`form-input ${formErrors.price ? "error" : ""}`} type="number" placeholder="100000" value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })} min="1000" step="1000" />
                   {formErrors.price && <span className="form-error-text">{formErrors.price}</span>}
                 </div>
                 <div className="form-group">

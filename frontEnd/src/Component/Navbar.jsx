@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../public/logo_no_bg.png";
 import LogIn from "./LogIn";
 import Register from "./Register";
@@ -28,6 +28,7 @@ function isCustomer() {
   return getRole() === "CUSTOMER";
 }
 export default function Navbar() {
+  const navigate = useNavigate();
   const loginDialog = useRef();
   const registerDialog = useRef();
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
@@ -45,6 +46,7 @@ export default function Navbar() {
     logOut();
     setLoggedIn(false);
     setRole(null);
+    navigate("/marketplace");
   }
 
   useEffect(() => {
@@ -53,7 +55,14 @@ export default function Navbar() {
       setRole(getRole());
     };
     window.addEventListener("authChanged", updateAuth);
-    return () => window.removeEventListener("authChanged", updateAuth);
+    
+    const handleOpenLogin = () => loginDialog.current?.showModal();
+    window.addEventListener("openLoginModal", handleOpenLogin);
+
+    return () => {
+      window.removeEventListener("authChanged", updateAuth);
+      window.removeEventListener("openLoginModal", handleOpenLogin);
+    };
   }, []);
 
   return (
@@ -98,7 +107,6 @@ export default function Navbar() {
               </div>
 
               <div className="dropdown-content">
-                <Link to="/Page/ProfilePage" id="router-link">ProfileChange</Link>
                 {role === "CUSTOMER" && (
                   <>
                   <Link to="/Page/VendorRegistration" id="router-link">Become a Vendor</Link>
@@ -110,7 +118,6 @@ export default function Navbar() {
                   <>
                   <Link to="/Page/Customer" id="router-link">Dashboard</Link>
                     <Link to="/Page/Vendor" id="router-link">Vendor Dashboard</Link>
-                    <Link to="/Page/Vendor/ProductUpload" id="router-link">Upload Product</Link>
                    
                   </>
                 )}

@@ -1,10 +1,12 @@
 package com.tallt.marketplace.service;
 
 import com.tallt.marketplace.entity.Coupon;
+import com.tallt.marketplace.entity.LicenseTier;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.entity.Vendor;
 import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.CouponRepository;
+import com.tallt.marketplace.repository.LicenseTierRepository;
 import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.VendorRepository;
 import org.springframework.stereotype.Service;
@@ -21,13 +23,16 @@ public class CouponService {
     private final CouponRepository couponRepository;
     private final VendorRepository vendorRepository;
     private final ProductRepository productRepository;
+    private final LicenseTierRepository licenseTierRepository;
 
     public CouponService(CouponRepository couponRepository,
                          VendorRepository vendorRepository,
-                         ProductRepository productRepository) {
+                         ProductRepository productRepository,
+                         LicenseTierRepository licenseTierRepository) {
         this.couponRepository = couponRepository;
         this.vendorRepository = vendorRepository;
         this.productRepository = productRepository;
+        this.licenseTierRepository = licenseTierRepository;
     }
 
     @Transactional
@@ -40,6 +45,7 @@ public class CouponService {
         Integer maxUses = body.get("maxUses") != null ? (Integer) body.get("maxUses") : null;
         String expiresAtStr = (String) body.get("expiresAt");
         Integer productId = body.get("productId") != null ? (Integer) body.get("productId") : null;
+        Integer tierId = body.get("tierId") != null ? (Integer) body.get("tierId") : null;
 
         if (code.isEmpty() || discountPercent == null) {
             throw new AppException("Mã coupon và phần trăm giảm giá không được để trống");
@@ -59,7 +65,11 @@ public class CouponService {
         coupon.setIsActive(true);
 
         if (expiresAtStr != null && !expiresAtStr.isEmpty()) {
-            coupon.setExpiresAt(LocalDateTime.parse(expiresAtStr));
+            LocalDateTime expiresAt = LocalDateTime.parse(expiresAtStr);
+            if (expiresAt.isBefore(LocalDateTime.now())) {
+                throw new AppException("Expiry date must be in the future");
+            }
+            coupon.setExpiresAt(expiresAt);
         }
 
         if (productId != null) {
@@ -69,6 +79,15 @@ public class CouponService {
                 throw new AppException("Sản phẩm không thuộc về bạn");
             }
             coupon.setProduct(product);
+
+            if (tierId != null) {
+                LicenseTier tier = licenseTierRepository.findById(tierId)
+                        .orElseThrow(() -> new AppException("Gói license không tồn tại"));
+                if (!tier.getProduct().getProductID().equals(productId)) {
+                    throw new AppException("Gói license không thuộc sản phẩm này");
+                }
+                coupon.setTier(tier);
+            }
         }
 
         return couponRepository.save(coupon);
@@ -92,7 +111,7 @@ public class CouponService {
         couponRepository.delete(coupon);
     }
 
-    public Map<String, Object> validateCoupon(String code, Integer productId) {
+    public Map<String, Object> validateCoupon(String code, Integer productId, Integer tierId) {
         Coupon coupon = couponRepository.findByCodeIgnoreCase(code.trim())
                 .orElseThrow(() -> new AppException("Mã coupon không tồn tại"));
 
@@ -116,6 +135,11 @@ public class CouponService {
         if (coupon.getProduct() == null &&
                 !coupon.getVendor().getVendorID().equals(product.getVendor().getVendorID())) {
             throw new AppException("Mã coupon không áp dụng cho sản phẩm này");
+        }
+
+        if (coupon.getTier() != null && tierId != null
+                && !coupon.getTier().getTierID().equals(tierId)) {
+            throw new AppException("Mã coupon chỉ áp dụng cho gói " + coupon.getTier().getTierName());
         }
 
         return Map.of(

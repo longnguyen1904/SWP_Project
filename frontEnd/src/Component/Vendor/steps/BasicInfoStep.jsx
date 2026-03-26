@@ -27,8 +27,8 @@ const BasicInfoStep = ({ productData, setProductData, categories }) => {
             </div>
             <div className="form-row">
                 <div className="form-group">
-                    <label className="form-label">Base Price ($) *</label>
-                    <input className="form-input" type="number" value={productData.basePrice} onChange={handleChange("basePrice")} required min="0" step="0.01" />
+                    <label className="form-label">Base Price (VND) *</label>
+                    <input className="form-input" type="number" value={productData.basePrice} onChange={handleChange("basePrice")} required min="0" step="1000" />
                 </div>
                 <div className="form-group">
                     <label className="form-label">Has Trial</label>

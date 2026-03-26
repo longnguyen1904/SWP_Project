@@ -103,7 +103,7 @@ public class AuthService {
         User newUser = new User();
         newUser.setEmail(request.getEmail());
 
-        // MÃ HÓA MẬT KHẨU TRƯỚC KHI LƯU
+        // Password strength is validated by @Pattern in RegisterRequest DTO
         newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         String generatedUsername = request.getEmail().split("@")[0];
         newUser.setUsername(generatedUsername);

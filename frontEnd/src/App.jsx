@@ -27,7 +27,6 @@ import CustomerTicketManagement from "./Page/CustomerTicketManagement";
 import PaymentResult from "./Page/PaymentResult";
 import VendorShop from "./Page/VendorShop";
 import WishlistPage from "./Page/WishlistPage";
-import RecentlyViewedPage from "./Page/RecentlyViewedPage";
 import AdminCommission from "./Page/AdminCommision.jsx";
 import AdminPayout from "./Page/AdminPayout.jsx";
 import PayoutResult from "./Page/PayoutResult.jsx";
@@ -52,11 +51,11 @@ export default function App() {
           <Route index element={<Navigate to="PurchasedProducts" replace />} />
           <Route path="PurchasedProducts" element={<PurchasedProducts />} />
           <Route path="Wishlist" element={<WishlistPage />} />
-          <Route path="RecentlyViewed" element={<RecentlyViewedPage />} />
           <Route path="Profile" element={<ProfilePage />} />
           <Route path="CustomerTicketManagement" element={<CustomerTicketManagement />} />
           <Route path="CreateSupportTicket" element={<CreateSupportTicketWizard />} />
           <Route path="HelpCenter" element={<HelpCenter />} />
+          <Route path="FollowedVendors" element={<FollowedVendors />} />
         </Route>
 
 
@@ -74,7 +73,6 @@ export default function App() {
           <Route path="QualityAnalyticsDashboard" element={<QualityAnalyticsDashboard />} />
           <Route path="CouponManagement" element={<CouponManagement />} />
           <Route path="Wallet" element={<VendorWallet />} />
-          <Route path="FollowedVendors" element={<FollowedVendors />} />
         </Route>
 
         <Route path="/Page/ProfilePage" element={<ProfilePage />} />

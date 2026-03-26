@@ -7,7 +7,7 @@ const ReviewStep = ({ productData, images, version, licenseTiers }) => (
 
         <div className="info-section">
             <div className="info-row"><span className="info-label">Product Name</span><span className="info-value">{productData.productName}</span></div>
-            <div className="info-row"><span className="info-label">Base Price</span><span className="info-value">${productData.basePrice}</span></div>
+            <div className="info-row"><span className="info-label">Base Price</span><span className="info-value">{Number(productData.basePrice).toLocaleString("vi-VN")} VND</span></div>
             <div className="info-row"><span className="info-label">Description</span><span className="info-value">{productData.description}</span></div>
             <div className="info-row"><span className="info-label">Guide Document</span><span className="info-value">{productData.guideDocumentUrl || "None"}</span></div>
             <div className="info-row"><span className="info-label">Images</span><span className="info-value">{images.length}</span></div>

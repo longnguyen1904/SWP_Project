@@ -50,6 +50,8 @@ export const vendorAPI = {
   getProduct: (productId) => api.get(`/api/vendor/products/${productId}`),
   updateProduct: (productId, data) => api.put(`/api/vendor/products/${productId}`, data),
   deleteProduct: (productId) => api.delete(`/api/vendor/products/${productId}`),
+  deactivateProduct: (productId) => api.put(`/api/vendor/products/${productId}/deactivate`),
+  reactivateProduct: (productId) => api.put(`/api/vendor/products/${productId}/reactivate`),
   uploadProductImage: (productId, imageData) =>
     api.post(`/api/vendor/products/${productId}/images`, imageData),
   deleteProductImage: (productId, imageId) =>
@@ -62,6 +64,8 @@ export const vendorAPI = {
     api.get(`/api/vendor/products/${productId}/versions/${versionId}`),
   updateProductVersion: (productId, versionId, data) =>
     api.put(`/api/vendor/products/${productId}/versions/${versionId}`, data),
+  deleteProductVersion: (productId, versionId) =>
+    api.delete(`/api/vendor/products/${productId}/versions/${versionId}`),
   createLicenseTier: (productId, tierData) =>
     api.post(`/api/vendor/products/${productId}/license-tiers`, tierData),
   getLicenseTiers: (productId, params = {}) =>
@@ -126,12 +130,15 @@ export const customerAPI = {
     api.post(`/api/wishlists/toggle?productId=${productId}`),
   checkWishlist: (productId) =>
     api.get(`/api/wishlists/check?productId=${productId}`),
-  validateCoupon: (code, productId) =>
-    api.get(`/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`),
+  validateCoupon: (code, productId, tierId) => {
+    let url = `/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`;
+    if (tierId) url += `&tierId=${tierId}`;
+    return api.get(url);
+  },
   getCouponsForProduct: (productId) =>
     api.get(`/api/coupons/product/${productId}`),
   followVendor: (vendorId) =>
-    api.post(`/api/vendors/${vendorId}/follow`, {}),
+    api.post(`/api/vendors/${vendorId}/follow`),
   checkFollowVendor: (vendorId) =>
     api.get(`/api/vendors/${vendorId}/follow/check`),
   getMyFollowedVendors: () =>
