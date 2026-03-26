@@ -1,6 +1,8 @@
 package com.tallt.marketplace.repository;
 
 import com.tallt.marketplace.entity.Product;
+import com.tallt.marketplace.entity.Product.ProductStatus;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,6 +23,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                         Product.ProductStatus status,
                         String productName,
                         Pageable pageable);
+
+        List<Product> findByVendor_VendorIDAndStatusIn(Integer vendorId, List<ProductStatus> statuses);
+
+        List<Product> findByVendor_VendorIDAndStatusAndRejectionNote(Integer vendorId, ProductStatus status,
+                        String rejectionNote);
 
         /**
          * Lấy danh sách sản phẩm của Vendor với filter, search, paging
