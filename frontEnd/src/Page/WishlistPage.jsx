@@ -31,6 +31,11 @@ const WishlistPage = () => {
   const [sortOption, setSortOption] = useState("newest");
 
   useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     fetchWishlist();
   }, []);
 
@@ -222,13 +227,12 @@ const WishlistPage = () => {
 
       {items.length === 0 ? (
         <div className="wishlist-page__empty">
-          <div className="wishlist-page__empty-icon">♡</div>
           <p>Your wishlist is empty.</p>
           <button
             className="btn btn--primary"
             onClick={() => navigate("/marketplace")}
           >
-            Browse Marketplace
+            Explore Marketplace
           </button>
         </div>
       ) : filteredItems.length === 0 ? (

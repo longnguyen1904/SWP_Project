@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { couponAPI, vendorAPI } from "../services/api";
 import { unwrapResponse, getApiErrorMessage } from "../services/apiHelpers";
+import "../Style/Vendor.css";
 
 const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "" });
+  const [form, setForm] = useState({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "", tierId: "" });
+  const [tiers, setTiers] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [products, setProducts] = useState([]);
@@ -37,6 +39,16 @@ const CouponManagement = () => {
     } catch { setProducts([]); }
   };
 
+  const fetchTiers = async (productId) => {
+    if (!productId) { setTiers([]); return; }
+    try {
+      const res = await vendorAPI.getLicenseTiers(productId);
+      const data = unwrapResponse(res);
+      const list = data?.content ?? data;
+      setTiers(Array.isArray(list) ? list : []);
+    } catch { setTiers([]); }
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setError("");
@@ -48,170 +60,206 @@ const CouponManagement = () => {
         maxUses: form.maxUses ? parseInt(form.maxUses) : null,
         expiresAt: form.expiresAt ? form.expiresAt + "T23:59:59" : null,
         productId: form.productId ? parseInt(form.productId) : null,
+        tierId: form.tierId ? parseInt(form.tierId) : null,
       };
       await couponAPI.createCoupon(body);
-      setSuccess("Tạo coupon thành công!");
-      setForm({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "" });
+      setSuccess("Coupon created successfully!");
+      setForm({ code: "", discountPercent: "", maxUses: "", expiresAt: "", productId: "", tierId: "" });
+      setTiers([]);
       setShowForm(false);
       fetchCoupons();
     } catch (err) {
-      setError(getApiErrorMessage(err, "Có lỗi xảy ra"));
+      setError(getApiErrorMessage(err, "An error occurred"));
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa coupon này?")) return;
+    if (!window.confirm("Are you sure you want to delete this coupon?")) return;
     try {
       await couponAPI.deleteCoupon(id);
       fetchCoupons();
     } catch {
-      alert("Không thể xóa coupon");
+      alert("Could not delete coupon");
     }
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return "Không giới hạn";
-    return new Date(dateStr).toLocaleDateString("vi-VN");
+    if (!dateStr) return "No limit";
+    return new Date(dateStr).toLocaleDateString("en-US");
   };
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center p-5">
-        <div className="spinner-border text-info" role="status" />
+      <div className="loading-center">
+        <div className="spinner spinner-lg"></div>
       </div>
     );
   }
 
   return (
-    <div className="text-white">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="fw-bold mb-0">Quản lý mã giảm giá</h2>
-        <button className="btn btn-info text-dark fw-bold" onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Đóng" : "+ Tạo coupon mới"}
+    <div>
+      <div className="vendor-page-header">
+        <h2 className="vendor-page-title">Coupon Management</h2>
+        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+          {showForm ? "✕ Close" : "+ Create Coupon"}
         </button>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {error && (
+        <div className="alert alert-error">
+          {error}
+          <button className="alert-close" onClick={() => setError("")}>×</button>
+        </div>
+      )}
+      {success && (
+        <div className="alert alert-success">
+          {success}
+          <button className="alert-close" onClick={() => setSuccess("")}>×</button>
+        </div>
+      )}
 
       {showForm && (
-        <div className="card bg-dark border-secondary mb-4">
-          <div className="card-body">
-            <h5 className="card-title text-info mb-3">Tạo coupon mới</h5>
-            <form onSubmit={handleCreate}>
-              <div className="row g-3">
-                <div className="col-md-3">
-                  <label className="form-label">Mã coupon</label>
-                  <input
-                    type="text"
-                    className="form-control bg-dark text-white border-secondary"
-                    value={form.code}
-                    onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-                    placeholder="VD: SALE20"
-                    required
-                  />
-                </div>
-                <div className="col-md-2">
-                  <label className="form-label">Giảm (%)</label>
-                  <input
-                    type="number"
-                    className="form-control bg-dark text-white border-secondary"
-                    value={form.discountPercent}
-                    onChange={(e) => setForm({ ...form, discountPercent: e.target.value })}
-                    min="1"
-                    max="100"
-                    placeholder="20"
-                    required
-                  />
-                </div>
-                <div className="col-md-2">
-                  <label className="form-label">Lượt dùng tối đa</label>
-                  <input
-                    type="number"
-                    className="form-control bg-dark text-white border-secondary"
-                    value={form.maxUses}
-                    onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
-                    min="1"
-                    placeholder="Không giới hạn"
-                  />
-                </div>
-                <div className="col-md-3">
-                  <label className="form-label">Ngày hết hạn</label>
-                  <input
-                    type="date"
-                    className="form-control bg-dark text-white border-secondary"
-                    value={form.expiresAt}
-                    onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
-                  />
-                </div>
+        <div className="vendor-card mb-24">
+          <div className="section-title">Create New Coupon</div>
+          <form onSubmit={handleCreate}>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label" style={{color:"#fff"}}>Coupon Code</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={form.code}
+                  onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+                  placeholder="e.g. SALE20"
+                  required
+                />
               </div>
-              <div className="row g-3 mt-1">
-                <div className="col-md-6">
-                  <label className="form-label">Áp dụng cho sản phẩm</label>
+              <div className="form-group">
+                <label className="form-label" style={{color:"#fff"}}>Discount (%)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={form.discountPercent}
+                  onChange={(e) => setForm({ ...form, discountPercent: e.target.value })}
+                  min="1"
+                  max="100"
+                  placeholder="20"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label" style={{color:"#fff"}}>Max Uses</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={form.maxUses}
+                  onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
+                  min="1"
+                  placeholder="Unlimited"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label" style={{color:"#fff"}}>Expiry Date</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={form.expiresAt}
+                  onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group" style={{ flex: 2 }}>
+                <label className="form-label" style={{color:"#fff"}}>Apply to Product</label>
+                <select
+                  className="form-select"
+                  value={form.productId}
+                  onChange={(e) => {
+                    const pid = e.target.value;
+                    setForm({ ...form, productId: pid, tierId: "" });
+                    fetchTiers(pid);
+                  }}
+                >
+                  <option value="">All my products</option>
+                  {products.map((p) => (
+                    <option key={p.productId ?? p.productID} value={p.productId ?? p.productID}>
+                      {p.productName ?? p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {form.productId && tiers.length > 0 && (
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label" style={{color:"#fff"}}>Apply to Tier</label>
                   <select
-                    className="form-select bg-dark text-white border-secondary"
-                    value={form.productId}
-                    onChange={(e) => setForm({ ...form, productId: e.target.value })}
+                    className="form-select"
+                    value={form.tierId}
+                    onChange={(e) => setForm({ ...form, tierId: e.target.value })}
                   >
-                    <option value="">Tất cả sản phẩm của tôi</option>
-                    {products.map((p) => (
-                      <option key={p.productId ?? p.productID} value={p.productId ?? p.productID}>
-                        {p.productName ?? p.name}
+                    <option value="">All tiers</option>
+                    {tiers.map((t) => (
+                      <option key={t.tierId ?? t.tierID} value={t.tierId ?? t.tierID}>
+                        {t.tierName}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div className="col-md-2 d-flex align-items-end">
-                  <button type="submit" className="btn btn-success w-100">Tạo</button>
-                </div>
+              )}
+              <div className="form-group" style={{ flex: 0, alignSelf: "flex-end" }}>
+                <button type="submit" className="btn btn-primary">Create</button>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       )}
 
       {coupons.length === 0 ? (
-        <div className="text-center text-white-50 py-5">
-          <i className="bi bi-ticket-perforated display-1"></i>
-          <p className="mt-3">Bạn chưa có coupon nào. Bấm "Tạo coupon mới" để bắt đầu!</p>
+        <div className="table-empty">
+          <p>You don't have any coupons yet.</p>
+          <p style={{ fontSize: 13, color: "#64748b" }}>Click "+ Create Coupon" to get started.</p>
         </div>
       ) : (
-        <div className="table-responsive">
-          <table className="table table-dark table-hover align-middle">
+        <div className="table-wrapper">
+          <table className="vendor-table">
             <thead>
-              <tr className="text-info">
-                <th>Mã</th>
-                <th>Giảm giá</th>
-                <th>Sản phẩm</th>
-                <th>Đã dùng</th>
-                <th>Tối đa</th>
-                <th>Hết hạn</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
+              <tr>
+                <th>Code</th>
+                <th>Discount</th>
+                <th>Product</th>
+                <th>Tier</th>
+                <th>Used</th>
+                <th>Max</th>
+                <th>Expires</th>
+                <th>Status</th>
+                <th style={{ textAlign: "center" }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {coupons.map((c) => {
                 const isExpired = c.expiresAt && new Date(c.expiresAt) < new Date();
                 const isMaxed = c.maxUses && c.currentUses >= c.maxUses;
-                const status = !c.isActive ? "Vô hiệu" : isExpired ? "Hết hạn" : isMaxed ? "Hết lượt" : "Hoạt động";
-                const badgeClass = status === "Hoạt động" ? "bg-success" : "bg-secondary";
+                const status = !c.isActive ? "Disabled" : isExpired ? "Expired" : isMaxed ? "Used Up" : "Active";
+                const badgeClass =
+                  status === "Active" ? "badge-success" :
+                  status === "Expired" ? "badge-error" :
+                  status === "Used Up" ? "badge-warning" : "badge-default";
 
                 return (
                   <tr key={c.couponId}>
-                    <td><code className="text-warning fs-6">{c.code}</code></td>
+                    <td><code style={{ color: "#fbbf24", fontSize: 14 }}>{c.code}</code></td>
                     <td>{c.discountPercent}%</td>
-                    <td className="text-white-50">{c.product?.productName ?? "Tất cả"}</td>
+                    <td style={{ color: "#94a3b8" }}>{c.product?.productName ?? "All"}</td>
+                    <td style={{ color: "#94a3b8" }}>{c.tier?.tierName ?? "All"}</td>
                     <td>{c.currentUses ?? 0}</td>
                     <td>{c.maxUses ?? "∞"}</td>
                     <td>{formatDate(c.expiresAt)}</td>
                     <td><span className={`badge ${badgeClass}`}>{status}</span></td>
-                    <td>
+                    <td className="actions">
                       <button
-                        className="btn btn-outline-danger btn-sm"
+                        className="btn btn-danger btn-sm"
                         onClick={() => handleDelete(c.couponId)}
                       >
-                        Xóa
+                        Delete
                       </button>
                     </td>
                   </tr>

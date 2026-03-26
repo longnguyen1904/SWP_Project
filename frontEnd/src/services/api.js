@@ -36,16 +36,23 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (userData) => api.post("/api/auth/register", userData),
   login: (credentials) => api.post("/api/auth/login", credentials),
+  forgotPassword: (email) => api.post("/api/auth/forgot-password", { email }),
+  verifyOtpAndResetPassword: (email, otp, newPassword) =>
+    api.post("/api/auth/verify-otp", { email, otp, newPassword }),
 };
 
 export const vendorAPI = {
   registerVendor: (data) => api.post("/api/vendors/register", data),
+  getMyVendorStatus: () => api.get("/api/vendors/my-status"),
+  resubmitIdentification: (data) => api.post("/api/vendors/resubmit-identification", data),
   getMe: () => api.get("/api/vendor/me"),
   createProduct: (productData) => api.post("/api/vendor/products", productData),
   getVendorProducts: (params = {}) => api.get("/api/vendor/products", { params }),
   getProduct: (productId) => api.get(`/api/vendor/products/${productId}`),
   updateProduct: (productId, data) => api.put(`/api/vendor/products/${productId}`, data),
   deleteProduct: (productId) => api.delete(`/api/vendor/products/${productId}`),
+  deactivateProduct: (productId) => api.put(`/api/vendor/products/${productId}/deactivate`),
+  reactivateProduct: (productId) => api.put(`/api/vendor/products/${productId}/reactivate`),
   uploadProductImage: (productId, imageData) =>
     api.post(`/api/vendor/products/${productId}/images`, imageData),
   deleteProductImage: (productId, imageId) =>
@@ -58,6 +65,8 @@ export const vendorAPI = {
     api.get(`/api/vendor/products/${productId}/versions/${versionId}`),
   updateProductVersion: (productId, versionId, data) =>
     api.put(`/api/vendor/products/${productId}/versions/${versionId}`, data),
+  deleteProductVersion: (productId, versionId) =>
+    api.delete(`/api/vendor/products/${productId}/versions/${versionId}`),
   createLicenseTier: (productId, tierData) =>
     api.post(`/api/vendor/products/${productId}/license-tiers`, tierData),
   getLicenseTiers: (productId, params = {}) =>
@@ -91,10 +100,10 @@ export const customerAPI = {
   getProducts: (params = {}) => {
     const adapted = { ...params };
     if (Array.isArray(params.categoryIds) && params.categoryIds.length > 0) {
-      adapted.categoryId = params.categoryIds[0];
+      adapted.categoryId = params.categoryIds;
     }
     if (Array.isArray(params.tags) && params.tags.length > 0) {
-      adapted.tag = params.tags[0];
+      adapted.tag = params.tags;
     }
     const queryString = buildProductsQueryString(adapted);
     return api.get(`/api/products${queryString}`);
@@ -122,10 +131,19 @@ export const customerAPI = {
     api.post(`/api/wishlists/toggle?productId=${productId}`),
   checkWishlist: (productId) =>
     api.get(`/api/wishlists/check?productId=${productId}`),
-  validateCoupon: (code, productId) =>
-    api.get(`/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`),
+  validateCoupon: (code, productId, tierId) => {
+    let url = `/api/coupons/validate?code=${encodeURIComponent(code)}&productId=${productId}`;
+    if (tierId) url += `&tierId=${tierId}`;
+    return api.get(url);
+  },
   getCouponsForProduct: (productId) =>
     api.get(`/api/coupons/product/${productId}`),
+  followVendor: (vendorId) =>
+    api.post(`/api/vendors/${vendorId}/follow`),
+  checkFollowVendor: (vendorId) =>
+    api.get(`/api/vendors/${vendorId}/follow/check`),
+  getMyFollowedVendors: () =>
+    api.get("/api/follow/my-vendors"),
 };
 
 export const couponAPI = {
@@ -146,8 +164,6 @@ export const uploadAPI = {
 export const profileAPI = {
   getProfile: () => api.get("/api/users/profile"),
   updateProfile: (data) => api.put("/api/users/profile", data),
-  forgotPassword: (email) => api.post("/api/users/forgot-password", { email }),
-  resetPassword: (data) => api.post("/api/users/reset-password", data),
 };
 
 export const licenseAPI = {

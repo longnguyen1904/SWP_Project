@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 
 /**
- * Controller xử lý đăng ký Vendor
+ * Controller for Vendor Registration
  * UC01 – Vendor Registration
  */
 @RestController
@@ -30,22 +30,32 @@ public class VendorController {
     private ProductService productService;
 
     /**
-     * Đăng ký trở thành Vendor
+     * Check current user's vendor registration status
+     * GET /api/vendors/my-status
+     */
+    @GetMapping("/my-status")
+    public ResponseEntity<ApiResponse<?>> getMyVendorStatus(
+            @RequestHeader("X-User-Id") Integer userId) {
+        return ResponseEntity.ok(ApiResponse.success(vendorService.getMyVendorStatus(userId)));
+    }
+
+    /**
+     * Register as a Vendor
      * POST /api/vendors/register
-     * - User gửi thông tin xác thực để trở thành Vendor
-     * - Tạo bản ghi Vendors (IsVerified=0, IsActive=1)
-     * - Cập nhật Users.RoleID = 2 (Vendor)
+     * - User submits verification info to become a Vendor
+     * - Creates Vendors record (Status=PENDING)
+     * - Role remains CUSTOMER until Admin approves
      */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<VendorRegisterResponse>> registerVendor(
             @RequestHeader("X-User-Id") Integer userId,
             @Valid @RequestBody VendorRegisterRequest request) {
         VendorRegisterResponse result = vendorService.registerVendor(userId, request);
-        return ResponseEntity.ok(ApiResponse.success("Đăng ký Vendor thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Vendor registration successful", result));
     }
 
     /**
-     * UC24 - Vendor Shop Page: lấy thông tin vendor public
+     * UC24 - Vendor Shop Page: get public vendor info
      * GET /api/vendors/{vendorId}
      */
     @GetMapping("/{vendorId}")
@@ -55,7 +65,7 @@ public class VendorController {
     }
 
     /**
-     * UC24 - Vendor Shop Page: list sản phẩm public theo vendor (approved only)
+     * UC24 - Vendor Shop Page: list public products by vendor (approved only)
      * GET /api/vendors/{vendorId}/products
      */
     @GetMapping("/{vendorId}/products")
@@ -76,4 +86,13 @@ public class VendorController {
         );
         return ResponseEntity.ok(ApiResponse.success(result));
     }
+    @PostMapping("/resubmit-identification")
+    public ResponseEntity<ApiResponse<?>> resubmitIdentification(
+            @RequestHeader("X-User-Id") Integer userId,
+            @RequestBody java.util.Map<String, String> body) {
+        String identificationUrl = body.get("identificationUrl");
+        var result = vendorService.resubmitIdentification(userId, identificationUrl);
+        return ResponseEntity.ok(ApiResponse.success("Identification resubmitted successfully", result));
+    }
+
 }

@@ -27,12 +27,16 @@ import CustomerTicketManagement from "./Page/CustomerTicketManagement";
 import PaymentResult from "./Page/PaymentResult";
 import VendorShop from "./Page/VendorShop";
 import WishlistPage from "./Page/WishlistPage";
-import RecentlyViewedPage from "./Page/RecentlyViewedPage";
 import AdminCommission from "./Page/AdminCommision.jsx";
 import AdminPayout from "./Page/AdminPayout.jsx";
+import PayoutResult from "./Page/PayoutResult.jsx";
 import QualityAnalyticsDashboard from "./Page/QualityAnalyticsDashboard";
+import TransactionLedger from "./Page/TransactionLedger.jsx";
 import CouponManagement from "./Page/CouponManagement";
 import VendorWallet from "./Page/VendorWallet.jsx";
+import HelpCenter from "./Page/HelpCenter.jsx";
+import ChatbotWidget from "./Component/ChatbotWidget.jsx";
+import FollowedVendors from "./Page/FollowedVendors.jsx";
 export default function App() {
   return (
     <div className="app snow">
@@ -48,16 +52,19 @@ export default function App() {
           <Route index element={<Navigate to="PurchasedProducts" replace />} />
           <Route path="PurchasedProducts" element={<PurchasedProducts />} />
           <Route path="Wishlist" element={<WishlistPage />} />
-          <Route path="RecentlyViewed" element={<RecentlyViewedPage />} />
           <Route path="Profile" element={<ProfilePage />} />
           <Route path="CustomerTicketManagement" element={<CustomerTicketManagement />} />
           <Route path="CreateSupportTicket" element={<CreateSupportTicketWizard />} />
+          <Route path="HelpCenter" element={<HelpCenter />} />
+          <Route path="FollowedVendors" element={<FollowedVendors />} />
         </Route>
 
 
         <Route path="/Page/Vendor" element={<VendorDashboard />}>
           <Route index element={<Navigate to="RevenueDashboard" replace />} />
-          <Route path="RevenueDashboard" element={<RevenueDashboard />} />
+          <Route path="RevenueDashboard" element={<RevenueDashboard />} >
+            <Route path="TransactionLedger" element={<TransactionLedger />} />
+          </Route>
           <Route path="ProductUpload" element={<ProductUpload />} />
           <Route path="MyProducts" element={<ProductManagement />} />
           <Route path="VersionControl" element={<VersionControlManager />} />
@@ -84,9 +91,10 @@ export default function App() {
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/vendors/:vendorId" element={<VendorShop />} />
         <Route path="/payment-result" element={<PaymentResult />} />
+        <Route path="/payout-result" element={<PayoutResult />} />
         <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
       </Routes>
-
+      <ChatbotWidget />
     </div>
   );
 }

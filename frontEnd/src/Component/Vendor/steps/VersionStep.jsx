@@ -17,8 +17,8 @@ const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
         const file = event.target.files[0];
         if (!file) return;
         const validExts = [".exe", ".zip", ".msi", ".dmg", ".pkg", ".jar"];
-        if (!validExts.some((ext) => file.name.toLowerCase().endsWith(ext))) { setError("Chỉ chấp nhận: exe, zip, msi, dmg, pkg, jar"); return; }
-        if (file.size > 500 * 1024 * 1024) { setError("File không được vượt quá 500MB"); return; }
+        if (!validExts.some((ext) => file.name.toLowerCase().endsWith(ext))) { setError("Only accepted: exe, zip, msi, dmg, pkg, jar"); return; }
+        if (file.size > 500 * 1024 * 1024) { setError("File must not exceed 500MB"); return; }
         setSelectedFile(file); setError(""); setVersion((prev) => ({ ...prev, saved: false }));
     };
 
@@ -30,8 +30,8 @@ const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
             fd.append("file", selectedFile);
             const response = await uploadAPI.uploadInstaller(fd);
             const url = response.data?.data?.url || response.data?.url;
-            if (url) { setVersion((prev) => ({ ...prev, fileUrl: url, saved: false })); setSuccess("Upload file thành công!"); setTimeout(() => setSuccess(""), 3000); }
-        } catch (err) { setError(err.response?.data?.message || "Upload thất bại."); }
+            if (url) { setVersion((prev) => ({ ...prev, fileUrl: url, saved: false })); setSuccess("File uploaded successfully!"); setTimeout(() => setSuccess(""), 3000); }
+        } catch (err) { setError(err.response?.data?.message || "Upload failed."); }
         finally { setUploading(false); }
     };
 
@@ -42,7 +42,7 @@ const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
 
     return (
         <div>
-            <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 16 }}>📦 Upload File Cài Đặt</h3>
+            <h3 style={{ color: "#e2e8f0", fontSize: 16, marginBottom: 16 }}>Upload Installer File</h3>
 
             <div className="form-group">
                 <label className="form-label">Version Number *</label>
@@ -57,42 +57,42 @@ const VersionStep = ({ version, setVersion, setError, setSuccess }) => {
                     onClick={() => installerInputRef.current?.click()}
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleFileSelect({ target: { files: [f] } }); }}>
-                    <div className="drop-zone-icon">📂</div>
-                    <div className="drop-zone-text">Kéo thả file vào đây hoặc <strong>click để chọn</strong></div>
-                    <div className="drop-zone-hint">exe, zip, msi, dmg, pkg, jar — Tối đa 500MB</div>
+                    <div className="drop-zone-icon"></div>
+                    <div className="drop-zone-text">Drag and drop file here or <strong>click to select</strong></div>
+                    <div className="drop-zone-hint">exe, zip, msi, dmg, pkg, jar — Max 500MB</div>
                 </div>
             )}
 
             {selectedFile && !version.fileUrl && (
                 <div className="file-preview mb-16">
-                    <span style={{ fontSize: 24 }}>📎</span>
+                    <span style={{ fontSize: 24 }}></span>
                     <div className="file-preview-info">
                         <div className="file-preview-name">{selectedFile.name}</div>
                         <div className="file-preview-size">{formatFileSize(selectedFile.size)}</div>
                     </div>
                     <button className="btn btn-primary btn-sm" onClick={handleUploadToCloud} disabled={uploading}>
-                        {uploading ? <><span className="spinner" /> Đang upload...</> : "⬆ Upload"}
+                        {uploading ? <><span className="spinner" /> Uploading...</> : "Upload"}
                     </button>
-                    <button className="btn-icon danger" onClick={clearFile} disabled={uploading}>🗑️</button>
+                    <button className="btn-icon danger" onClick={clearFile} disabled={uploading}>Remove</button>
                 </div>
             )}
 
             {version.fileUrl && (
                 <div className="file-preview success mb-16">
-                    <span style={{ fontSize: 24 }}>✅</span>
+                    <span style={{ fontSize: 24 }}></span>
                     <div className="file-preview-info">
-                        <div className="file-preview-name">File đã upload!</div>
+                        <div className="file-preview-name">File uploaded!</div>
                         <div className="file-preview-size word-break">{version.fileUrl}</div>
                     </div>
-                    <button className="btn-icon danger" onClick={clearFile}>🗑️</button>
+                    <button className="btn-icon danger" onClick={clearFile}>Remove</button>
                 </div>
             )}
 
             {uploading && <div className="progress-bar mb-16"><div className="progress-bar-fill" /></div>}
 
             <div className="form-group">
-                <span className="form-hint mb-8" style={{ display: "block" }}>Hoặc dán URL trực tiếp:</span>
-                <input className="form-input" placeholder="URL tự động điền sau upload" value={version.fileUrl}
+                <span className="form-hint mb-8" style={{ display: "block" }}>Or paste URL directly:</span>
+                <input className="form-input" placeholder="URL will be auto-filled after upload" value={version.fileUrl}
                     onChange={(e) => setVersion({ ...version, fileUrl: e.target.value, saved: false })} required />
             </div>
 

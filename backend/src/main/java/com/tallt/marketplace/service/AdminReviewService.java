@@ -4,8 +4,12 @@ import com.tallt.marketplace.dto.admin.AdminProductReviewDTO;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.entity.ProductVersion;
 import com.tallt.marketplace.exception.AppException;
+import com.tallt.marketplace.service.EmailService;
 import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.ProductVersionRepository;
+import com.tallt.marketplace.repository.VendorFollowerRepository;
+import com.tallt.marketplace.entity.VendorFollower;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -23,7 +27,11 @@ public class AdminReviewService {
         private final ProductRepository productRepository;
         private final ProductVersionRepository versionRepository;
         private final VirusTotalService virusTotalService;
+        private final EmailService emailService;
+        private final VendorFollowerRepository followerRepository;
 
+        @Value("${frontend.base-url:http://localhost:5173}")
+        private String frontendBaseUrl;
 
         public Page<AdminProductReviewDTO> getAllProductsForReview(
                         String status,
@@ -41,8 +49,6 @@ public class AdminReviewService {
                                 throw new AppException("Invalid status: " + status);
                         }
                 }
-
-
 
                 if (statusEnum != null && keyword != null && !keyword.isBlank()) {
 
@@ -65,7 +71,6 @@ public class AdminReviewService {
                         productPage = productRepository.findAll(pageable);
 
                 }
-
 
                 List<AdminProductReviewDTO> dtoList = productPage
                                 .getContent()
@@ -98,15 +103,13 @@ public class AdminReviewService {
                                                                         : null,
                                                         scanStatus,
                                                         product.getStatus().name(),
-                                                        product.getRejectionNote());
+                                                        product.getRejectionNote(),
+                                                        latestOpt.map(ProductVersion::getFileUrl).orElse(null));
 
-                                })
-                                .toList();
+                                }).toList();
 
                 return new PageImpl<>(dtoList, pageable, productPage.getTotalElements());
         }
-
-
 
         @Transactional
         public String reviewProduct(Integer productId) {
@@ -127,8 +130,6 @@ public class AdminReviewService {
 
                 boolean isMalicious = virusTotalService.isUrlMalicious(latestVersion.getFileUrl());
 
-
-
                 if (isMalicious) {
 
                         latestVersion.setScanStatus("MALICIOUS");
@@ -143,8 +144,6 @@ public class AdminReviewService {
                         return "Product rejected due to malicious download link.";
                 }
 
-
-
                 latestVersion.setScanStatus("CLEAN");
                 versionRepository.save(latestVersion);
 
@@ -153,6 +152,42 @@ public class AdminReviewService {
 
                 productRepository.save(product);
 
+                // Gửi email thông báo cho followers
+                notifyFollowersOfNewProduct(product);
+
                 return "Product approved successfully.";
+        }
+
+        private void notifyFollowersOfNewProduct(Product product) {
+                if (product.getVendor() == null) return;
+
+                List<VendorFollower> followers = followerRepository.findByVendor_VendorID(product.getVendor().getVendorID());
+                if (followers.isEmpty()) return;
+
+                String vendorName = product.getVendor().getCompanyName() != null
+                        ? product.getVendor().getCompanyName() : "A Vendor";
+                String productUrl = frontendBaseUrl + "/products/" + product.getProductID();
+
+                String subject = "New Product from " + vendorName + "!";
+                String title = "New Product Available";
+                String body = "<p>Hello,</p>"
+                        + "<p>Vendor <strong>" + vendorName + "</strong> that you follow has published a new product: "
+                        + "<strong>" + product.getProductName() + "</strong>.</p>"
+                        + "<p style='text-align:center;margin:24px 0;'>"
+                        + "<a href='" + productUrl + "' "
+                        + "style='display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);"
+                        + "color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;"
+                        + "font-size:16px;font-weight:600;'>View Product →</a></p>";
+
+                for (VendorFollower follower : followers) {
+                        if (follower.getUser() != null && follower.getUser().getEmail() != null) {
+                                try {
+                                        emailService.sendEmail(follower.getUser().getEmail(), subject, title, body);
+                                } catch (Exception e) {
+                                        System.err.println("[FollowerNotify] Failed to send email to "
+                                                + follower.getUser().getEmail() + ": " + e.getMessage());
+                                }
+                        }
+                }
         }
 }

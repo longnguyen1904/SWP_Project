@@ -4,15 +4,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.tallt.marketplace.dto.user.OrderWithDownloadDTO;
 import com.tallt.marketplace.entity.Order;
-
-import jakarta.transaction.Transactional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
@@ -72,6 +69,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             """)
     List<OrderWithDownloadDTO> findOrderDownloadLinks(@Param("userId") Integer userId);
 
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.product.vendor.vendorID = :vendorId AND UPPER(o.paymentStatus) = 'COMPLETED'")
+    @Query("SELECT COALESCE(SUM(o.vendorNetAmount), 0) FROM Order o WHERE o.product.vendor.vendorID = :vendorId AND UPPER(o.paymentStatus) = 'COMPLETED'")
     java.math.BigDecimal sumCompletedRevenueByVendorId(@Param("vendorId") Integer vendorId);
+
+    boolean existsByTier_TierID(Integer tierId);
 }

@@ -17,16 +17,14 @@ export const getCurrentUser = () => {
  * Đăng xuất: Xóa sạch dấu vết
  */
 export const logOut = () => {
-  removeToken(); // Xóa accessToken
-  localStorage.removeItem("user"); // Xóa thông tin user
-  localStorage.removeItem("role"); // Xóa role để lần login sau không hiển thị menu sai
-  localStorage.removeItem("userId"); // Xóa userId
+  removeToken();
+  localStorage.removeItem("user");
+  localStorage.removeItem("role");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("vendorStatus");
+  localStorage.removeItem("suspendReason");
 
-  // Phát sự kiện để các Component khác (như Header) biết để cập nhật giao diện
   window.dispatchEvent(new Event("authChanged"));
-  
-  // Nâng cao: Có thể điều hướng người dùng về trang login
-  // window.location.href = "/login"; 
 };
 
 /**

@@ -83,7 +83,7 @@ export default function FilterList() {
           .map(product => (
             <li key={product.productId}>
               <h3>{product.productName}</h3>
-              <p>Price: ${product.basePrice}</p>
+              <p>Price: {Number(product.basePrice).toLocaleString("vi-VN")} VND</p>
               <button onClick={() => openProductDetail(product)}>
                 Buy
               </button>
@@ -107,7 +107,7 @@ export default function FilterList() {
 
               <p><b>Category:</b> {selectedProduct.categoryName}</p>
 
-              <p><b>Price:</b> ${selectedProduct.basePrice}</p>
+              <p><b>Price:</b> {Number(selectedProduct.basePrice).toLocaleString("vi-VN")} VND</p>
 
             </div>
 

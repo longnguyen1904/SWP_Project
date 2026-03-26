@@ -11,7 +11,7 @@ spring:
       mail.smtp.starttls.enable: true
   servlet:
     multipart:
-      max-file-size: 500MB  
+      max-file-size: 500MB
       max-request-size: 500MB
   datasource:
     url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -56,3 +56,4 @@ vnpay:
   version: "2.1.0"
   command: pay
   frontend-url: http://localhost:5173
+  payout-return-url: http://localhost:8081/api/admin/payouts/vnpay-payout-return

@@ -161,10 +161,35 @@ public class VendorProductController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Vendor vendor = vendorService.getVendorByUserId(userId);
-        System.out.println("Hello World");
         PageResponse<ProductResponse> result = productService.getVendorProducts(vendor.getVendorID(), search, null, status, page, size, sortBy, sortDir);
         return ResponseEntity.ok(ApiResponse.success(result));
         
+    }
+
+    /**
+     * Deactivate product (stop selling)
+     * PUT /api/vendor/products/{productId}/deactivate
+     */
+    @PutMapping("/products/{productId}/deactivate")
+    public ResponseEntity<ApiResponse<Void>> deactivateProduct(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        productService.deactivateProduct(vendor.getVendorID(), productId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /**
+     * Reactivate product (resume selling)
+     * PUT /api/vendor/products/{productId}/reactivate
+     */
+    @PutMapping("/products/{productId}/reactivate")
+    public ResponseEntity<ApiResponse<Void>> reactivateProduct(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        productService.reactivateProduct(vendor.getVendorID(), productId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     /**
@@ -285,6 +310,20 @@ public class VendorProductController {
         Vendor vendor = vendorService.getVendorByUserId(userId);
         ProductVersionResponse result = productVersionService.updateVersion(vendor.getVendorID(), productId, versionId, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật phiên bản thành công", result));
+    }
+
+    /**
+     * Delete a version
+     * DELETE /api/vendor/products/{productId}/versions/{versionId}
+     */
+    @DeleteMapping("/products/{productId}/versions/{versionId}")
+    public ResponseEntity<ApiResponse<Void>> deleteProductVersion(
+            @RequestHeader("X-User-Id") Integer userId,
+            @PathVariable Integer productId,
+            @PathVariable Integer versionId) {
+        Vendor vendor = vendorService.getVendorByUserId(userId);
+        productVersionService.deleteVersion(vendor.getVendorID(), productId, versionId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // ==================== LICENSE TIERS ====================

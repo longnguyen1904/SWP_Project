@@ -40,7 +40,7 @@ function AdminReview() {
 
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch products");
-      
+
       const data = await res.json();
       setProducts(data.content || []);
       setTotalPages(data.totalPages || 0);
@@ -54,7 +54,7 @@ function AdminReview() {
     }
   };
 
- 
+
   useEffect(() => {
     fetchProducts(page);
   }, [page]);
@@ -78,11 +78,11 @@ function AdminReview() {
     setMessageType("loading");
 
     try {
-      const res = await fetch(`http://localhost:8081/api/admin/review/${productId}`, { 
-        method: "POST" 
+      const res = await fetch(`http://localhost:8081/api/admin/review/${productId}`, {
+        method: "POST"
       });
       const text = await res.text();
-      
+
       if (!res.ok) throw new Error(text);
 
       // Reload 
@@ -105,6 +105,7 @@ function AdminReview() {
     switch (scanStatus) {
       case "CLEAN": return "APPROVED";
       case "MALICIOUS": return "REJECTED";
+      case "DRAFT": return "PENDING";
       default: return "DRAFT";
     }
   };
@@ -117,13 +118,13 @@ function AdminReview() {
     }
   };
 
- 
+
   // 4. RENDER UI
 
   return (
     <div style={{ padding: "40px 20px", backgroundColor: colors.bg, minHeight: "100vh", fontFamily: "'Inter', sans-serif", color: colors.textMain }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        
+
         {/* HEADER */}
         <header style={{ marginBottom: "30px" }}>
           <h2 style={{ fontSize: "28px", fontWeight: "700", margin: 0 }}>Product Review Management</h2>
@@ -132,9 +133,9 @@ function AdminReview() {
 
         {/* CONTROL BAR (SYNCED STYLE) */}
         <div style={controlBarStyle(colors)}>
-          <select 
-            style={selectStyle} 
-            value={statusFilter} 
+          <select
+            style={selectStyle}
+            value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
           >
             <option value="">All Status</option>
@@ -144,7 +145,7 @@ function AdminReview() {
           </select>
 
           <button onClick={handleApplyFilter} style={btnPrimary}>Apply Filter</button>
-          
+
           <div style={{ flexGrow: 1 }}></div>
 
           <div style={{ display: "flex", gap: "8px" }}>
@@ -157,7 +158,7 @@ function AdminReview() {
               onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
             />
             <button onClick={handleApplyFilter} style={btnSecondary}>Search</button>
-            <button onClick={handleReset} style={{...btnSecondary, color: colors.error}}>Reset</button>
+            <button onClick={handleReset} style={{ ...btnSecondary, color: colors.error }}>Reset</button>
           </div>
         </div>
 
@@ -179,6 +180,7 @@ function AdminReview() {
                 <th style={thStyle}>Price</th>
                 <th style={thStyle}>Status</th>
                 <th style={thStyle}>Rejection Note</th>
+                <th style={thStyle}>Download</th>
                 <th style={thStyle}>Actions</th>
               </tr>
             </thead>
@@ -191,18 +193,34 @@ function AdminReview() {
                     <td style={tdStyle}>#{p.productID}</td>
                     <td style={{ ...tdStyle, fontWeight: "600", color: colors.textMain }}>{p.productName}</td>
                     <td style={tdStyle}>ID: {p.vendorID}</td>
-                    <td style={tdStyle}>${p.basePrice}</td>
+                    <td style={tdStyle}>{Number(p.basePrice).toLocaleString("vi-VN")} VND</td>
                     <td style={tdStyle}>
                       <span style={badgeStyle(sStyle)}>{status}</span>
                     </td>
-                    <td style={{...tdStyle, fontSize: "12px", color: colors.textMuted}}>
+                    <td style={{ ...tdStyle, fontSize: "12px", color: colors.textMuted }}>
                       {status === "REJECTED" ? p.rejectionNote : "—"}
                     </td>
                     <td style={tdStyle}>
+                      {p.scanStatus === "CLEAN" && p.fileUrl ? (
+                        <a
+                          href={p.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            ...actionBtnStyle(colors.success, false),
+                            textDecoration: "none",
+                            display: "inline-block"
+                          }}
+                        >Download File</a>
+                      ) : (
+                        <span style={{ color: colors.textMuted, fontSize: "12px" }}>Not Available</span>
+                      )}
+                    </td>
+                    <td style={tdStyle}>
                       {status === "DRAFT" ? (
-                        <button 
+                        <button
                           disabled={loadingId === p.productID}
-                          onClick={() => handleApprove(p.productID)} 
+                          onClick={() => handleApprove(p.productID)}
                           style={actionBtnStyle(colors.accent, loadingId === p.productID)}
                         >
                           {loadingId === p.productID ? "Scanning..." : "Scan & Review"}
@@ -216,7 +234,7 @@ function AdminReview() {
               })}
             </tbody>
           </table>
-          
+
           {loading && <div style={loadingOverlay(colors)}>⏳ Loading data...</div>}
           {!loading && products.length === 0 && (
             <div style={{ padding: "60px", textAlign: "center", color: colors.textMuted }}>No records found.</div>
@@ -226,9 +244,9 @@ function AdminReview() {
         {/* PAGINATION (SYNCED LOGIC) */}
         {!loading && totalPages > 1 && (
           <div style={paginationStyle}>
-            <button 
-              disabled={page === 0} 
-              onClick={() => setPage(page - 1)} 
+            <button
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
               style={page === 0 ? btnDisabled : btnSecondary}
             >
               Previous
@@ -236,9 +254,9 @@ function AdminReview() {
             <div style={{ color: colors.textMuted, fontSize: "14px" }}>
               Page <span style={{ color: colors.textMain, fontWeight: "bold" }}>{page + 1}</span> of {totalPages}
             </div>
-            <button 
-              disabled={page + 1 >= totalPages} 
-              onClick={() => setPage(page + 1)} 
+            <button
+              disabled={page + 1 >= totalPages}
+              onClick={() => setPage(page + 1)}
               style={page + 1 >= totalPages ? btnDisabled : btnSecondary}
             >
               Next

@@ -44,30 +44,4 @@ public class UserProfileController {
         Map<String, Object> result = userProfileService.getProfile(userId);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
-
-    /**
-     * Gửi OTP reset mật khẩu qua email
-     * POST /api/users/forgot-password
-     */
-    @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> forgotPassword(
-            @RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        Map<String, Object> result = userProfileService.sendPasswordResetEmail(email);
-        return ResponseEntity.ok(ApiResponse.success("Đã gửi mã OTP", result));
-    }
-
-    /**
-     * Xác thực OTP và đặt lại mật khẩu
-     * POST /api/users/reset-password
-     */
-    @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> resetPassword(
-            @RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String token = body.get("token");
-        String newPassword = body.get("newPassword");
-        Map<String, Object> result = userProfileService.resetPassword(email, token, newPassword);
-        return ResponseEntity.ok(ApiResponse.success("Đặt lại mật khẩu thành công", result));
-    }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { customerAPI } from "../services/api";
 import { unwrapResponse, normalizePageResponse, getApiErrorMessage } from "../services/apiHelpers";
@@ -20,6 +20,20 @@ const VendorShop = () => {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  const [following, setFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [showUnfollowOption, setShowUnfollowOption] = useState(false);
+
+  const isLoggedIn = (() => {
+    try {
+      const u = JSON.parse(localStorage.getItem("user") || "{}");
+      return !!(u.userID || u.userId);
+    } catch {
+      return false;
+    }
+  })();
+
   useEffect(() => {
     if (!vendorId) return;
     const load = async () => {
@@ -32,14 +46,100 @@ const VendorShop = () => {
         setVendor(unwrapResponse(vendorRes));
         const { content } = normalizePageResponse(productsRes);
         setProducts(content);
+
+        try {
+          const followRes = await customerAPI.checkFollowVendor(vendorId);
+          const followData = followRes.data?.data ?? followRes.data;
+          setFollowing(followData.following ?? false);
+          setFollowerCount(followData.followerCount ?? 0);
+        } catch {}
       } catch (err) {
-        setError(getApiErrorMessage(err, "Không tìm thấy vendor."));
+        setError(getApiErrorMessage(err, "Vendor not found."));
       } finally {
         setLoading(false);
       }
     };
     load();
   }, [vendorId]);
+
+  const handleToggleFollow = async () => {
+    if (!isLoggedIn) {
+      alert("Please log in to follow this vendor.");
+      return;
+    }
+    setFollowLoading(true);
+    try {
+      const res = await customerAPI.followVendor(vendorId);
+      const data = res.data?.data ?? res.data;
+      setFollowing(data.following ?? false);
+      setFollowerCount(data.followerCount ?? 0);
+    } catch (err) {
+      console.error("Follow error:", err, err.response);
+      const msg = typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "Action failed.";
+      alert(msg);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  /* ── Derived product lists ── */
+  const bestSellers = useMemo(() => {
+    return [...products]
+      .filter((p) => (p.soldCount ?? 0) > 0)
+      .sort((a, b) => (b.soldCount ?? 0) - (a.soldCount ?? 0))
+      .slice(0, 4);
+  }, [products]);
+
+  const topRated = useMemo(() => {
+    return [...products]
+      .filter((p) => (p.averageRating ?? 0) > 0)
+      .sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
+      .slice(0, 4);
+  }, [products]);
+
+  const otherProducts = useMemo(() => {
+    const featuredIds = new Set([
+      ...bestSellers.map((p) => p.productId ?? p.productID),
+      ...topRated.map((p) => p.productId ?? p.productID),
+    ]);
+    return products.filter((p) => !featuredIds.has(p.productId ?? p.productID));
+  }, [products, bestSellers, topRated]);
+
+  const renderCard = (p) => {
+    const id = p.productId ?? p.productID;
+    const name = p.productName ?? p.name;
+    const price = p.basePrice ?? p.price ?? 0;
+    const rating = p.averageRating ?? 0;
+    const reviewCount = p.reviewCount ?? 0;
+    const sold = p.soldCount ?? 0;
+    const img = getProductImageUrl(p) || p.thumbnailUrl || PLACEHOLDER;
+
+    return (
+      <div
+        key={id}
+        className="vendor-shop__card"
+        onClick={() => navigate(`/products/${id}`)}
+      >
+        <img
+          className="vendor-shop__card-img"
+          src={img}
+          alt={name}
+          onError={(e) => { e.target.src = PLACEHOLDER; }}
+        />
+        <div className="vendor-shop__card-body">
+          <h3 className="vendor-shop__card-name">{name}</h3>
+          <div className="vendor-shop__card-meta">
+            <span className="vendor-shop__card-rating">★ {rating.toFixed(1)}</span>
+            <span className="vendor-shop__card-reviews">({reviewCount})</span>
+            <span className="vendor-shop__card-sold">{sold} sold</span>
+          </div>
+          <p className="vendor-shop__card-price">{formatPrice(price)}</p>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -52,9 +152,9 @@ const VendorShop = () => {
   if (error || !vendor) {
     return (
       <div className="vendor-shop" style={{ padding: 40 }}>
-        <div className="alert alert--error">{error || "Không tìm thấy vendor"}</div>
+        <div className="alert alert--error">{error || "Vendor not found"}</div>
         <Link to="/marketplace" className="btn btn--outline" style={{ marginTop: 16 }}>
-          ← Về Marketplace
+          ← Back to Marketplace
         </Link>
       </div>
     );
@@ -77,79 +177,107 @@ const VendorShop = () => {
             <p className="vendor-shop__description">{vendor.description}</p>
           )}
           <div className="vendor-shop__meta">
-            <span>{vendor.type === "COMPANY" ? "Doanh nghiệp" : "Cá nhân"}</span>
+            <span>{vendor.type === "COMPANY" ? "Company" : "Individual"}</span>
             <span className="vendor-shop__meta-sep">•</span>
             <span>
-              Tham gia{" "}
+              Joined{" "}
               {vendor.createdAt
-                ? new Date(vendor.createdAt).toLocaleDateString("vi-VN", {
+                ? new Date(vendor.createdAt).toLocaleDateString("en-US", {
                     month: "long",
                     year: "numeric",
                   })
                 : "—"}
             </span>
             <span className="vendor-shop__meta-sep">•</span>
-            <span>{products.length} sản phẩm</span>
+            <span>{products.length} products</span>
+            <span className="vendor-shop__meta-sep">•</span>
+            <span>{followerCount} followers</span>
           </div>
+
+          {!following ? (
+            <button
+              className="btn vendor-shop__follow-btn"
+              onClick={handleToggleFollow}
+              disabled={followLoading}
+            >
+              {followLoading ? "..." : "+ Follow"}
+            </button>
+          ) : (
+            <div className="vendor-shop__follow-wrapper">
+              <button
+                className="btn vendor-shop__follow-btn vendor-shop__follow-btn--active"
+                onClick={() => setShowUnfollowOption((p) => !p)}
+                disabled={followLoading}
+              >
+                {followLoading ? "..." : "✓ Following"}
+              </button>
+              {showUnfollowOption && (
+                <button
+                  className="btn vendor-shop__unfollow-btn"
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to unfollow this vendor?")) {
+                      handleToggleFollow();
+                      setShowUnfollowOption(false);
+                    }
+                  }}
+                >
+                  ✕ Unfollow
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      <h2 className="vendor-shop__section-title">Sản phẩm của cửa hàng</h2>
-
       {products.length === 0 ? (
         <div className="vendor-shop__empty">
-          <p>Vendor này chưa có sản phẩm nào.</p>
+          <p>This vendor has no products yet.</p>
         </div>
       ) : (
         <>
-          <div className="vendor-shop__grid">
-            {products.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((p) => {
-              const id = p.productId ?? p.productID;
-              const name = p.productName ?? p.name;
-              const price = p.basePrice ?? p.price ?? 0;
-              const rating = p.averageRating ?? 0;
-              const reviewCount = p.reviewCount ?? 0;
-              const sold = p.soldCount ?? 0;
-              const img = getProductImageUrl(p) || p.thumbnailUrl || PLACEHOLDER;
+          {/* ── Section 1: Best Sellers ── */}
+          {bestSellers.length > 0 && (
+            <>
+              <h2 className="vendor-shop__section-title">Best Sellers</h2>
+              <div className="vendor-shop__grid">
+                {bestSellers.map((p) => renderCard(p))}
+              </div>
+            </>
+          )}
 
-              return (
-                <div
-                  key={id}
-                  className="vendor-shop__card"
-                  onClick={() => navigate(`/products/${id}`)}
-                >
-                  <img
-                    className="vendor-shop__card-img"
-                    src={img}
-                    alt={name}
-                    onError={(e) => { e.target.src = PLACEHOLDER; }}
-                  />
-                  <div className="vendor-shop__card-body">
-                    <h3 className="vendor-shop__card-name">{name}</h3>
-                    <div className="vendor-shop__card-meta">
-                      <span className="vendor-shop__card-rating">★ {rating.toFixed(1)}</span>
-                      <span className="vendor-shop__card-reviews">({reviewCount})</span>
-                      <span className="vendor-shop__card-sold">{sold} sold</span>
-                    </div>
-                    <p className="vendor-shop__card-price">{formatPrice(price)}</p>
-                  </div>
+          {/* ── Section 2: Top Rated ── */}
+          {topRated.length > 0 && (
+            <>
+              <h2 className="vendor-shop__section-title">Top Rated</h2>
+              <div className="vendor-shop__grid">
+                {topRated.map((p) => renderCard(p))}
+              </div>
+            </>
+          )}
+
+          {/* ── Section 3: Other Products ── */}
+          {otherProducts.length > 0 && (
+            <>
+              <h2 className="vendor-shop__section-title">All Products</h2>
+              <div className="vendor-shop__grid">
+                {otherProducts
+                  .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+                  .map((p) => renderCard(p))}
+              </div>
+              {otherProducts.length > PAGE_SIZE && (
+                <div className="vendor-shop__pagination">
+                  {Array.from({ length: Math.ceil(otherProducts.length / PAGE_SIZE) }, (_, i) => (
+                    <button
+                      key={i}
+                      className={`vendor-shop__page-btn ${currentPage === i + 1 ? "active" : ""}`}
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-
-          {products.length > PAGE_SIZE && (
-            <div className="vendor-shop__pagination">
-              {Array.from({ length: Math.ceil(products.length / PAGE_SIZE) }, (_, i) => (
-                <button
-                  key={i}
-                  className={`vendor-shop__page-btn ${currentPage === i + 1 ? "active" : ""}`}
-                  onClick={() => setCurrentPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </>
       )}

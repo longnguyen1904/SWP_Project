@@ -1,12 +1,16 @@
 package com.tallt.marketplace.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tallt.marketplace.entity.Order;
+import com.tallt.marketplace.entity.Product;
+import com.tallt.marketplace.entity.ProductVersion;
 import com.tallt.marketplace.entity.SupportTicket;
 import com.tallt.marketplace.entity.TicketMessage;
 import com.tallt.marketplace.entity.User;
@@ -17,6 +21,7 @@ import com.tallt.marketplace.repository.TicketMessageRepository;
 import com.tallt.marketplace.repository.UserRepository;
 import com.tallt.marketplace.repository.VendorRepository;
 
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -29,9 +34,10 @@ public class SupportTicketService {
     private final UserRepository userRepository;
     private final VendorRepository vendorRepository;
     private final OrderRepository orderRepository;
+    private final EntityManager entityManager; // Thêm EntityManager để query version
 
     // =====================================================
-    // CREATE TICKET
+    // CREATE TICKET (GIỮ NGUYÊN)
     // =====================================================
     public SupportTicket createTicket(
             Integer userId,
@@ -65,7 +71,7 @@ public class SupportTicketService {
     }
 
     // =====================================================
-    // ADD MESSAGE
+    // ADD MESSAGE (GIỮ NGUYÊN)
     // =====================================================
     public TicketMessage addMessage(
             Integer ticketId,
@@ -90,7 +96,7 @@ public class SupportTicketService {
     }
 
     // =====================================================
-    // GET TICKET
+    // GET TICKET (GIỮ NGUYÊN)
     // =====================================================
     @Transactional(readOnly = true)
     public SupportTicket getTicketById(Integer ticketId) {
@@ -99,7 +105,7 @@ public class SupportTicketService {
     }
 
     // =====================================================
-    // GET ALL TICKETS
+    // GET ALL TICKETS (GIỮ NGUYÊN)
     // =====================================================
     @Transactional(readOnly = true)
     public List<SupportTicket> getAllTickets() {
@@ -107,12 +113,11 @@ public class SupportTicketService {
     }
 
     // =====================================================
-    // GET MESSAGES BY TICKET (TỐI ƯU)
+    // GET MESSAGES BY TICKET (GIỮ NGUYÊN)
     // =====================================================
     @Transactional(readOnly = true)
     public List<TicketMessage> getMessagesByTicket(Integer ticketId) {
 
-        // kiểm tra ticket tồn tại
         if (!ticketRepository.existsById(ticketId)) {
             throw new RuntimeException("Ticket not found");
         }
@@ -121,12 +126,11 @@ public class SupportTicketService {
     }
 
     // =====================================================
-    // UPDATE STATUS (CÓ BẢO MẬT QUYỀN ĐÓNG TICKET)
+    // UPDATE STATUS (GIỮ NGUYÊN)
     // =====================================================
     public SupportTicket updateStatus(Integer ticketId, String status, Integer requestingUserId) {
         SupportTicket ticket = getTicketById(ticketId);
 
-        // BẢO MẬT: Nếu trạng thái mới là Closed, bắt buộc người gọi phải là Customer
         if ("Closed".equalsIgnoreCase(status)) {
             if (!ticket.getUser().getUserID().equals(requestingUserId)) {
                 throw new RuntimeException("Chỉ Khách hàng (người tạo) mới có quyền Đóng Ticket!");
@@ -138,11 +142,51 @@ public class SupportTicketService {
     }
 
     // =====================================================
-    // DELETE TICKET
+    // DELETE TICKET (GIỮ NGUYÊN)
     // =====================================================
     public void deleteTicket(Integer ticketId) {
-
         SupportTicket ticket = getTicketById(ticketId);
         ticketRepository.delete(ticket);
+    }
+
+    // =====================================================
+    // 🆕 NEW: LẤY CHI TIẾT SẢN PHẨM & ĐƠN HÀNG TỪ TICKET
+    // =====================================================
+    @Transactional(readOnly = true)
+    public Map<String, Object> getOrderProductDetails(Integer ticketId) {
+        SupportTicket ticket = getTicketById(ticketId);
+        Order order = ticket.getOrder();
+
+        if (order == null) {
+            throw new RuntimeException("Ticket không có đơn hàng liên kết.");
+        }
+
+        Product p = order.getProduct();
+        Map<String, Object> map = new HashMap<>();
+        
+        // 1. Dữ liệu từ bảng Orders
+        map.put("orderTotalAmount", order.getTotalAmount());
+        map.put("orderPaymentStatus", order.getPaymentStatus());
+        map.put("licenseTier", order.getTier() != null ? order.getTier().getTierName() : "N/A");
+        
+        // 2. Dữ liệu từ bảng Products
+        map.put("productName", p.getProductName());
+
+        // 3. Truy vấn Version mới nhất từ bảng ProductVersions
+        List<ProductVersion> versions = entityManager.createQuery(
+            "SELECT v FROM ProductVersion v WHERE v.product.productID = :pid ORDER BY v.createdAt DESC", ProductVersion.class)
+            .setParameter("pid", p.getProductID())
+            .getResultList();
+
+        if (!versions.isEmpty()) {
+            ProductVersion latest = versions.get(0);
+            map.put("versionNumber", latest.getVersionNumber());
+            map.put("releaseNotes", latest.getReleaseNotes());
+        } else {
+            map.put("versionNumber", "N/A");
+            map.put("releaseNotes", "Chưa có phiên bản nào");
+        }
+
+        return map;
     }
 }

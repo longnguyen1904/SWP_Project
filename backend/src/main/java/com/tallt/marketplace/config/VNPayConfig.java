@@ -19,4 +19,5 @@ public class VNPayConfig {
     private String version;
     private String command;
     private String frontendUrl;
+    private String payoutReturnUrl;
 }

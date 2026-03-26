@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../public/logo_no_bg.png";
+import LogIn from "./LogIn";
 import Register from "./Register";
 import "../Style/Navbar.css";
 
@@ -27,18 +28,25 @@ function isCustomer() {
   return getRole() === "CUSTOMER";
 }
 export default function Navbar() {
-  const dialog = useRef();
+  const navigate = useNavigate();
+  const loginDialog = useRef();
+  const registerDialog = useRef();
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
   const [role, setRole] = useState(getRole());
 
-  function handleClick() {
-    dialog.current.showModal();
+  function openLogin() {
+    loginDialog.current.showModal();
+  }
+
+  function openRegister() {
+    registerDialog.current.showModal();
   }
 
   function handleLogout() {
     logOut();
     setLoggedIn(false);
     setRole(null);
+    navigate("/marketplace");
   }
 
   useEffect(() => {
@@ -47,13 +55,21 @@ export default function Navbar() {
       setRole(getRole());
     };
     window.addEventListener("authChanged", updateAuth);
-    return () => window.removeEventListener("authChanged", updateAuth);
+    
+    const handleOpenLogin = () => loginDialog.current?.showModal();
+    window.addEventListener("openLoginModal", handleOpenLogin);
+
+    return () => {
+      window.removeEventListener("authChanged", updateAuth);
+      window.removeEventListener("openLoginModal", handleOpenLogin);
+    };
   }, []);
 
   return (
     <>
       <nav className="navbar">
-        <Register ref={dialog}></Register>
+        <LogIn ref={loginDialog} onSwitchToRegister={openRegister} />
+        <Register ref={registerDialog} onSwitchToLogin={openLogin} />
 
         <h1 className="logo">
           <img src={logo} alt="logo" />
@@ -76,7 +92,7 @@ export default function Navbar() {
               Logout
             </button>
           ) : (
-            <button className="Register" onClick={handleClick}>
+            <button className="Register" onClick={openLogin}>
               Login / SignUp
             </button>
           )}
@@ -91,18 +107,17 @@ export default function Navbar() {
               </div>
 
               <div className="dropdown-content">
-                <Link to="/Page/ProfilePage" id="router-link">ProfileChange</Link>
                 {role === "CUSTOMER" && (
                   <>
                   <Link to="/Page/VendorRegistration" id="router-link">Become a Vendor</Link>
-                    <Link to="/Page/Customer" id="router-link">CustomerDashboard</Link>
+                    <Link to="/Page/Customer" id="router-link">Dashboard</Link>
                     
                   </>
                 )}
                 {role === "VENDOR" && (
                   <>
+                  <Link to="/Page/Customer" id="router-link">Dashboard</Link>
                     <Link to="/Page/Vendor" id="router-link">Vendor Dashboard</Link>
-                    <Link to="/Page/Vendor/ProductUpload" id="router-link">Upload Product</Link>
                    
                   </>
                 )}
@@ -123,4 +138,4 @@ export default function Navbar() {
       </nav>
     </>
   );
-}
+}

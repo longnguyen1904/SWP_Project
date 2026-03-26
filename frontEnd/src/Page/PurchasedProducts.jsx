@@ -109,7 +109,7 @@ function PurchasedProducts() {
 
                 <td style={tdStyle}>{order.quantity}</td>
 
-                <td style={tdStyle}>${order.totalAmount}</td>
+                <td style={tdStyle}>{Number(order.totalAmount).toLocaleString("vi-VN")} VND</td>
 
                 <td style={tdStyle}>{formatDate(order.createdAt)}</td>
                 <td style={tdStyle}>{order.license ? formatDate(order.license.activatedAt) : "N/A"}</td>
@@ -212,7 +212,7 @@ function PurchasedProducts() {
           <tfoot>
             <tr style={{ background: "rgba(255,255,255,0.1)", fontWeight: "bold" }}>
               <td colSpan="3" style={tdStyle}>Total</td> {/* Sửa từ 4 thành 3 */}
-              <td style={tdStyle}>${totalPrice}</td> {/* Giờ số tiền sẽ nằm dưới cột Price */}
+              <td style={tdStyle}>{Number(totalPrice).toLocaleString("vi-VN")} VND</td> {/* Giờ số tiền sẽ nằm dưới cột Price */}
               <td colSpan="6"></td>
             </tr>
           </tfoot>

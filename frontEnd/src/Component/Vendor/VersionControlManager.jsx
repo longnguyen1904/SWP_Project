@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { vendorAPI, uploadAPI } from "../../services/api";
+import useVendorProducts from "../../services/useVendorProducts";
 import "../../Style/Vendor.css";
 
 const SEMVER_REGEX = /^\d+\.\d+\.\d+$/;
@@ -11,7 +12,7 @@ const formatFileSize = (bytes) => {
 };
 
 const VersionControlManager = () => {
-  const [products, setProducts] = useState([]);
+  const { products, loading: productsLoading } = useVendorProducts();
   const [selectedProductId, setSelectedProductId] = useState("");
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -30,21 +31,8 @@ const VersionControlManager = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => { fetchProducts(); }, []);
   useEffect(() => { if (selectedProductId) fetchVersions(); }, [selectedProductId]);
   useEffect(() => { if (success) { const t = setTimeout(() => setSuccess(""), 4000); return () => clearTimeout(t); } }, [success]);
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const res = await vendorAPI.getVendorProducts({ size: 100 });
-      const data = res.data?.data ?? res.data;
-      const content = data?.content ?? data?.products ?? (Array.isArray(data) ? data : []);
-      setProducts(Array.isArray(content) ? content : []);
-    } catch (err) {
-      setError(err.response?.data?.message || "Không thể tải danh sách sản phẩm");
-    } finally { setLoading(false); }
-  };
 
   const fetchVersions = async () => {
     if (!selectedProductId) return;
@@ -54,7 +42,7 @@ const VersionControlManager = () => {
       const data = res.data?.data ?? res.data;
       setVersions(Array.isArray(data) ? data : data?.content ?? []);
     } catch (err) {
-      setError(err.response?.data?.message || "Không thể tải danh sách phiên bản");
+      setError(err.response?.data?.message || "Cannot load version list");
       setVersions([]);
     } finally { setVersionLoading(false); }
   };
@@ -78,9 +66,9 @@ const VersionControlManager = () => {
 
   const validate = () => {
     const errs = {};
-    if (!formData.versionNumber.trim()) errs.versionNumber = "Số phiên bản không được để trống";
-    else if (!SEMVER_REGEX.test(formData.versionNumber.trim())) errs.versionNumber = "Định dạng phải là x.y.z (ví dụ: 1.0.0)";
-    if (!formData.fileUrl.trim()) errs.fileUrl = "URL file không được để trống";
+    if (!formData.versionNumber.trim()) errs.versionNumber = "Version number is required";
+    else if (!SEMVER_REGEX.test(formData.versionNumber.trim())) errs.versionNumber = "Format must be x.y.z (e.g., 1.0.0)";
+    if (!formData.fileUrl.trim()) errs.fileUrl = "File URL is required";
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -89,8 +77,8 @@ const VersionControlManager = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     const validExts = [".exe", ".zip", ".msi", ".dmg", ".pkg", ".jar"];
-    if (!validExts.some((ext) => file.name.toLowerCase().endsWith(ext))) { setError("Chỉ chấp nhận: exe, zip, msi, dmg, pkg, jar"); return; }
-    if (file.size > 500 * 1024 * 1024) { setError("File không được vượt quá 500MB"); return; }
+    if (!validExts.some((ext) => file.name.toLowerCase().endsWith(ext))) { setError("Only accepted: exe, zip, msi, dmg, pkg, jar"); return; }
+    if (file.size > 500 * 1024 * 1024) { setError("File must not exceed 500MB"); return; }
     setSelectedFile(file); setError("");
   };
 
@@ -104,11 +92,11 @@ const VersionControlManager = () => {
       const url = response.data?.data?.url || response.data?.url;
       if (url) {
         setFormData((prev) => ({ ...prev, fileUrl: url }));
-        setSuccess("Upload file thành công!");
+        setSuccess("File uploaded successfully!");
         setSelectedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
-    } catch (err) { setError(err.response?.data?.message || "Upload thất bại."); }
+    } catch (err) { setError(err.response?.data?.message || "Upload failed."); }
     finally { setUploading(false); }
   };
 
@@ -124,14 +112,26 @@ const VersionControlManager = () => {
       const payload = { versionNumber: formData.versionNumber.trim(), fileUrl: formData.fileUrl.trim(), releaseNotes: formData.releaseNotes };
       if (editMode) {
         await vendorAPI.updateProductVersion(selectedProductId, editingVersionId, payload);
-        setSuccess("Cập nhật phiên bản thành công!");
+        setSuccess("Version updated successfully!");
       } else {
         await vendorAPI.createProductVersion(selectedProductId, payload);
-        setSuccess("Tạo phiên bản thành công!");
+        setSuccess("Version created successfully!");
       }
       closeDialog(); fetchVersions();
-    } catch (err) { setError(err.response?.data?.message || "Thao tác thất bại"); }
+    } catch (err) { setError(err.response?.data?.message || "Operation failed"); }
     finally { setLoading(false); }
+  };
+
+  const handleDeleteVersion = async (versionId) => {
+    if (!window.confirm("Are you sure you want to delete this version?")) return;
+    setLoading(true); setError(""); setSuccess("");
+    try {
+      await vendorAPI.deleteProductVersion(selectedProductId, versionId);
+      setSuccess("Version deleted!");
+      fetchVersions();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete version");
+    } finally { setLoading(false); }
   };
 
   const getProductName = () => {
@@ -147,16 +147,16 @@ const VersionControlManager = () => {
     <div className="vendor-page">
       <div className="vendor-card">
         <div className="vendor-page-header">
-          <h2 className="vendor-page-title">🕐 Version Control Manager</h2>
+          <h2 className="vendor-page-title">Version Control Manager</h2>
         </div>
 
         {error && <div className="alert alert-error">{error}<button className="alert-close" onClick={() => setError("")}>×</button></div>}
         {success && <div className="alert alert-success">{success}</div>}
 
         <div className="form-group">
-          <label className="form-label">Chọn sản phẩm</label>
+          <label className="form-label">Select Product</label>
           <select className="form-select" value={selectedProductId} onChange={(e) => setSelectedProductId(e.target.value)}>
-            <option value="">-- Chọn sản phẩm --</option>
+            <option value="">-- Select product --</option>
             {products.map((p) => {
               const pid = p.productId ?? p.id;
               return <option key={pid} value={pid}>{p.productName ?? p.name} {p.status ? `[${p.status}]` : ""}</option>;
@@ -167,35 +167,39 @@ const VersionControlManager = () => {
         {selectedProductId && (
           <>
             <div className="flex-between mb-16">
-              <h3 style={{ color: "#e2e8f0", fontSize: "16px", margin: 0 }}>Phiên bản của "{getProductName()}"</h3>
-              <button className="btn btn-primary btn-sm" onClick={openCreateDialog}>+ Tạo phiên bản mới</button>
+              <h3 style={{ color: "#e2e8f0", fontSize: "16px", margin: 0 }}>Versions of "{getProductName()}"</h3>
+              <button className="btn btn-primary btn-sm" onClick={openCreateDialog}>+ New Version</button>
             </div>
 
             {versionLoading ? (
               <div className="loading-center"><span className="spinner spinner-lg" /></div>
             ) : versions.length === 0 ? (
               <div className="table-empty">
-                <p>Sản phẩm chưa có phiên bản nào</p>
-                <button className="btn btn-secondary btn-sm mt-8" onClick={openCreateDialog}>+ Tạo phiên bản đầu tiên</button>
+                <p>This product has no versions yet</p>
+                <button className="btn btn-secondary btn-sm mt-8" onClick={openCreateDialog}>+ Create First Version</button>
               </div>
             ) : (
               <div className="table-wrapper">
                 <table className="vendor-table">
                   <thead>
                     <tr>
-                      <th>Phiên bản</th><th>File</th><th>Ghi chú</th><th>Trạng thái quét</th><th>Ngày tạo</th><th style={{ textAlign: "center" }}>Thao tác</th>
+                      <th>Version</th><th>File</th><th>Notes</th><th>Scan Status</th><th>Created</th><th style={{ textAlign: "center" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {versions.map((v) => (
                       <tr key={v.versionId}>
                         <td><span className="badge badge-primary">v{v.versionNumber}</span></td>
-                        <td>{v.fileUrl ? <a href={v.fileUrl} target="_blank" rel="noopener noreferrer" className="download-link">📥 Tải xuống</a> : "—"}</td>
+                        <td>{v.fileUrl ? <a href={v.fileUrl} target="_blank" rel="noopener noreferrer" className="download-link">Download</a> : "—"}</td>
                         <td className="truncate" style={{ maxWidth: 250 }} title={v.releaseNotes}>{v.releaseNotes || "—"}</td>
-                        <td><span className={`badge ${badgeClass(v.scanStatus)}`}>{v.scanStatus || "PENDING"}</span></td>
+                        <td>
+                          <span className={`badge ${badgeClass(v.scanStatus)}`}>{v.scanStatus || "PENDING"}</span>
+                          {v.scanStatus === "INFECTED" && <span style={{ color: "#ff4d4d", fontSize: 12, marginLeft: 6 }}>⚠ File may be unsafe</span>}
+                        </td>
                         <td>{v.createdAt ? new Date(v.createdAt).toLocaleString("vi-VN") : "—"}</td>
                         <td className="actions">
-                          <button className="btn-icon primary" onClick={() => openEditDialog(v)} title="Chỉnh sửa">✏️</button>
+                          <button className="btn-icon primary" onClick={() => openEditDialog(v)} title="Edit">Edit</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteVersion(v.versionId)} title="Delete">Delete</button>
                         </td>
                       </tr>
                     ))}
@@ -211,17 +215,17 @@ const VersionControlManager = () => {
       {dialogOpen && (
         <div className="modal-overlay" onClick={closeDialog}>
           <div className="vendor-modal vendor-modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="vendor-modal-header">{editMode ? "Chỉnh sửa phiên bản" : "Tạo phiên bản mới"}</div>
+            <div className="vendor-modal-header">{editMode ? "Edit Version" : "Create New Version"}</div>
             <div className="vendor-modal-body">
               <div className="form-group">
-                <label className="form-label">Số phiên bản *</label>
+                <label className="form-label">Version Number *</label>
                 <input className={`form-input ${formErrors.versionNumber ? "error" : ""}`} placeholder="1.0.0" value={formData.versionNumber}
                   onChange={(e) => setFormData({ ...formData, versionNumber: e.target.value })} />
-                {formErrors.versionNumber ? <span className="form-error-text">{formErrors.versionNumber}</span> : <span className="form-hint">Định dạng: x.y.z</span>}
+                {formErrors.versionNumber ? <span className="form-error-text">{formErrors.versionNumber}</span> : <span className="form-hint">Format: x.y.z</span>}
               </div>
 
               <div className="form-group">
-                <label className="form-label">📦 File cài đặt *</label>
+                <label className="form-label">Installer File *</label>
                 <input ref={fileInputRef} type="file" accept=".exe,.zip,.msi,.dmg,.pkg,.jar" onChange={handleFileSelect} style={{ display: "none" }} />
 
                 {!selectedFile && !formData.fileUrl && (
@@ -229,34 +233,34 @@ const VersionControlManager = () => {
                     onClick={() => fileInputRef.current?.click()}
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleFileSelect({ target: { files: [f] } }); }}>
-                    <div className="drop-zone-icon">📂</div>
-                    <div className="drop-zone-text">Kéo thả file vào đây hoặc <strong>click để chọn</strong></div>
-                    <div className="drop-zone-hint">exe, zip, msi, dmg, pkg, jar — Tối đa 500MB</div>
+                    <div className="drop-zone-icon"></div>
+                    <div className="drop-zone-text">Drag and drop file here or <strong>click to select</strong></div>
+                    <div className="drop-zone-hint">exe, zip, msi, dmg, pkg, jar — Max 500MB</div>
                   </div>
                 )}
 
                 {selectedFile && !formData.fileUrl && (
                   <div className="file-preview">
-                    <span style={{ fontSize: 24 }}>📎</span>
+                    <span style={{ fontSize: 24 }}></span>
                     <div className="file-preview-info">
                       <div className="file-preview-name">{selectedFile.name}</div>
                       <div className="file-preview-size">{formatFileSize(selectedFile.size)}</div>
                     </div>
                     <button className="btn btn-primary btn-sm" onClick={handleUploadToCloud} disabled={uploading}>
-                      {uploading ? <><span className="spinner" /> Đang upload...</> : "⬆ Upload"}
+                      {uploading ? <><span className="spinner" /> Uploading...</> : "Upload"}
                     </button>
-                    <button className="btn-icon danger" onClick={clearFile} disabled={uploading}>🗑️</button>
+                    <button className="btn-icon danger" onClick={clearFile} disabled={uploading}>Remove</button>
                   </div>
                 )}
 
                 {formData.fileUrl && (
                   <div className="file-preview success">
-                    <span style={{ fontSize: 24 }}>✅</span>
+                    <span style={{ fontSize: 24 }}></span>
                     <div className="file-preview-info">
-                      <div className="file-preview-name">File đã upload!</div>
+                      <div className="file-preview-name">File uploaded!</div>
                       <div className="file-preview-size word-break">{formData.fileUrl}</div>
                     </div>
-                    <button className="btn-icon danger" onClick={() => { setFormData((prev) => ({ ...prev, fileUrl: "" })); setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}>🗑️</button>
+                    <button className="btn-icon danger" onClick={() => { setFormData((prev) => ({ ...prev, fileUrl: "" })); setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}>Remove</button>
                   </div>
                 )}
 
@@ -265,22 +269,22 @@ const VersionControlManager = () => {
               </div>
 
               <div className="form-group">
-                <span className="form-hint mb-8" style={{ display: "block" }}>Hoặc dán URL trực tiếp:</span>
-                <input className={`form-input ${formErrors.fileUrl ? "error" : ""}`} placeholder="URL tự động điền sau upload" value={formData.fileUrl}
+                <span className="form-hint mb-8" style={{ display: "block" }}>Or paste URL directly:</span>
+                <input className={`form-input ${formErrors.fileUrl ? "error" : ""}`} placeholder="URL will be auto-filled after upload" value={formData.fileUrl}
                   onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })} />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Ghi chú phát hành (Release Notes)</label>
+                <label className="form-label">Release Notes</label>
                 <textarea className="form-textarea" rows={4} value={formData.releaseNotes}
                   onChange={(e) => setFormData({ ...formData, releaseNotes: e.target.value })}
-                  placeholder="Mô tả các thay đổi trong phiên bản này..." />
+                  placeholder="Describe the changes in this version..." />
               </div>
             </div>
             <div className="vendor-modal-footer">
-              <button className="btn btn-secondary" onClick={closeDialog}>Hủy</button>
+              <button className="btn btn-secondary" onClick={closeDialog}>Cancel</button>
               <button className="btn btn-primary" onClick={handleSubmit} disabled={loading || uploading}>
-                {loading ? <><span className="spinner" /> Đang lưu...</> : editMode ? "Lưu thay đổi" : "Tạo phiên bản"}
+                {loading ? <><span className="spinner" /> Saving...</> : editMode ? "Save Changes" : "Create Version"}
               </button>
             </div>
           </div>

@@ -17,4 +17,8 @@ public class MessageConstant {
     // Success Messages
     public static final String REGISTER_SUCCESS = "Đăng ký tài khoản thành công!";
     public static final String LOGIN_SUCCESS = "Đăng nhập thành công!";
+
+    // Vendor's Product Status Messages
+    public static final String SUSPENDED_FROM_APPROVED = "Vendor account has been suspended (was APPROVED)";
+    public static final String SUSPENDED_FROM_PENDING = "Vendor account has been suspended (was PENDING)";
 }

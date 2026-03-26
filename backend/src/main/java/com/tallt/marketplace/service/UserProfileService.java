@@ -1,20 +1,18 @@
 package com.tallt.marketplace.service;
 
 import com.tallt.marketplace.dto.user.UpdateProfileRequest;
-import com.tallt.marketplace.entity.PasswordResetToken;
 import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.exception.AppException;
-import com.tallt.marketplace.repository.PasswordResetTokenRepository;
 import com.tallt.marketplace.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Random;
 
 @Service
 public class UserProfileService {
@@ -26,20 +24,20 @@ public class UserProfileService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private PasswordResetTokenRepository passwordResetTokenRepository;
-
-    @Autowired
     private EmailService emailService;
 
+    private static final int OTP_LENGTH = 6;
+    private static final int OTP_EXPIRY_MINUTES = 5;
+    private static final int MAX_OTP_ATTEMPTS = 5;
+    private static final int OTP_COOLDOWN_SECONDS = 60;
+
     /**
-     * Cập nhật thông tin cá nhân
-     * - Cập nhật fullName
-     * - Đổi mật khẩu (kiểm tra mật khẩu cũ, hash mật khẩu mới)
+     * Update user profile
      */
     @Transactional
     public Map<String, Object> updateProfile(Integer userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User không tồn tại"));
+                .orElseThrow(() -> new AppException("User does not exist"));
 
         // Update fullName if provided
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
@@ -48,21 +46,18 @@ public class UserProfileService {
 
         // Update password if provided
         if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
-            // Must provide old password
             if (request.getOldPassword() == null || request.getOldPassword().isBlank()) {
-                throw new AppException("Vui lòng nhập mật khẩu cũ");
+                throw new AppException("Please enter old password");
             }
-
-            // Verify old password
             if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
-                throw new AppException("Mật khẩu cũ không chính xác");
+                throw new AppException("Old password is incorrect");
             }
-
-            // Old and new must differ
             if (request.getOldPassword().equals(request.getNewPassword())) {
-                throw new AppException("Mật khẩu mới phải khác mật khẩu cũ");
+                throw new AppException("New password must be different from old password");
             }
-
+            if (request.getNewPassword().length() < 6) {
+                throw new AppException("Password must be at least 6 characters");
+            }
             user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         }
 
@@ -72,16 +67,16 @@ public class UserProfileService {
         result.put("userId", user.getUserID());
         result.put("fullName", user.getFullName());
         result.put("email", user.getEmail());
-        result.put("message", "Cập nhật thông tin thành công");
+        result.put("message", "Profile updated successfully");
         return result;
     }
 
     /**
-     * Lấy thông tin cá nhân
+     * Get user profile
      */
     public Map<String, Object> getProfile(Integer userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User không tồn tại"));
+                .orElseThrow(() -> new AppException("User does not exist"));
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("userId", user.getUserID());
@@ -95,77 +90,137 @@ public class UserProfileService {
     }
 
     /**
-     * Gửi email OTP reset mật khẩu
-     * - Tìm user theo email
-     * - Tạo OTP 6 chữ số, lưu token (hết hạn sau 10 phút)
-     * - Gửi email chứa OTP
+     * Generate OTP (6 digits)
+     */
+    private String generateOtp() {
+        SecureRandom random = new SecureRandom();
+        StringBuilder otp = new StringBuilder(OTP_LENGTH);
+        for (int i = 0; i < OTP_LENGTH; i++) {
+            otp.append(random.nextInt(10));
+        }
+        return otp.toString();
+    }
+
+    /**
+     * Forgot password – generate OTP and send via email
+     * 1. Find user by email
+     * 2. Generate 6-digit OTP
+     * 3. Save OTP + expiry (5 minutes) to DB
+     * 4. Send OTP via email
      */
     @Transactional
-    public Map<String, Object> sendPasswordResetEmail(String email) {
-        User user = userRepository.findByEmail(email);
-        if (user == null) {
-            throw new AppException("Email không tồn tại trong hệ thống");
+    public Map<String, Object> forgotPassword(String email) {
+        if (email == null || email.isBlank()) {
+            throw new AppException("Please enter an email address");
         }
 
-        // Xóa token cũ (nếu có)
-        passwordResetTokenRepository.deleteByEmail(email);
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new AppException("Email does not exist in the system");
+        }
 
-        // Tạo OTP 6 chữ số
-        String otp = String.format("%06d", new Random().nextInt(999999));
+        // Rate limiting: reject if OTP was requested within the last 60 seconds
+        if (user.getOtpExpiry() != null) {
+            LocalDateTime lastRequested = user.getOtpExpiry().minusMinutes(OTP_EXPIRY_MINUTES);
+            if (LocalDateTime.now().isBefore(lastRequested.plusSeconds(OTP_COOLDOWN_SECONDS))) {
+                throw new AppException("Please wait at least 60 seconds before requesting a new OTP.");
+            }
+        }
 
-        // Lưu token
-        PasswordResetToken resetToken = new PasswordResetToken();
-        resetToken.setEmail(email);
-        resetToken.setToken(otp);
-        resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(10));
-        passwordResetTokenRepository.save(resetToken);
+        // Generate OTP, hash before storing
+        String otp = generateOtp();
+        user.setOtp(passwordEncoder.encode(otp));
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
+        user.setOtpAttempts(0);
+        userRepository.save(user);
 
-        // Gửi email
-        String subject = "Mã xác thực đặt lại mật khẩu - Software Marketplace";
-        String body = "Xin chào " + (user.getFullName() != null ? user.getFullName() : user.getUsername()) + ",\n\n"
-                + "Mã OTP đặt lại mật khẩu của bạn là: " + otp + "\n\n"
-                + "Mã này có hiệu lực trong 10 phút.\n"
-                + "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n\n"
-                + "Trân trọng,\nSoftware Marketplace";
-        emailService.sendEmail(email, subject, body);
+        // Send OTP via email
+        String userName = user.getFullName() != null ? user.getFullName() : user.getUsername();
+        String subject = "Password Reset OTP - Software Marketplace";
+        String title = "Password Reset";
+        String body = "<p>Hello <strong>" + userName + "</strong>,</p>"
+                + "<p>We received a request to reset your password. Use the OTP code below:</p>"
+                + "<div style='text-align:center;margin:24px 0;'>"
+                + "<span style='display:inline-block;background:#2d3748;color:#667eea;font-size:32px;font-weight:700;"
+                + "letter-spacing:8px;padding:16px 32px;border-radius:8px;'>" + otp + "</span></div>"
+                + "<p>This code will expire in <strong>" + OTP_EXPIRY_MINUTES + " minutes</strong>.</p>"
+                + "<p style='color:#718096;'>If you did not request a password reset, please ignore this email.</p>";
+        emailService.sendEmail(email, subject, title, body);
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("message", "Mã OTP đã được gửi đến email " + email);
+        result.put("message", "OTP has been sent to email " + email);
         return result;
     }
 
     /**
-     * Xác thực OTP và đặt lại mật khẩu
+     * Verify OTP and reset password
+     * 1. Find user by email
+     * 2. Verify OTP is valid and not expired
+     * 3. Check attempt count (max 5)
+     * 4. If valid, hash new password and save
+     * 5. Clear OTP fields
      */
     @Transactional
-    public Map<String, Object> resetPassword(String email, String token, String newPassword) {
-        if (newPassword == null || newPassword.length() < 6) {
-            throw new AppException("Mật khẩu mới phải có ít nhất 6 ký tự");
+    public Map<String, Object> verifyOtpAndResetPassword(String email, String otp, String newPassword) {
+        if (email == null || email.isBlank()) {
+            throw new AppException("Please enter an email address");
         }
-
-        PasswordResetToken resetToken = passwordResetTokenRepository
-                .findByEmailAndTokenAndUsedFalse(email, token)
-                .orElseThrow(() -> new AppException("Mã OTP không hợp lệ hoặc đã được sử dụng"));
-
-        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new AppException("Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới");
+        if (otp == null || otp.isBlank()) {
+            throw new AppException("Please enter OTP code");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new AppException("Please enter new password");
+        }
+        if (newPassword.length() < 6) {
+            throw new AppException("Password must be at least 6 characters");
         }
 
         User user = userRepository.findByEmail(email);
         if (user == null) {
-            throw new AppException("Email không tồn tại trong hệ thống");
+            throw new AppException("Email does not exist in the system");
         }
 
-        // Đặt lại mật khẩu
+        // Check if OTP exists
+        if (user.getOtp() == null) {
+            throw new AppException("No OTP request found. Please request a new OTP.");
+        }
+
+        // Check max attempts
+        if (user.getOtpAttempts() != null && user.getOtpAttempts() >= MAX_OTP_ATTEMPTS) {
+            // Clear OTP on too many attempts
+            user.setOtp(null);
+            user.setOtpExpiry(null);
+            user.setOtpAttempts(0);
+            userRepository.save(user);
+            throw new AppException("Too many failed attempts. Please request a new OTP.");
+        }
+
+        // Check expiry
+        if (user.getOtpExpiry() == null || LocalDateTime.now().isAfter(user.getOtpExpiry())) {
+            user.setOtp(null);
+            user.setOtpExpiry(null);
+            user.setOtpAttempts(0);
+            userRepository.save(user);
+            throw new AppException("OTP has expired. Please request a new OTP.");
+        }
+
+        // Check OTP match (using hash comparison)
+        if (!passwordEncoder.matches(otp, user.getOtp())) {
+            user.setOtpAttempts((user.getOtpAttempts() != null ? user.getOtpAttempts() : 0) + 1);
+            userRepository.save(user);
+            int remaining = MAX_OTP_ATTEMPTS - user.getOtpAttempts();
+            throw new AppException("Invalid OTP. " + remaining + " attempts remaining.");
+        }
+
+        // OTP valid – reset password
         user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setOtp(null);
+        user.setOtpExpiry(null);
+        user.setOtpAttempts(0);
         userRepository.save(user);
 
-        // Đánh dấu token đã sử dụng
-        resetToken.setUsed(true);
-        passwordResetTokenRepository.save(resetToken);
-
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("message", "Đặt lại mật khẩu thành công");
+        result.put("message", "Password has been reset successfully");
         return result;
     }
 }

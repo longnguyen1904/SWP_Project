@@ -28,7 +28,6 @@ const ProductUploadForm = () => {
   });
 
   const [images, setImages] = useState([]);
-  const [imageUpload, setImageUpload] = useState({ imageUrl: "", isPrimary: false, sortOrder: 0 });
   const [version, setVersion] = useState({ versionNumber: "", fileUrl: "", releaseNotes: "" });
   const [licenseTiers, setLicenseTiers] = useState([]);
   const [tierForm, setTierForm] = useState({
@@ -102,10 +101,10 @@ const ProductUploadForm = () => {
         else if (hasImages) setActiveStep(2);
         else setActiveStep(0);
 
-        setSuccess("Đã tải bản nháp thành công!");
+        setSuccess("Draft loaded successfully!");
         setTimeout(() => setSuccess(""), 3000);
       } catch (err) {
-        setError("Không thể tải bản nháp: " + (err.response?.data?.message || err.message));
+        setError("Cannot load draft: " + (err.response?.data?.message || err.message));
       } finally { setInitialLoading(false); }
     };
     loadDraft();
@@ -122,14 +121,14 @@ const ProductUploadForm = () => {
         if (!productData.basePrice || parseFloat(productData.basePrice) <= 0) { setError("Base price must be greater than 0"); return false; }
         return true;
       case 1:
-        if (images.length === 0) { setError("Vui lòng thêm ít nhất 1 ảnh sản phẩm"); return false; }
+        if (images.length === 0) { setError("Please add at least 1 product image"); return false; }
         return true;
       case 2:
         if (!version.versionNumber) { setError("Version number is required"); return false; }
         if (!version.fileUrl) { setError("File URL is required"); return false; }
         return true;
       case 3:
-        if (licenseTiers.length === 0) { setError("Vui lòng thêm ít nhất 1 license tier"); return false; }
+        if (licenseTiers.length === 0) { setError("Please add at least 1 license tier"); return false; }
         return true;
       default: return true;
     }
@@ -187,7 +186,7 @@ const ProductUploadForm = () => {
         default: break;
       }
       setActiveStep((prev) => prev + 1);
-    } catch (err) { setError(err.response?.data?.message || "Lỗi khi lưu. Vui lòng thử lại."); }
+    } catch (err) { setError(err.response?.data?.message || "Error saving. Please try again."); }
     finally { setLoading(false); }
   };
 
@@ -198,10 +197,12 @@ const ProductUploadForm = () => {
     try {
       await vendorAPI.submitProduct(productId);
       setSuccess("Product successfully submitted for approval!");
+      // Clear URL params before resetting
+      window.history.replaceState({}, document.title, window.location.pathname);
       setActiveStep(0); setProductId(null);
       setProductData({ productName: "", categoryId: "", description: "", basePrice: "", hasTrial: false, trialDurationDays: 7, guideDocumentUrl: "", tags: [] });
       setImages([]); setVersion({ versionNumber: "", fileUrl: "", releaseNotes: "" }); setLicenseTiers([]);
-    } catch (err) { setError(err.response?.data?.message || "Submit thất bại."); }
+    } catch (err) { setError(err.response?.data?.message || "Submit failed."); }
     finally { setLoading(false); }
   };
 
@@ -209,20 +210,26 @@ const ProductUploadForm = () => {
     setLoading(true); setError(""); setSuccess("");
     try {
       if (!productId) {
+        // Validate at least product name before creating draft
+        if (!productData.productName || !productData.productName.trim()) {
+          setError("Product name is required to save draft");
+          setLoading(false);
+          return;
+        }
         const payload = { ...productData, categoryId: productData.categoryId ? Number(productData.categoryId) : null, basePrice: productData.basePrice ? parseFloat(productData.basePrice) : null };
         const response = await vendorAPI.createProduct(payload);
         const data = response.data?.data ?? response.data;
         setProductId(data?.productId ?? data?.id);
-        setSuccess("Đã lưu nháp sản phẩm mới!");
+        setSuccess("New product draft saved!");
       } else {
         await vendorAPI.saveDraft(productId, {
           productName: productData.productName || null, description: productData.description || null,
           basePrice: productData.basePrice ? parseFloat(productData.basePrice) : null, guideDocumentUrl: productData.guideDocumentUrl || null,
         });
-        setSuccess("Đã lưu nháp thành công!");
+        setSuccess("Draft saved successfully!");
       }
       setTimeout(() => setSuccess(""), 3000);
-    } catch (err) { setError(err.response?.data?.message || "Lưu nháp thất bại."); }
+    } catch (err) { setError(err.response?.data?.message || "Save draft failed."); }
     finally { setLoading(false); }
   };
 
@@ -230,7 +237,7 @@ const ProductUploadForm = () => {
   const renderStepContent = (step) => {
     switch (step) {
       case 0: return <BasicInfoStep productData={productData} setProductData={setProductData} categories={categories} />;
-      case 1: return <ImagesStep images={images} setImages={setImages} imageUpload={imageUpload} setImageUpload={setImageUpload} setError={setError} setSuccess={setSuccess} />;
+      case 1: return <ImagesStep images={images} setImages={setImages} setError={setError} setSuccess={setSuccess} />;
       case 2: return <VersionStep version={version} setVersion={setVersion} setError={setError} setSuccess={setSuccess} />;
       case 3: return <LicenseTiersStep licenseTiers={licenseTiers} setLicenseTiers={setLicenseTiers} tierForm={tierForm} setTierForm={setTierForm} />;
       case 4: return <ReviewStep productData={productData} images={images} version={version} licenseTiers={licenseTiers} />;
@@ -245,7 +252,7 @@ const ProductUploadForm = () => {
 
       <div className="vendor-card">
         {initialLoading ? (
-          <div className="loading-center"><span className="spinner spinner-lg" /> Đang tải bản nháp...</div>
+          <div className="loading-center"><span className="spinner spinner-lg" /> Loading draft...</div>
         ) : (
           <>
             {/* Stepper */}
@@ -270,7 +277,7 @@ const ProductUploadForm = () => {
               <div className="flex-gap">
                 {activeStep < steps.length - 1 && (
                   <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={loading}>
-                    {loading ? <span className="spinner" /> : "💾"} Save Draft
+                    {loading ? <span className="spinner" /> : ""} Save Draft
                   </button>
                 )}
                 {activeStep === steps.length - 1 ? (
