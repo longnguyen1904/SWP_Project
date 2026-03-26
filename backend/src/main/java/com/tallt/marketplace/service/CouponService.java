@@ -53,8 +53,14 @@ public class CouponService {
         if (discountPercent < 1 || discountPercent > 100) {
             throw new AppException("Phần trăm giảm giá phải từ 1 đến 100");
         }
-        if (couponRepository.findByCodeIgnoreCase(code).isPresent()) {
-            throw new AppException("Mã coupon đã tồn tại");
+        if (expiresAtStr != null && !expiresAtStr.isEmpty()) {
+            LocalDateTime expiresAt = LocalDateTime.parse(expiresAtStr);
+            if (expiresAt.isBefore(LocalDateTime.now())) {
+                throw new AppException("Expiry date must be in the future");
+            }
+        }
+        if (couponRepository.existsByCodeIgnoreCaseAndVendor_VendorID(code, vendor.getVendorID())) {
+            throw new AppException("Coupon code already exists");
         }
 
         Coupon coupon = new Coupon();
@@ -65,11 +71,7 @@ public class CouponService {
         coupon.setIsActive(true);
 
         if (expiresAtStr != null && !expiresAtStr.isEmpty()) {
-            LocalDateTime expiresAt = LocalDateTime.parse(expiresAtStr);
-            if (expiresAt.isBefore(LocalDateTime.now())) {
-                throw new AppException("Expiry date must be in the future");
-            }
-            coupon.setExpiresAt(expiresAt);
+            coupon.setExpiresAt(LocalDateTime.parse(expiresAtStr));
         }
 
         if (productId != null) {

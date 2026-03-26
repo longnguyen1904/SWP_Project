@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { Outlet, Link, NavLink } from "react-router-dom";
-
-
+import React, { useState, useEffect } from "react";
+import { Outlet, Link, NavLink, useNavigate } from "react-router-dom";
+import { vendorAPI, uploadAPI } from "../services/api";
+import { unwrapResponse, getApiErrorMessage } from "../services/apiHelpers";
 
 const VS = {
     APPROVED: "APPROVED",
@@ -11,6 +11,7 @@ const VS = {
 };
 
 export default function VendorDashboard() {
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState("");
 
     const [vendorStatus, setVendorStatus] = useState(null); // null = đang load
@@ -382,7 +383,7 @@ export default function VendorDashboard() {
                             }
                         >
                             <i className="bi bi-ticket-perforated me-3"></i>
-                            Mã giảm giá
+                            Coupons
                         </NavLink>
                     </li>
                     <li className="nav-item mb-2">
@@ -394,7 +395,7 @@ export default function VendorDashboard() {
                             }
                         >
                             <i className="bi bi-wallet2 me-3"></i>
-                            Ví & Rút tiền
+                            Wallet & Payouts
                         </NavLink>
                     </li>
                     <li className="nav-item mb-2">

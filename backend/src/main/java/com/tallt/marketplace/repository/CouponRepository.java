@@ -12,5 +12,7 @@ public interface CouponRepository extends JpaRepository<Coupon, Integer> {
 
     Optional<Coupon> findByCodeIgnoreCase(String code);
 
+    boolean existsByCodeIgnoreCaseAndVendor_VendorID(String code, Integer vendorId);
+
     List<Coupon> findByVendor_VendorID(Integer vendorId);
 }
