@@ -1,0 +1,60 @@
+[INFO] Error stacktraces are turned on.
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< com.mycompany:AppDesktop >----------------------
+[INFO] Building AppDesktop 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ AppDesktop ---
+[INFO] skip non existing resourceDirectory D:\Semester5\SWP391\SWP_Project\AppDesktop\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ AppDesktop ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 2 source files with javac [debug target 1.8] to target\classes
+[WARNING] bootstrap class path is not set in conjunction with -source 8
+  not setting the bootstrap class path may lead to class files that cannot run on JDK 8
+    --release 8 is recommended instead of -source 8 -target 1.8 because it sets the bootstrap class path automatically
+[WARNING] source value 8 is obsolete and will be removed in a future release
+[WARNING] target value 8 is obsolete and will be removed in a future release
+[WARNING] To suppress warnings about obsolete options, use -Xlint:-options.
+[INFO] /D:/Semester5/SWP391/SWP_Project/AppDesktop/src/main/java/com/mycompany/appdesktop/TalltLicenseGuard.java: D:\Semester5\SWP391\SWP_Project\AppDesktop\src\main\java\com\mycompany\appdesktop\TalltLicenseGuard.java uses or overrides a deprecated API.
+[INFO] /D:/Semester5/SWP391/SWP_Project/AppDesktop/src/main/java/com/mycompany/appdesktop/TalltLicenseGuard.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ AppDesktop ---
+[INFO] skip non existing resourceDirectory D:\Semester5\SWP391\SWP_Project\AppDesktop\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ AppDesktop ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ AppDesktop ---
+[INFO] 
+[INFO] --- jar:3.3.0:jar (default-jar) @ AppDesktop ---
+[INFO] Building jar: D:\Semester5\SWP391\SWP_Project\AppDesktop\target\AppDesktop-1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- launch4j:2.4.1:launch4j (l4j-clui) @ AppDesktop ---
+[WARNING] Configuration param ${project.organization.name} is empty, so a dummy value "Default organization" might be used instead to fulfill some of VersionInfo params by defaults.
+[WARNING] Configuration param ${project.inceptionYear} is empty, so a dummy value "2020" might be used instead to fulfill some of VersionInfo params by defaults.
+[WARNING] Configuration param ${project.description} is empty, so a dummy value "A Java project." might be used instead to fulfill some of VersionInfo params by defaults.
+[INFO] Platform-specific work directory already exists: C:\Users\nguye\.m2\repository\net\sf\launch4j\launch4j\3.50\launch4j-3.50-workdir-win32
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.thoughtworks.xstream.converters.reflection.SunUnsafeReflectionProvider (file:/C:/Users/nguye/.m2/repository/com/thoughtworks/xstream/xstream/1.4.20/xstream-1.4.20.jar)
+WARNING: Please consider reporting this to the maintainers of class com.thoughtworks.xstream.converters.reflection.SunUnsafeReflectionProvider
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] launch4j: Compiling resources
+[INFO] launch4j: Linking
+[INFO] launch4j: Wrapping
+WARNING: Sign the executable to minimize antivirus false positives or use launching instead of wrapping.
+[INFO] launch4j: Successfully created D:\Semester5\SWP391\SWP_Project\AppDesktop\target\AppDesktop.exe
+[INFO] 
+[INFO] --- assembly:3.6.0:single (default) @ AppDesktop ---
+[INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-io/3.4.1/plexus-io-3.4.1.jar
+[INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-io/3.4.1/plexus-io-3.4.1.jar (79 kB at 256 kB/s)
+[INFO] Reading assembly descriptor: src/assembly/zip.xml
+[INFO] Building zip: D:\Semester5\SWP391\SWP_Project\AppDesktop\target\AppDesktop-1.0-SNAPSHOT-portable.zip
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.409 s
+[INFO] Finished at: 2026-03-28T04:33:40+07:00
+[INFO] ------------------------------------------------------------------------
