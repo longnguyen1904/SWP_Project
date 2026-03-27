@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
 
 import com.tallt.marketplace.entity.SupportTicket;
 import com.tallt.marketplace.entity.TicketMessage;
@@ -33,6 +37,7 @@ public class SupportTicketController {
 
     private final SupportTicketService ticketService;
     private final CloudinaryService cloudinaryService;
+    private final JdbcTemplate jdbcTemplate;
 
     // =========================================
     // 🛡️ HÀM BẢO MẬT: GIẢI MÃ TOKEN LẤY USER_ID
@@ -88,28 +93,45 @@ public class SupportTicketController {
     // =========================================
     // 2. LẤY DANH SÁCH TICKET (DÀNH CHO VENDOR)
     // =========================================
-  @GetMapping("/vendor")
-    public ResponseEntity<?> getVendorTickets(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    @GetMapping("/vendor")
+    public ResponseEntity<?> getVendorTickets(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Integer productId) {
         try {
             Integer userId = getUserIdFromToken(authHeader);
-            List<SupportTicket> allTickets = ticketService.getAllTickets();
-            List<Map<String, Object>> response = new ArrayList<>();
-            
-            for (SupportTicket t : allTickets) {
-                if (t.getVendor() != null && t.getVendor().getUser() != null && t.getVendor().getUser().getUserID().equals(userId)) {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("ticketId", t.getTicketId());
-                    map.put("subject", t.getSubject());
-                    map.put("status", t.getStatus());
-                    map.put("customerName", t.getUser() != null ? t.getUser().getFullName() : "Khách hàng");
-                    map.put("orderId", t.getOrder() != null ? t.getOrder().getOrderID() : null);
-                    // THÊM DÒNG NÀY ĐỂ TRẢ VỀ TÊN SẢN PHẨM
-                    map.put("productName", t.getOrder() != null && t.getOrder().getProduct() != null 
-                            ? t.getOrder().getProduct().getProductName() : "N/A");
-                    map.put("createdAt", t.getCreatedAt());
-                    response.add(map);
-                }
+
+            // Dùng SQL JOIN để lấy productId chính xác (tránh lazy loading issues)
+            StringBuilder sql = new StringBuilder("""
+                SELECT t.TicketID AS ticketId, t.Subject AS subject, t.Status AS status,
+                       u.FullName AS customerName, t.OrderID AS orderId,
+                       p.ProductID AS productId, COALESCE(p.ProductName, 'N/A') AS productName,
+                       t.CreatedAt AS createdAt
+                FROM SupportTickets t
+                JOIN Vendors v ON t.VendorID = v.VendorID
+                JOIN Users vu ON v.UserID = vu.UserID
+                LEFT JOIN Users u ON t.UserID = u.UserID
+                LEFT JOIN Orders o ON t.OrderID = o.OrderID
+                LEFT JOIN Products p ON o.ProductID = p.ProductID
+                WHERE vu.UserID = ? AND t.OrderID IS NOT NULL
+            """);
+            List<Object> params = new ArrayList<>();
+            params.add(userId);
+
+            if (startDate != null && endDate != null) {
+                sql.append(" AND t.CreatedAt >= ? AND t.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)");
+                params.add(startDate);
+                params.add(endDate);
             }
+
+            if (productId != null) {
+                sql.append(" AND p.ProductID = ?");
+                params.add(productId);
+            }
+            sql.append(" ORDER BY t.CreatedAt DESC");
+
+            List<Map<String, Object>> response = jdbcTemplate.queryForList(sql.toString(), params.toArray());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
