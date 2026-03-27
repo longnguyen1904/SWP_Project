@@ -74,7 +74,7 @@ public class licenseValidationController {
 
         // Logic check Max Devices
         Optional<LicenseSession> sessionOpt = sessionRepo.findByLicenseAndDeviceIdentifier(license, deviceId);
-        
+
         if (sessionOpt.isPresent()) {
             // Thiết bị đã từng đăng nhập, cập nhật lại LastActive
             LicenseSession session = sessionOpt.get();
@@ -98,17 +98,18 @@ public class licenseValidationController {
             // Thiết bị mới, kiểm tra giới hạn Max Devices
             int currentDevices = sessionRepo.countByLicenseAndIsActiveTrue(license);
             Integer maxDevices = license.getTier().getMaxDevices();
-            
+
             if (maxDevices != null && currentDevices >= maxDevices) {
                 // Xoá thiết bị cũ nhất
-                java.util.List<LicenseSession> activeSessions = sessionRepo.findByLicenseAndIsActiveTrueOrderByLastActiveAsc(license);
+                java.util.List<LicenseSession> activeSessions = sessionRepo
+                        .findByLicenseAndIsActiveTrueOrderByLastActiveAsc(license);
                 if (!activeSessions.isEmpty()) {
                     LicenseSession oldestSession = activeSessions.get(0);
                     oldestSession.setIsActive(false);
                     sessionRepo.save(oldestSession);
                 }
             }
-            
+
             // Tạo mới session
             LicenseSession newSession = new LicenseSession();
             newSession.setLicense(license);
@@ -132,7 +133,8 @@ public class licenseValidationController {
         String deviceId = payload.get("deviceId");
 
         if (licenseKey == null || licenseKey.isBlank() || deviceId == null || deviceId.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Thiếu licenseKey hoặc deviceId"));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("status", "error", "message", "Thiếu licenseKey hoặc deviceId"));
         }
 
         Optional<License> licenseOpt = licenseRepo.findByLicenseKey(licenseKey.trim());
@@ -143,7 +145,7 @@ public class licenseValidationController {
         Optional<LicenseSession> sessionOpt = sessionRepo.findByLicenseAndDeviceIdentifier(licenseOpt.get(), deviceId);
         if (sessionOpt.isPresent()) {
             LicenseSession session = sessionOpt.get();
-            session.setIsActive(false); 
+            session.setIsActive(false);
             sessionRepo.save(session);
             return ResponseEntity.ok(Map.of("status", "success", "message", "Đã giải phóng thiết bị"));
         }
@@ -155,9 +157,10 @@ public class licenseValidationController {
     public ResponseEntity<?> heartbeat(@RequestBody Map<String, String> payload) {
         String licenseKey = payload.get("licenseKey");
         String deviceId = payload.get("deviceId");
-        
+
         Optional<License> licenseOpt = licenseRepo.findByLicenseKey(licenseKey);
-        if (licenseOpt.isEmpty()) return ResponseEntity.status(403).build();
+        if (licenseOpt.isEmpty())
+            return ResponseEntity.status(403).build();
 
         Optional<LicenseSession> sessionOpt = sessionRepo.findByLicenseAndDeviceIdentifier(licenseOpt.get(), deviceId);
         if (sessionOpt.isPresent() && sessionOpt.get().getIsActive()) {
@@ -167,7 +170,7 @@ public class licenseValidationController {
             sessionRepo.save(session);
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.status(403).build(); 
+        return ResponseEntity.status(403).build();
     }
 
     @GetMapping("/{licenseKey}/sessions")
@@ -176,7 +179,7 @@ public class licenseValidationController {
             return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "License key trống"));
         }
         java.util.List<LicenseSession> sessions = sessionRepo.findByLicense_LicenseKey(licenseKey.trim());
-        
+
         java.util.List<Map<String, Object>> responseList = sessions.stream().map(s -> {
             Map<String, Object> map = new java.util.HashMap<>();
             map.put("sessionID", s.getSessionID());
