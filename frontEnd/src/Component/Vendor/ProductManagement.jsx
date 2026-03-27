@@ -12,7 +12,7 @@ const ProductManagement = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState({ productName: "", description: "", basePrice: "", guideDocumentUrl: "", hasTrial: false, trialDurationDays: 7 });
+  const [editFormData, setEditFormData] = useState({ productName: "", description: "", basePrice: "", hasTrial: false, trialDurationDays: 7 });
   const [editImages, setEditImages] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [imagesToAdd, setImagesToAdd] = useState([]);
@@ -50,7 +50,6 @@ const ProductManagement = () => {
       productName: product.productName ?? product.name,
       description: product.description,
       basePrice: product.basePrice ?? product.price,
-      guideDocumentUrl: product.guideDocumentUrl ?? "",
       hasTrial: product.hasTrial ?? false,
       trialDurationDays: product.trialDurationDays ?? 7,
     });
@@ -120,7 +119,7 @@ const ProductManagement = () => {
       const pid = getProductId(selectedProduct);
       await vendorAPI.updateProduct(pid, {
         productName: editFormData.productName, description: editFormData.description,
-        basePrice: parseFloat(editFormData.basePrice), guideDocumentUrl: editFormData.guideDocumentUrl,
+        basePrice: parseFloat(editFormData.basePrice),
       });
       for (const imageId of imagesToDelete) { await vendorAPI.deleteProductImage(pid, imageId); }
       for (const img of imagesToAdd) { await vendorAPI.uploadProductImage(pid, img); }
@@ -321,12 +320,6 @@ const ProductManagement = () => {
                   <label className="form-label">Price (VND)</label>
                   <input className="form-input" type="number" value={editFormData.basePrice} min="0" step="1000"
                     onChange={(e) => setEditFormData({ ...editFormData, basePrice: e.target.value })} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Guide Document URL</label>
-                  <input className="form-input" value={editFormData.guideDocumentUrl} placeholder="https://example.com/guide.pdf"
-                    onChange={(e) => setEditFormData({ ...editFormData, guideDocumentUrl: e.target.value })} />
-                  <span className="form-hint">Link to user guide document (optional)</span>
                 </div>
               </div>
 

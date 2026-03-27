@@ -75,7 +75,7 @@ public class OrderService {
             if (o.getProduct() != null) {
                 map.put("productId", o.getProduct().getProductID());
                 map.put("productName", o.getProduct().getProductName());
-                map.put("productImage", o.getProduct().getGuideDocumentUrl());
+                map.put("productImage", null);
                 
                 if (o.getProduct().getVendor() != null) {
                     map.put("vendorId", o.getProduct().getVendor().getVendorID());
@@ -105,7 +105,7 @@ public class OrderService {
                 
                 map.put("productId", p.getProductID());
                 map.put("productName", p.getProductName());
-                map.put("productImage", p.getGuideDocumentUrl());
+                map.put("productImage", null);
                 
                 if (p.getVendor() != null) {
                     map.put("vendorId", p.getVendor().getVendorID());

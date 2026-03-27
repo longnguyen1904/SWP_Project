@@ -99,9 +99,6 @@ public class ProductService {
         product.setStatus(Product.ProductStatus.DRAFT);
         product.setHasTrial(request.getHasTrial() != null ? request.getHasTrial() : false);
         product.setTrialDurationDays(request.getTrialDurationDays() != null ? request.getTrialDurationDays() : 7);
-        if (request.getGuideDocumentUrl() != null && !request.getGuideDocumentUrl().isBlank()) {
-            product.setGuideDocumentUrl(request.getGuideDocumentUrl().trim());
-        }
         productRepository.save(product);
 
         // 5. Process Tags
@@ -224,9 +221,6 @@ public class ProductService {
         if (request.getBasePrice() != null) {
             product.setBasePrice(request.getBasePrice());
         }
-        if (request.getGuideDocumentUrl() != null) {
-            product.setGuideDocumentUrl(request.getGuideDocumentUrl().isBlank() ? null : request.getGuideDocumentUrl().trim());
-        }
 
         // If product was APPROVED, change to PENDING for Admin re-approval
         if (product.getStatus() == Product.ProductStatus.APPROVED) {
@@ -259,9 +253,6 @@ public class ProductService {
         }
         if (request.getBasePrice() != null) {
             product.setBasePrice(request.getBasePrice());
-        }
-        if (request.getGuideDocumentUrl() != null) {
-            product.setGuideDocumentUrl(request.getGuideDocumentUrl().isBlank() ? null : request.getGuideDocumentUrl().trim());
         }
 
         // If REJECTED -> change to DRAFT when saving draft
@@ -857,7 +848,6 @@ public class ProductService {
         // Xác định status
         response.setStatus(product.getStatus().name());
         response.setRejectionNote(product.getRejectionNote());
-        response.setGuideDocumentUrl(product.getGuideDocumentUrl());
 
         productImageRepository.findTopByProduct_ProductIDOrderBySortOrderAsc(product.getProductID())
                 .ifPresent(img -> response.setThumbnailUrl(img.getImageUrl()));
