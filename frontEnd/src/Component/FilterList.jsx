@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { getProductImageUrl } from "../services/formatters";
 import "../Style/FilterList.css";
 
-const FILTERS = ["All", "Fruit", "Vegetable", "Drink"];
+
 
 export default function FilterList() {
   const [open, setOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchName, setSearchName] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  
+  const navigate = useNavigate();
 
   function handleSelect(filter) {
     setSelectedFilter(filter);
@@ -16,21 +17,13 @@ export default function FilterList() {
   }
 
   const [products, setProducts] = useState([]);
+  const FILTERS = ["All", ...new Set(products.map(p => p.categoryName).filter(Boolean))];
   useEffect(() => {
     fetch("http://localhost:8081/api/products")
       .then(res => res.json())
       .then(data => setProducts(data.data.content));
   }, []);
 
-
-
-  function openProductDetail(product) {
-    setSelectedProduct(product);
-  }
-
-  function closeProductDetail() {
-    setSelectedProduct(null);
-  }
   return (
 
     <section className="filter-container">
@@ -82,42 +75,18 @@ export default function FilterList() {
           )
           .map(product => (
             <li key={product.productId}>
+              <img 
+                src={getProductImageUrl(product) || "https://fakeimg.pl/400x400?text=No+Image"} 
+                alt={product.productName} 
+                style={{ width: "100%", height: "150px", objectFit: "cover", borderRadius: "12px", marginBottom: "15px" }} 
+              />
               <h3>{product.productName}</h3>
               <p>Price: {Number(product.basePrice).toLocaleString("vi-VN")} VND</p>
-              <button onClick={() => openProductDetail(product)}>
+              <button onClick={() => navigate(`/products/${product.productId}`)}>
                 Buy
               </button>
             </li>
           ))}
       </ul>
-      {selectedProduct && (
-        <div className="product-modal-overlay">
-
-          <div className="product-modal">
-
-            <button className="close-btn" onClick={closeProductDetail}>
-              ✕
-            </button>
-
-            <h2>Product Detail</h2>
-
-            <div className="product-detail">
-
-              <p><b>Name:</b> {selectedProduct.productName}</p>
-
-              <p><b>Category:</b> {selectedProduct.categoryName}</p>
-
-              <p><b>Price:</b> {Number(selectedProduct.basePrice).toLocaleString("vi-VN")} VND</p>
-
-            </div>
-
-            <button className="checkout-btn">
-              Checkout
-            </button>
-
-          </div>
-
-        </div>
-      )}
     </section>);
 }
