@@ -33,10 +33,8 @@ const VendorShop = () => {
     }
   })();
   const isLoggedIn = !!(currentUser.userID || currentUser.userId);
-  const isOwnShop = isLoggedIn && (
-    String(currentUser.userID || currentUser.userId) === String(vendorId) || 
-    String(currentUser.vendorId || currentUser.vendorID || "") === String(vendorId)
-  );
+  const currentUserId = String(currentUser.userID || currentUser.userId || "");
+  const isOwnShop = isLoggedIn && vendor && String(vendor.userId ?? "") === currentUserId;
 
   useEffect(() => {
     if (!vendorId) return;
