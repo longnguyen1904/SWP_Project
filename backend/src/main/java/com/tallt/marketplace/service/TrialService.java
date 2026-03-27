@@ -54,6 +54,13 @@ public class TrialService {
             throw new AppException("Sản phẩm không hỗ trợ dùng thử");
         }
 
+        // Prevent vendor from trialing their own product
+        if (product.getVendor() != null
+                && product.getVendor().getUser() != null
+                && product.getVendor().getUser().getUserID().equals(userId)) {
+            throw new AppException("You cannot start a trial on your own product");
+        }
+
         boolean tried = licenseRepository.existsByUser_UserIDAndProduct_ProductIDAndIsTrialTrueAndIsDeletedFalse(
                 userId, productId
         );

@@ -29,6 +29,8 @@ public class AdminPayoutController {
     private final UserRepository userRepository;
     private final VNPayConfig vnPayConfig;
 
+    // ==================== WALLET INFO ====================
+
     @GetMapping("/admin-wallet")
     public ResponseEntity<BigDecimal> getAdminWalletBalance() {
         User admin = userRepository.findFirstByRole_RoleName("Admin");
@@ -42,13 +44,14 @@ public class AdminPayoutController {
         return ResponseEntity.ok(wallet.getBalance());
     }
 
+    // ==================== GET PAYOUTS ====================
+
     @GetMapping
     public ResponseEntity<Page<AdminPayoutResponse>> getAllPayouts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("payoutDate").descending());
-
         return ResponseEntity.ok(adminPayoutService.getAllPayouts(pageable));
     }
 
@@ -57,59 +60,28 @@ public class AdminPayoutController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
-
+        Pageable pageable = PageRequest.of(page, size, Sort.by("payoutDate").descending());
         return ResponseEntity.ok(adminPayoutService.getPendingPayouts(pageable));
     }
 
-    /**
-     * Admin bấm Approve → tạo VNPay URL → trả paymentUrl cho frontend.
-     */
     @PostMapping("/{id}/approve")
-    public ResponseEntity<?> approvePayout(
-            @PathVariable Integer id,
-            HttpServletRequest httpRequest) {
+    public ResponseEntity<?> approvePayout(@PathVariable Integer id) {
 
-        String ipAddress = getClientIp(httpRequest);
-        String paymentUrl = adminPayoutService.initiatePayoutApproval(id, ipAddress);
-
-        return ResponseEntity.ok(Map.of("paymentUrl", paymentUrl));
+        adminPayoutService.approvePayout(id);
+        return ResponseEntity.ok(Map.of("message", "Payout approved successfully"));
     }
 
-    /**
-     * VNPay redirect callback — xử lý kết quả thanh toán payout.
-     * Redirect sang frontend /payout-result.
-     */
-    @GetMapping("/vnpay-return")
-    public ResponseEntity<Void> vnpayPayoutReturn(@RequestParam Map<String, String> params) {
 
-        boolean success = adminPayoutService.processPayoutVNPayReturn(params);
 
-        String txnRef = params.get("vnp_TxnRef");
-        String payoutId = txnRef != null ? txnRef.replace("PAYOUT_", "") : "";
-        String baseUrl = vnPayConfig.getFrontendUrl();
-
-        String frontendUrl;
-        if (success) {
-            frontendUrl = baseUrl + "/payout-result?status=success&payoutId=" + payoutId;
-        } else {
-            frontendUrl = baseUrl + "/payout-result?status=failed&payoutId=" + payoutId;
-        }
-
-        return ResponseEntity.status(302)
-                .header("Location", frontendUrl)
-                .build();
-    }
 
     @PostMapping("/{id}/reject")
     public ResponseEntity<?> rejectPayout(@PathVariable Integer id) {
 
         adminPayoutService.rejectPayout(id);
-
-        return ResponseEntity.ok("Payout rejected successfully");
+        return ResponseEntity.ok(Map.of("message", "Payout rejected successfully"));
     }
 
-    // ==================== PRIVATE METHODS ====================
+    // ==================== PRIVATE HELPERS ====================
 
     private String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
@@ -119,6 +91,6 @@ public class AdminPayoutController {
         if (ip != null && ip.contains(",")) {
             ip = ip.split(",")[0].trim();
         }
-        return ip != null ? ip : "127.0.0.1";
+        return (ip != null) ? ip : "127.0.0.1";
     }
 }

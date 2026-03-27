@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { vendorAPI, uploadAPI } from "../../services/api";
+import useVendorProducts from "../../services/useVendorProducts";
 import "../../Style/Vendor.css";
 
 const SEMVER_REGEX = /^\d+\.\d+\.\d+$/;
@@ -11,8 +13,14 @@ const formatFileSize = (bytes) => {
 };
 
 const VersionControlManager = () => {
-  const [products, setProducts] = useState([]);
+  const [searchParams] = useSearchParams();
+  const { products, loading: productsLoading } = useVendorProducts();
   const [selectedProductId, setSelectedProductId] = useState("");
+
+  useEffect(() => {
+    const pid = searchParams.get("productId");
+    if (pid && !selectedProductId) setSelectedProductId(pid);
+  }, [searchParams]);
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [versionLoading, setVersionLoading] = useState(false);
@@ -30,21 +38,8 @@ const VersionControlManager = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => { fetchProducts(); }, []);
   useEffect(() => { if (selectedProductId) fetchVersions(); }, [selectedProductId]);
   useEffect(() => { if (success) { const t = setTimeout(() => setSuccess(""), 4000); return () => clearTimeout(t); } }, [success]);
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const res = await vendorAPI.getVendorProducts({ size: 100 });
-      const data = res.data?.data ?? res.data;
-      const content = data?.content ?? data?.products ?? (Array.isArray(data) ? data : []);
-      setProducts(Array.isArray(content) ? content : []);
-    } catch (err) {
-      setError(err.response?.data?.message || "Cannot load product list");
-    } finally { setLoading(false); }
-  };
 
   const fetchVersions = async () => {
     if (!selectedProductId) return;
@@ -134,8 +129,21 @@ const VersionControlManager = () => {
     finally { setLoading(false); }
   };
 
+  const handleDeleteVersion = async (versionId) => {
+    if (!window.confirm("Are you sure you want to delete this version?")) return;
+    setLoading(true); setError(""); setSuccess("");
+    try {
+      await vendorAPI.deleteProductVersion(selectedProductId, versionId);
+      setSuccess("Version deleted!");
+      fetchVersions();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete version");
+    } finally { setLoading(false); }
+  };
+
   const getProductName = () => {
-    const p = products.find((p) => (p.productId ?? p.id) === selectedProductId);
+    const numId = Number(selectedProductId);
+    const p = products.find((p) => (p.productId ?? p.id) === numId);
     return p?.productName ?? p?.name ?? "";
   };
 
@@ -192,10 +200,14 @@ const VersionControlManager = () => {
                         <td><span className="badge badge-primary">v{v.versionNumber}</span></td>
                         <td>{v.fileUrl ? <a href={v.fileUrl} target="_blank" rel="noopener noreferrer" className="download-link">Download</a> : "—"}</td>
                         <td className="truncate" style={{ maxWidth: 250 }} title={v.releaseNotes}>{v.releaseNotes || "—"}</td>
-                        <td><span className={`badge ${badgeClass(v.scanStatus)}`}>{v.scanStatus || "PENDING"}</span></td>
+                        <td>
+                          <span className={`badge ${badgeClass(v.scanStatus)}`}>{v.scanStatus || "PENDING"}</span>
+                          {v.scanStatus === "INFECTED" && <span style={{ color: "#ff4d4d", fontSize: 12, marginLeft: 6 }}>⚠ File may be unsafe</span>}
+                        </td>
                         <td>{v.createdAt ? new Date(v.createdAt).toLocaleString("vi-VN") : "—"}</td>
                         <td className="actions">
                           <button className="btn-icon primary" onClick={() => openEditDialog(v)} title="Edit">Edit</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteVersion(v.versionId)} title="Delete">Delete</button>
                         </td>
                       </tr>
                     ))}

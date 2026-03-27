@@ -69,6 +69,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             """)
     List<OrderWithDownloadDTO> findOrderDownloadLinks(@Param("userId") Integer userId);
 
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.product.vendor.vendorID = :vendorId AND UPPER(o.paymentStatus) = 'COMPLETED'")
+    @Query("SELECT COALESCE(SUM(o.vendorNetAmount), 0) FROM Order o WHERE o.product.vendor.vendorID = :vendorId AND UPPER(o.paymentStatus) = 'COMPLETED'")
     java.math.BigDecimal sumCompletedRevenueByVendorId(@Param("vendorId") Integer vendorId);
+
+    boolean existsByTier_TierID(Integer tierId);
 }

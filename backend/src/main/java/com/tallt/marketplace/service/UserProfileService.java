@@ -29,6 +29,7 @@ public class UserProfileService {
     private static final int OTP_LENGTH = 6;
     private static final int OTP_EXPIRY_MINUTES = 5;
     private static final int MAX_OTP_ATTEMPTS = 5;
+    private static final int OTP_COOLDOWN_SECONDS = 60;
 
     /**
      * Update user profile
@@ -53,6 +54,9 @@ public class UserProfileService {
             }
             if (request.getOldPassword().equals(request.getNewPassword())) {
                 throw new AppException("New password must be different from old password");
+            }
+            if (request.getNewPassword().length() < 6) {
+                throw new AppException("Password must be at least 6 characters");
             }
             user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         }
@@ -115,9 +119,17 @@ public class UserProfileService {
             throw new AppException("Email does not exist in the system");
         }
 
-        // Generate OTP and save
+        // Rate limiting: reject if OTP was requested within the last 60 seconds
+        if (user.getOtpExpiry() != null) {
+            LocalDateTime lastRequested = user.getOtpExpiry().minusMinutes(OTP_EXPIRY_MINUTES);
+            if (LocalDateTime.now().isBefore(lastRequested.plusSeconds(OTP_COOLDOWN_SECONDS))) {
+                throw new AppException("Please wait at least 60 seconds before requesting a new OTP.");
+            }
+        }
+
+        // Generate OTP, hash before storing
         String otp = generateOtp();
-        user.setOtp(otp);
+        user.setOtp(passwordEncoder.encode(otp));
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
         user.setOtpAttempts(0);
         userRepository.save(user);
@@ -125,12 +137,15 @@ public class UserProfileService {
         // Send OTP via email
         String userName = user.getFullName() != null ? user.getFullName() : user.getUsername();
         String subject = "Password Reset OTP - Software Marketplace";
-        String body = "Hello " + userName + ",\n\n"
-                + "Your OTP code is: " + otp + "\n\n"
-                + "This code will expire in " + OTP_EXPIRY_MINUTES + " minutes.\n"
-                + "If you did not request a password reset, please ignore this email.\n\n"
-                + "Best regards,\nSoftware Marketplace";
-        emailService.sendEmail(email, subject, body);
+        String title = "Password Reset";
+        String body = "<p>Hello <strong>" + userName + "</strong>,</p>"
+                + "<p>We received a request to reset your password. Use the OTP code below:</p>"
+                + "<div style='text-align:center;margin:24px 0;'>"
+                + "<span style='display:inline-block;background:#2d3748;color:#667eea;font-size:32px;font-weight:700;"
+                + "letter-spacing:8px;padding:16px 32px;border-radius:8px;'>" + otp + "</span></div>"
+                + "<p>This code will expire in <strong>" + OTP_EXPIRY_MINUTES + " minutes</strong>.</p>"
+                + "<p style='color:#718096;'>If you did not request a password reset, please ignore this email.</p>";
+        emailService.sendEmail(email, subject, title, body);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("message", "OTP has been sent to email " + email);
@@ -189,8 +204,8 @@ public class UserProfileService {
             throw new AppException("OTP has expired. Please request a new OTP.");
         }
 
-        // Check OTP match
-        if (!otp.equals(user.getOtp())) {
+        // Check OTP match (using hash comparison)
+        if (!passwordEncoder.matches(otp, user.getOtp())) {
             user.setOtpAttempts((user.getOtpAttempts() != null ? user.getOtpAttempts() : 0) + 1);
             userRepository.save(user);
             int remaining = MAX_OTP_ATTEMPTS - user.getOtpAttempts();

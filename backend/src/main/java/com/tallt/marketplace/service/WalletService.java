@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,9 +35,6 @@ public class WalletService {
 
         @Autowired
         private OrderRepository orderRepository;
-
-        @Autowired
-        private CommissionService commissionService;
 
         // GET WALLET
         public WalletResponse getVendorWallet(Integer userId, int page, int size) {
@@ -80,7 +78,6 @@ public class WalletService {
                 res.setAvailable(available);
                 res.setTransactions(transactions);
 
-                
                 res.setPage(page);
                 res.setSize(size);
                 res.setTotalPages(txPage.getTotalPages());
@@ -120,26 +117,15 @@ public class WalletService {
                         throw new AppException("Không đủ tiền rút");
                 }
 
-                // SNAPSHOT COMMISSION
-                BigDecimal percent = commissionService.getCurrentCommission();
-
-                BigDecimal fee = request.getAmount()
-                                .multiply(percent)
-                                .divide(BigDecimal.valueOf(100));
-
-                BigDecimal tax = request.getAmount()
-                                .multiply(BigDecimal.valueOf(5))
-                                .divide(BigDecimal.valueOf(100));
-
-                BigDecimal net = request.getAmount()
-                                .subtract(fee)
-                                .subtract(tax);
+                // Phí và thuế đã được tính và trừ per-order (lúc checkout),
+                // nên lúc rút tiền không cần tính lại.
+                BigDecimal net = request.getAmount();
 
                 VendorPayout payout = new VendorPayout();
                 payout.setVendor(vendor);
                 payout.setAmount(request.getAmount());
-                payout.setPlatformFee(fee);
-                payout.setTax(tax);
+                payout.setPlatformFee(BigDecimal.ZERO);
+                payout.setTax(BigDecimal.ZERO);
                 payout.setNetAmount(net);
                 payout.setPayoutDate(LocalDateTime.now());
                 payout.setStatus("PENDING");
@@ -162,5 +148,24 @@ public class WalletService {
                 res.setCreatedAt(t.getCreatedAt());
                 res.setDescription(t.getDescription());
                 return res;
+        }
+
+        public Page<WalletTransactionResponse> getTransactions(
+                        Integer userId, int page, int size,
+                        LocalDate from, LocalDate to) {
+
+                Wallet wallet = walletRepository.findByUser_UserID(userId)
+                                .orElseThrow(() -> new AppException("Ví không tồn tại"));
+
+                Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+                LocalDateTime fromDt = from != null ? from.atStartOfDay() : LocalDateTime.of(2000, 1, 1, 0, 0);
+                LocalDateTime toDt = to != null ? to.atTime(23, 59, 59) : LocalDateTime.now();
+
+                Page<WalletTransaction> txPage = walletTransactionRepository
+                                .findByWallet_WalletIDAndCreatedAtBetween(
+                                                wallet.getWalletID(), fromDt, toDt, pageable);
+
+                return txPage.map(this::toTransactionResponse);
         }
 }

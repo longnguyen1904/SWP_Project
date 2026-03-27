@@ -13,7 +13,6 @@ const COLORS = {
   border: "#334155",
 };
 
-// ✅ CHỈ ĐỔI BASE URL (bỏ /pending)
 const API_BASE = "http://localhost:8081/api/admin/payouts";
 
 const AdminPayout = () => {
@@ -22,7 +21,6 @@ const AdminPayout = () => {
   const [message, setMessage] = useState({ text: "", type: "" });
   const [processingId, setProcessingId] = useState(null);
 
-  // Pagination
   const [page, setPage] = useState(0);
   const [size] = useState(5);
   const [totalPages, setTotalPages] = useState(0);
@@ -30,7 +28,6 @@ const AdminPayout = () => {
   const fetchData = useCallback(async () => {
     try {
       const [payoutsRes, balanceRes] = await Promise.all([
-        // ✅ LẤY ALL thay vì pending
         fetch(`${API_BASE}?page=${page}&size=${size}`),
         fetch(`${API_BASE}/admin-wallet`),
       ]);
@@ -50,6 +47,7 @@ const AdminPayout = () => {
     fetchData();
   }, [fetchData]);
 
+  // ❌ giữ nguyên reject + manual approve nếu cần
   const handleAction = async (id, action) => {
     setProcessingId(id);
     try {
@@ -63,21 +61,14 @@ const AdminPayout = () => {
         return;
       }
 
-      if (action === "approve") {
-        // Approve → backend trả JSON { paymentUrl: "..." }
-        const data = await res.json();
-        if (data.paymentUrl) {
-          // Redirect admin sang VNPay sandbox để thanh toán
-          window.location.href = data.paymentUrl;
-          return;
-        }
-      }
+      setMessage({
+        text: action === "approve"
+          ? "Payout approved successfully"
+          : "Payout rejected",
+        type: "success",
+      });
 
-      // Reject → plain text response
-      const responseText = await res.text();
-      setMessage({ text: responseText, type: "success" });
       await fetchData();
-
     } catch (err) {
       setMessage({
         text: "Admin wallet does not have enough balance for this payout",
@@ -89,12 +80,39 @@ const AdminPayout = () => {
     }
   };
 
+  const handleApprove = async (id) => {
+  setProcessingId(id);
+  try {
+    const res = await fetch(`${API_BASE}/${id}/approve`, {
+      method: "POST",
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      setMessage({ text: errorText, type: "error" });
+      return;
+    }
+
+    setMessage({ text: "Payout approved successfully", type: "success" });
+    await fetchData();
+
+  } catch (err) {
+    setMessage({
+      text: "Admin wallet does not have enough balance for this payout",
+      type: "error",
+    });
+  } finally {
+    setProcessingId(null);
+    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  }
+};
+
   const getStatusStyle = (status) => {
     const styles = {
       COMPLETED: { color: COLORS.success, bg: "rgba(34, 197, 94, 0.1)" },
       REJECTED: { color: COLORS.error, bg: "rgba(239, 68, 68, 0.1)" },
       PENDING: { color: COLORS.warning, bg: "rgba(245, 158, 11, 0.1)" },
-      APPROVED_PENDING_PAYMENT: { color: COLORS.accent, bg: "rgba(56, 189, 248, 0.1)" },
+      PROCESSING: { color: COLORS.accent, bg: "rgba(56, 189, 248, 0.1)" },
     };
     return styles[status] || styles.PENDING;
   };
@@ -102,7 +120,6 @@ const AdminPayout = () => {
   return (
     <div style={containerStyle}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Header */}
         <header style={headerStyle}>
           <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "700" }}>
             Vendor Payout Management
@@ -117,14 +134,12 @@ const AdminPayout = () => {
           </div>
         </header>
 
-        {/* Alert */}
         {message.text && (
           <div style={{ ...alertStyle, borderColor: COLORS[message.type], color: COLORS[message.type] }}>
             {message.text}
           </div>
         )}
 
-        {/* Table */}
         <div style={tableWrapperStyle}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -149,7 +164,8 @@ const AdminPayout = () => {
               ) : (
                 payouts.map((p) => {
                   const sStyle = getStatusStyle(p.status);
-                  const isProcessed = p.status !== "PENDING" && p.status !== "APPROVED_PENDING_PAYMENT";
+                  const isProcessed =
+                    p.status !== "PENDING" && p.status !== "PROCESSING";
 
                   return (
                     <tr key={p.payoutId} style={{ ...trStyle, opacity: isProcessed ? 0.6 : 1 }}>
@@ -194,9 +210,10 @@ const AdminPayout = () => {
                       <td style={tdStyle}>
                         {!isProcessed ? (
                           <div style={{ display: "flex", gap: "8px" }}>
+                            {/* ✅ CHỈ SỬA DÒNG NÀY */}
                             <button
                               disabled={processingId === p.payoutId}
-                              onClick={() => handleAction(p.payoutId, "approve")}
+                              onClick={() => handleApprove(p.payoutId)}
                               style={actionBtn(COLORS.success)}
                             >
                               {processingId === p.payoutId ? "..." : "Approve"}
@@ -211,13 +228,7 @@ const AdminPayout = () => {
                             </button>
                           </div>
                         ) : (
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              color: COLORS.textMuted,
-                              fontStyle: "italic",
-                            }}
-                          >
+                          <span style={{ fontSize: "12px", color: COLORS.textMuted, fontStyle: "italic" }}>
                             Processed
                           </span>
                         )}
@@ -230,7 +241,6 @@ const AdminPayout = () => {
           </table>
         </div>
 
-        {/* Pagination */}
         <div style={paginationContainer}>
           <button
             disabled={page === 0}
@@ -257,36 +267,26 @@ const AdminPayout = () => {
   );
 };
 
-// --- STYLES giữ nguyên ---
+// --- STYLES ---
 const containerStyle = { padding: "40px 20px", backgroundColor: COLORS.bg, minHeight: "100vh", color: COLORS.textMain, fontFamily: "'Inter', sans-serif" };
 const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" };
 const walletCardStyle = { backgroundColor: COLORS.card, padding: "12px 24px", borderRadius: "12px", border: `1px solid ${COLORS.border}`, display: "flex", flexDirection: "column", alignItems: "flex-end" };
-const tableWrapperStyle = { backgroundColor: COLORS.card, borderRadius: "16px", overflow: "hidden", border: `1px solid ${COLORS.border}`, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" };
-const tableHeaderRowStyle = { borderBottom: `1px solid ${COLORS.border}`, backgroundColor: "rgba(255,255,255,0.02)" };
-const thStyle = { padding: "16px", fontSize: "12px", color: COLORS.textMuted, textTransform: "uppercase", fontWeight: "600", textAlign: "left" };
-const tdStyle = { padding: "16px", fontSize: "14px", color: "#cbd5e1" };
-const trStyle = { borderBottom: `1px solid ${COLORS.border}`, transition: "all 0.3s ease" };
-const badgeStyle = { padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "700", border: "1px solid" };
-const alertStyle = { padding: "12px 16px", marginBottom: "20px", borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid" };
-const emptyStateStyle = { padding: "40px", textAlign: "center", color: COLORS.textMuted };
-
-const paginationContainer = {
-  marginTop: "24px",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  gap: "20px",
-};
-
+const tableWrapperStyle = { backgroundColor: COLORS.card, borderRadius: "16px", overflow: "hidden", border: `1px solid ${COLORS.border}` };
+const tableHeaderRowStyle = { borderBottom: `1px solid ${COLORS.border}` };
+const thStyle = { padding: "16px", fontSize: "12px", color: COLORS.textMuted };
+const tdStyle = { padding: "16px" };
+const trStyle = { borderBottom: `1px solid ${COLORS.border}` };
+const badgeStyle = { padding: "4px 10px", borderRadius: "6px", border: "1px solid" };
+const alertStyle = { padding: "12px", marginBottom: "20px", border: "1px solid" };
+const emptyStateStyle = { padding: "40px", textAlign: "center" };
+const paginationContainer = { marginTop: "24px", display: "flex", justifyContent: "center", gap: "20px" };
 const actionBtn = (color) => ({
   background: "transparent",
   border: `1px solid ${color}`,
-  color: color,
+  color,
   padding: "8px 16px",
   borderRadius: "8px",
   cursor: "pointer",
-  fontSize: "13px",
-  fontWeight: "600",
 });
 
 export default AdminPayout;

@@ -6,7 +6,6 @@ import com.tallt.marketplace.dto.vendor.VendorRegisterRequest;
 import com.tallt.marketplace.dto.vendor.VendorRegisterResponse;
 import com.tallt.marketplace.dto.vendor.VendorShopResponse;
 import com.tallt.marketplace.dto.vendor.VendorVerifyRequest;
-import com.tallt.marketplace.entity.Role;
 import com.tallt.marketplace.entity.User;
 import com.tallt.marketplace.entity.Vendor;
 import com.tallt.marketplace.entity.Wallet;
@@ -17,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 @Service
 public class VendorService {
@@ -69,10 +68,11 @@ public class VendorService {
      * - Role remains CUSTOMER until Admin approves
      * - Create Wallet for Vendor
      */
+    private static final Pattern TAX_CODE_PATTERN = Pattern.compile("^\\d{10,13}$");
+
     @Transactional
     public VendorRegisterResponse registerVendor(Integer userId, VendorRegisterRequest request) {
         // 1. Check User exists
-        System.out.println("Hello World");
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User does not exist"));
 
@@ -108,7 +108,19 @@ public class VendorService {
             throw new AppException("Company name is required when vendor type is COMPANY");
         }
 
-        // 6. Create Vendor
+        // 6. Validate taxCode format (10-13 digits)
+        if (request.getTaxCode() == null || !TAX_CODE_PATTERN.matcher(request.getTaxCode().trim()).matches()) {
+            throw new AppException("Tax code must be 10-13 digits");
+        }
+
+        // 7. Validate identificationDoc URL
+        if (request.getIdentificationDoc() == null ||
+                (!request.getIdentificationDoc().startsWith("http://") &&
+                 !request.getIdentificationDoc().startsWith("https://"))) {
+            throw new AppException("Identification document must be a valid URL (http:// or https://)");
+        }
+
+        // 8. Create Vendor
         Vendor vendor = new Vendor();
         vendor.setUser(user);
         vendor.setType(vendorType);
@@ -116,9 +128,9 @@ public class VendorService {
         if (request.getDescription() != null && !request.getDescription().isBlank()) {
             vendor.setDescription(request.getDescription().trim());
         }
-        vendor.setTaxCode(request.getTaxCode());
+        vendor.setTaxCode(request.getTaxCode().trim());
 
-        vendor.setIdentificationDoc(request.getIdentificationDoc());
+        vendor.setIdentificationDoc(request.getIdentificationDoc().trim());
         vendor.setStatus(Vendor.VendorStatus.PENDING);
         vendorRepository.save(vendor);
 
@@ -134,55 +146,16 @@ public class VendorService {
         return new VendorRegisterResponse(
                 vendor.getVendorID(),
                 "PENDING_VERIFICATION",
-                "Vendor registration submitted successfully"
-        );
+                "Vendor registration submitted successfully");
     }
 
-    /**
-     * Admin approve/reject Vendor
-     * - If approved: Status=APPROVED, VerifiedAt=now()
-     * - If rejected: Status=REJECTED, save rejection note
-     */
-    @Transactional
-    public Map<String, Object> verifyVendor(Integer vendorId, VendorVerifyRequest request) {
-        Vendor vendor = vendorRepository.findById(vendorId)
-                .orElseThrow(() -> new AppException("Vendor does not exist"));
 
-        if (vendor.getStatus() == Vendor.VendorStatus.APPROVED) {
-            throw new AppException("Vendor has already been verified");
-        }
-
-        Vendor.VendorStatus newStatus;
-        try {
-            newStatus = Vendor.VendorStatus.valueOf(request.getStatus().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new AppException("Invalid status. Accepted values: APPROVED or REJECTED");
-        }
-
-        if (newStatus != Vendor.VendorStatus.APPROVED && newStatus != Vendor.VendorStatus.REJECTED) {
-            throw new AppException("Invalid status. Accepted values: APPROVED or REJECTED");
-        }
-
-        vendor.setStatus(newStatus);
-        if (newStatus == Vendor.VendorStatus.APPROVED) {
-            vendor.setVerifiedAt(LocalDateTime.now());
-        } else {
-            vendor.setRejectionNote(request.getNote());
-        }
-        vendorRepository.save(vendor);
-
-        return Map.of(
-                "vendorId", vendor.getVendorID(),
-                "status", vendor.getStatus().name(),
-                "note", request.getNote() != null ? request.getNote() : ""
-        );
-    }
 
     /**
      * Get list of Vendors with filter, search, paging, sort
      */
     public PageResponse<Vendor> getVendors(String search, String status, String type,
-                                           int page, int size, String sortBy, String sortDir) {
+            int page, int size, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
@@ -242,6 +215,7 @@ public class VendorService {
 
         VendorShopResponse response = new VendorShopResponse();
         response.setVendorId(vendor.getVendorID());
+        response.setUserId(vendor.getUser() != null ? vendor.getUser().getUserID() : null);
         response.setCompanyName(vendor.getCompanyName());
         response.setType(vendor.getType() != null ? vendor.getType().name() : null);
         response.setIsVerified(vendor.getIsVerified());
@@ -254,5 +228,33 @@ public class VendorService {
         }
         response.setDisplayName(displayName);
         return response;
+    }
+
+
+     //Vendor resubmit identification after being suspended
+
+    @Transactional
+    public Map<String, Object> resubmitIdentification(Integer userId, String identificationUrl) {
+        Vendor vendor = vendorRepository.findByUser_UserID(userId)
+                .orElseThrow(() -> new AppException("Vendor does not exist for this user"));
+
+        if (vendor.getStatus() != Vendor.VendorStatus.SUSPENDED
+                && vendor.getStatus() != Vendor.VendorStatus.REJECTED) {
+            throw new AppException("Only suspended or rejected vendors can resubmit identification");
+        }
+
+        if (identificationUrl == null || identificationUrl.trim().isEmpty()) {
+            throw new AppException("Identification URL is required");
+        }
+
+        vendor.setIdentificationDoc(identificationUrl.trim());
+        vendor.setStatus(Vendor.VendorStatus.PENDING);
+        vendor.setRejectionNote(null);
+        vendorRepository.save(vendor);
+
+        return Map.of(
+                "vendorId", vendor.getVendorID(),
+                "status", vendor.getStatus().name(),
+                "message", "Identification resubmitted successfully. Waiting for admin approval.");
     }
 }

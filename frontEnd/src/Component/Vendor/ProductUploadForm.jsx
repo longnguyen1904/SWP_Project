@@ -28,7 +28,6 @@ const ProductUploadForm = () => {
   });
 
   const [images, setImages] = useState([]);
-  const [imageUpload, setImageUpload] = useState({ imageUrl: "", isPrimary: false, sortOrder: 0 });
   const [version, setVersion] = useState({ versionNumber: "", fileUrl: "", releaseNotes: "" });
   const [licenseTiers, setLicenseTiers] = useState([]);
   const [tierForm, setTierForm] = useState({
@@ -198,6 +197,8 @@ const ProductUploadForm = () => {
     try {
       await vendorAPI.submitProduct(productId);
       setSuccess("Product successfully submitted for approval!");
+      // Clear URL params before resetting
+      window.history.replaceState({}, document.title, window.location.pathname);
       setActiveStep(0); setProductId(null);
       setProductData({ productName: "", categoryId: "", description: "", basePrice: "", hasTrial: false, trialDurationDays: 7, guideDocumentUrl: "", tags: [] });
       setImages([]); setVersion({ versionNumber: "", fileUrl: "", releaseNotes: "" }); setLicenseTiers([]);
@@ -209,6 +210,12 @@ const ProductUploadForm = () => {
     setLoading(true); setError(""); setSuccess("");
     try {
       if (!productId) {
+        // Validate at least product name before creating draft
+        if (!productData.productName || !productData.productName.trim()) {
+          setError("Product name is required to save draft");
+          setLoading(false);
+          return;
+        }
         const payload = { ...productData, categoryId: productData.categoryId ? Number(productData.categoryId) : null, basePrice: productData.basePrice ? parseFloat(productData.basePrice) : null };
         const response = await vendorAPI.createProduct(payload);
         const data = response.data?.data ?? response.data;
@@ -230,7 +237,7 @@ const ProductUploadForm = () => {
   const renderStepContent = (step) => {
     switch (step) {
       case 0: return <BasicInfoStep productData={productData} setProductData={setProductData} categories={categories} />;
-      case 1: return <ImagesStep images={images} setImages={setImages} imageUpload={imageUpload} setImageUpload={setImageUpload} setError={setError} setSuccess={setSuccess} />;
+      case 1: return <ImagesStep images={images} setImages={setImages} setError={setError} setSuccess={setSuccess} />;
       case 2: return <VersionStep version={version} setVersion={setVersion} setError={setError} setSuccess={setSuccess} />;
       case 3: return <LicenseTiersStep licenseTiers={licenseTiers} setLicenseTiers={setLicenseTiers} tierForm={tierForm} setTierForm={setTierForm} />;
       case 4: return <ReviewStep productData={productData} images={images} version={version} licenseTiers={licenseTiers} />;

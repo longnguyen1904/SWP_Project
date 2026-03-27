@@ -1,0 +1,209 @@
+﻿
+> swp@0.0.0 lint
+> eslint .
+
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\ChatbotWidget.jsx
+  93:15  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  91 |       setChatHistory(prev => [...prev, { sender: 'bot', text: reply }]);
+  92 |       setIsTyping(false);
+> 93 |     }, 1200 + Math.random() * 800);
+     |               ^^^^^^^^^^^^^ Cannot call impure function
+  94 |   };
+  95 |
+  96 |   return (  react-hooks/purity
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\CountDown.jsx
+  25:8  warning  React Hook useEffect has a missing dependency: 'target'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\Customer\ProductCard.jsx
+  10:35  error  'description' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\Customer\ProductImageGallery.jsx
+  10:21  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+   8 |   const [selectedIndex, setSelectedIndex] = useState(0);
+   9 |
+> 10 |   useEffect(() => { setSelectedIndex(0); }, [images]);
+     |                     ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  11 |
+  12 |   const mainSrc = images.length > 0
+  13 |     ? getImageUrlByIndex(images, selectedIndex)  react-hooks/set-state-in-effect
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\Customer\ReviewSection.jsx
+  1:27  error  'useMemo' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\LogIn.jsx
+  4:26  error  'getApiErrorMessage' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\Navbar.jsx
+  21:10  error  'isAdmin' is defined but never used. Allowed unused vars must match /^[A-Z_]/u     no-unused-vars
+  24:10  error  'isVendor' is defined but never used. Allowed unused vars must match /^[A-Z_]/u    no-unused-vars
+  27:10  error  'isCustomer' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\Register.jsx
+    8:49  error  'onSwitchToLogin' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            no-unused-vars
+   11:10  error  'showForgot' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+   12:10  error  'forgotStep' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+   12:22  error  'setForgotStep' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          no-unused-vars
+   13:10  error  'forgotEmail' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            no-unused-vars
+   13:23  error  'setForgotEmail' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         no-unused-vars
+   14:10  error  'forgotOtp' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+   14:21  error  'setForgotOtp' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+   15:10  error  'forgotNewPassword' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+   15:29  error  'setForgotNewPassword' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   no-unused-vars
+   16:10  error  'forgotConfirmPassword' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  no-unused-vars
+   16:33  error  'setForgotConfirmPassword' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               no-unused-vars
+   17:10  error  'forgotLoading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          no-unused-vars
+   17:25  error  'setForgotLoading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       no-unused-vars
+   18:10  error  'forgotMessage' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          no-unused-vars
+   18:25  error  'setForgotMessage' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       no-unused-vars
+   19:10  error  'forgotError' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            no-unused-vars
+   19:23  error  'setForgotError' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         no-unused-vars
+   30:34  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  28 |   const [loginError, setLoginError] = useState("");
+  29 |   const [attemptData, setAttemptData] = useState({});
+> 30 |   const [now, setNow] = useState(Date.now());
+     |                                  ^^^^^^^^^^ Cannot call impure function
+  31 |   const MAX_ATTEMPTS = 5;
+  32 |   const LOCK_SECONDS = 300;
+  33 |  react-hooks/purity
+   90:9   error  'setToken' is not defined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-undef
+  221:19  error  'props' is not defined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 no-undef
+  221:42  error  'props' is not defined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 no-undef
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\Vendor\LicenseTierConfig.jsx
+  14:30  error    'productsLoading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                no-unused-vars
+  34:61  warning  React Hook useEffect has a missing dependency: 'fetchTiers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\Vendor\ProductManagement.jsx
+  24:16  error    'setPage' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                           no-unused-vars
+  25:10  error    'totalPages' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                        no-unused-vars
+  27:41  warning  React Hook useEffect has a missing dependency: 'fetchProducts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  72:9   error    'handleAddNewImage' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                 no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Component\Vendor\VersionControlManager.jsx
+  15:30  error    'productsLoading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                   no-unused-vars
+  34:64  warning  React Hook useEffect has a missing dependency: 'fetchVersions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\AdminCommision.jsx
+   29:14  error    'err' is defined but never used                                                                                    no-unused-vars
+   38:6   warning  React Hook useEffect has a missing dependency: 'loadCommission'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   61:14  error    'err' is defined but never used                                                                                    no-unused-vars
+  211:7   error    'btnSecondary' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                       no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\AdminDashboard.jsx
+  5:24  error  'setSearchTerm' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\AdminPayout.jsx
+  72:14  error  'err' is defined but never used  no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\AdminReview.jsx
+  60:6  warning  React Hook useEffect has a missing dependency: 'fetchProducts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\AdminVendorManagement.jsx
+  77:6  warning  React Hook useEffect has a missing dependency: 'fetchVendors'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\CreateSupportTicketWizard.jsx
+  92:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\CustomerTicketManagement.jsx
+  39:40  warning  React Hook useEffect has a missing dependency: 'fetchTickets'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  84:14  error    'err' is defined but never used                                                                                  no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\HelpCenter.jsx
+  162:38  error  'index' is defined but never used  no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\Marketplace.jsx
+  61:6  warning  React Hook useEffect has missing dependencies: 'fetchProducts' and 'searchParams'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\ProductDetail.jsx
+  25:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  23 |   useEffect(() => {
+  24 |     if (searchParams.get("paymentFailed") === "true") {
+> 25 |       setPaymentFailed(true);
+     |       ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  26 |       searchParams.delete("paymentFailed");
+  27 |       setSearchParams(searchParams, { replace: true });
+  28 |     }  react-hooks/set-state-in-effect
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\ProfilePage.jsx
+  64:15  error  Empty block statement  no-empty
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\RevenueDashboard.jsx
+  136:5  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  134 |
+  135 |   useEffect(() => {
+> 136 |     loadVendorProducts();
+      |     ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  137 |     loadRevenue();
+  138 |   }, []);
+  139 |  react-hooks/set-state-in-effect
+  138:6  warning  React Hook useEffect has missing dependencies: 'loadRevenue' and 'loadVendorProducts'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\TransactionLedger.jsx
+   23:18  error    'setSortBy' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                               no-unused-vars
+   56:6   warning  React Hook useEffect has missing dependencies: 'today' and 'token'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   72:39  warning  React Hook useEffect has a missing dependency: 'fetchLedger'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+  106:14  error    'err' is defined but never used                                                                                         no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\VendorDashboard.jsx
+  14:24  error    'setSearchTerm' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                         no-unused-vars
+  26:5   error    'useEffect' is not defined                                                                                                                                                                                                            no-undef
+  29:35  error    'vendorAPI' is not defined                                                                                                                                                                                                            no-undef
+  30:30  error    'unwrapResponse' is not defined                                                                                                                                                                                                       no-undef
+  33:21  error    'navigate' is not defined                                                                                                                                                                                                             no-undef
+  42:22  error    'err' is defined but never used                                                                                                                                                                                                       no-unused-vars
+  54:8   warning  React Hook useEffect has an unnecessary dependency: 'navigate'. Either exclude it or remove the dependency array. Outer scope values like 'navigate' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+  54:9   error    'navigate' is not defined                                                                                                                                                                                                             no-undef
+  64:31  error    'uploadAPI' is not defined                                                                                                                                                                                                            no-undef
+  65:26  error    'unwrapResponse' is not defined                                                                                                                                                                                                       no-undef
+  68:48  error    'getApiErrorMessage' is not defined                                                                                                                                                                                                   no-undef
+  84:15  error    'vendorAPI' is not defined                                                                                                                                                                                                            no-undef
+  95:24  error    'getApiErrorMessage' is not defined                                                                                                                                                                                                   no-undef
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\VendorShop.jsx
+  55:17  error  Empty block statement  no-empty
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\VendorTicketManagement.jsx
+   49:40  warning  React Hook useEffect has a missing dependency: 'fetchTickets'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  113:14  error    'err' is defined but never used                                                                                  no-unused-vars
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\WalletHistory.jsx
+  87:6  warning  React Hook useEffect has missing dependencies: 'from' and 'to'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Semester5\SWP391\SWP_Project\frontEnd\src\Page\WishlistPage.jsx
+    5:23  error  'getProductImageUrl' is defined but never used. Allowed unused vars must match /^[A-Z_]/u    no-unused-vars
+  265:23  error  'avgRating' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u    no-unused-vars
+  266:23  error  'reviewCount' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  267:23  error  'soldCount' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u    no-unused-vars
+
+Γ£û 81 problems (65 errors, 16 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

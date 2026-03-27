@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class VendorShopResponse {
     private Integer vendorId;
+    private Integer userId;
     private String displayName;
     private String companyName;
     private String type;

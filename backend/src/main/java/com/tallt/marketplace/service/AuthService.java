@@ -30,26 +30,29 @@ public class AuthService {
     @Autowired
     private RoleRepository roleRepository;
     @Autowired
-    private PasswordEncoder passwordEncoder; // Inject Bean vừa tạo
+    private PasswordEncoder passwordEncoder;
 
     public AuthResponse login(LoginRequest request) {
-    User user = userRepository.findByEmail(request.getEmail());
+        User user = userRepository.findByEmail(request.getEmail());
 
-    if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-        throw new AppException("Invalid email or password");
+        if (user == null) {
+            throw new AppException("Invalid email or password");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new AppException("Invalid email or password");
+        }
+
+        String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
+
+        return new AuthResponse(
+                user.getEmail(),
+                user.getFullName(),
+                user.getRole().getRoleName(),
+                token,
+                user.getUserID()
+        );
     }
-
-    // 👉 tạo token phiên đăng nhập
-    String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
-
-    return new AuthResponse(
-            user.getEmail(),
-            user.getFullName(),
-            user.getRole().getRoleName(),
-            token,
-            user.getUserID()
-    );
-}
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -64,7 +67,7 @@ public class AuthService {
         User newUser = new User();
         newUser.setEmail(request.getEmail());
 
-        // MÃ HÓA MẬT KHẨU TRƯỚC KHI LƯU
+        // Password strength is validated by @Pattern in RegisterRequest DTO
         newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         String generatedUsername = request.getEmail().split("@")[0];
         newUser.setUsername(generatedUsername);
