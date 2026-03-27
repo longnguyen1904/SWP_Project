@@ -6,7 +6,7 @@ import { getToken, setToken } from "../services/localStorageService";
 import { OAuthConfig } from "../configurations/configuration";
 import "../Style/LogIn.css";
 
-const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
+const LogIn = forwardRef(function LogIn({ onSwitchToRegister, prefillCredentials, onCredentialsConsumed }, ref) {
   const navigate = useNavigate();
   const [showForgot, setShowForgot] = useState(false);
   const [forgotStep, setForgotStep] = useState(1);
@@ -18,26 +18,20 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
   const [forgotMessage, setForgotMessage] = useState("");
   const [forgotError, setForgotError] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [attemptData, setAttemptData] = useState({});
-  const [now, setNow] = useState(() => Date.now());
-  const MAX_ATTEMPTS = 5;
-  const LOCK_SECONDS = 300;
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const currentEmail = formData.email.trim().toLowerCase();
-  const currentData = attemptData[currentEmail] || { attempts: 0, lockUntil: 0 };
-  const lockoutTimeLeft = currentData.lockUntil > now ? Math.ceil((currentData.lockUntil - now) / 1000) : 0;
-
-  useEffect(() => {
     if (getToken()) ref?.current?.close();
   }, [ref]);
+
+  useEffect(() => {
+    if (prefillCredentials?.email) {
+      setFormData({ email: prefillCredentials.email, password: prefillCredentials.password || "" });
+      onCredentialsConsumed?.();
+    }
+  }, [prefillCredentials, onCredentialsConsumed]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,18 +42,12 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (lockoutTimeLeft > 0) {
-      setLoginError(`Account locked. Try again in ${lockoutTimeLeft}s.`);
-      return;
-    }
-
     try {
       const res = await authAPI.login({
         email: formData.email,
         password: formData.password,
       });
       const user = unwrapResponse(res);
-      setAttemptData((prev) => ({ ...prev, [currentEmail]: undefined }));
       setToken(user.token || "authenticated");
       if (user.roleName) localStorage.setItem("role", user.roleName);
       if (user.userID != null) localStorage.setItem("userId", String(user.userID));
@@ -73,21 +61,7 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
       navigate("/");
     } catch (err) {
       console.error(err);
-      const newAttempts = currentData.attempts + 1;
-      const remaining = MAX_ATTEMPTS - newAttempts;
-
-      let newLockUntil = 0;
-      if (remaining <= 0) {
-        newLockUntil = Date.now() + LOCK_SECONDS * 1000;
-        setLoginError(`Too many failed attempts. Account locked for ${LOCK_SECONDS}s.`);
-      } else {
-        setLoginError(`Invalid email or password. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`);
-      }
-
-      setAttemptData((prev) => ({
-        ...prev,
-        [currentEmail]: { attempts: remaining <= 0 ? 0 : newAttempts, lockUntil: newLockUntil }
-      }));
+      setLoginError(getApiErrorMessage(err, "Invalid email or password."));
     }
   };
 
@@ -249,11 +223,9 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
                 {showPassword ? 'Ẩn' : 'Hiện'}
               </button>
             </div>
-            {(loginError || lockoutTimeLeft > 0) && (
+            {loginError && (
               <div className="login-alert-error">
-                {lockoutTimeLeft > 0 
-                  ? `Account locked. Try again in ${Math.floor(lockoutTimeLeft / 60).toString().padStart(2, '0')}:${(lockoutTimeLeft % 60).toString().padStart(2, '0')}` 
-                  : loginError}
+                {loginError}
               </div>
             )}
           </div>
@@ -265,8 +237,8 @@ const LogIn = forwardRef(function LogIn({ onSwitchToRegister }, ref) {
             </span>
           </p>
 
-          <button className="login-btn" type="submit" disabled={lockoutTimeLeft > 0}>
-            {lockoutTimeLeft > 0 ? "Locked..." : "Log In"}
+          <button className="login-btn" type="submit">
+            Log In
           </button>
         </form>
 
