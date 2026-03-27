@@ -265,6 +265,39 @@ const ProductManagement = () => {
             })}
           </div>
         )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "16px",
+            marginTop: "24px",
+            paddingTop: "16px",
+            borderTop: "1px solid rgba(255,255,255,0.1)"
+          }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setPage(prev => Math.max(0, prev - 1))}
+              disabled={page === 0}
+            >
+              ← Previous
+            </button>
+
+            <span style={{ color: "#a0aec0", fontSize: "14px" }}>
+              Page <strong style={{ color: "#e2e8f0" }}>{page + 1}</strong> / <strong>{totalPages}</strong>
+            </span>
+
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setPage(prev => prev + 1)}
+              disabled={page >= totalPages - 1}
+            >
+              Next →
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Edit Dialog */}
