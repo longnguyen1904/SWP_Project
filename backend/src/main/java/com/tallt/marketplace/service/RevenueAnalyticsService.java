@@ -100,6 +100,7 @@ public class RevenueAnalyticsService {
             FROM SupportTickets t 
             LEFT JOIN Orders o ON t.OrderID = o.OrderID
             WHERE t.VendorID = ? 
+              AND t.OrderID IS NOT NULL
               AND t.CreatedAt >= ? AND t.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
         """);
         List<Object> tParams = new ArrayList<>(List.of(vendorId, startDate, endDate));
@@ -155,18 +156,18 @@ public class RevenueAnalyticsService {
         String sql = """
             SELECT p.ProductID AS productId, p.ProductName AS productName, 
                    COALESCE(c.CategoryName, 'Chưa phân loại') AS categoryName,
-                   SUM(o.totalAmount) AS revenue, COUNT(o.OrderID) AS quantity
-            FROM Orders o
-            JOIN Products p ON o.ProductID = p.ProductID
+                   COALESCE(SUM(o.totalAmount), 0) AS revenue, COUNT(o.OrderID) AS quantity
+            FROM Products p
+            LEFT JOIN Orders o ON p.ProductID = o.ProductID
+                 AND UPPER(o.paymentStatus) IN ('PAID','COMPLETED','SUCCESS')
+                 AND o.CreatedAt >= ? AND o.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
             LEFT JOIN Categories c ON p.CategoryID = c.CategoryID
             WHERE p.VendorID = ?
-              AND UPPER(o.paymentStatus) IN ('PAID','COMPLETED','SUCCESS')
-              AND o.CreatedAt >= ? AND o.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
             GROUP BY p.ProductID, p.ProductName, c.CategoryName 
-            ORDER BY revenue DESC LIMIT 50
+            ORDER BY revenue DESC, quantity DESC LIMIT 50
         """;
         
-        List<Map<String, Object>> rawProducts = jdbcTemplate.queryForList(sql, vendorId, startDate, endDate);
+        List<Map<String, Object>> rawProducts = jdbcTemplate.queryForList(sql, startDate, endDate, vendorId);
         List<Map<String, Object>> enrichedProducts = new ArrayList<>();
 
         for (Map<String, Object> row : rawProducts) {
@@ -187,6 +188,18 @@ public class RevenueAnalyticsService {
             """;
             Long tCount = jdbcTemplate.queryForObject(tSql, Long.class, pId, startDate, endDate);
             mutableRow.put("ticketCount", tCount != null ? tCount : 0);
+
+            // Đếm số lượng Ticket ĐÃ GIẢI QUYẾT (Resolved, Closed) của từng sản phẩm
+            String tResolvedSql = """
+                SELECT COUNT(t.TicketID) 
+                FROM SupportTickets t 
+                JOIN Orders o ON t.OrderID = o.OrderID 
+                WHERE o.ProductID = ? 
+                  AND t.Status IN ('Resolved', 'Closed')
+                  AND t.CreatedAt >= ? AND t.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
+            """;
+            Long tResolvedCount = jdbcTemplate.queryForObject(tResolvedSql, Long.class, pId, startDate, endDate);
+            mutableRow.put("resolvedTicketCount", tResolvedCount != null ? tResolvedCount : 0);
 
             enrichedProducts.add(mutableRow);
         }
@@ -241,6 +254,7 @@ public class RevenueAnalyticsService {
             FROM SupportTickets t 
             LEFT JOIN Orders o ON t.OrderID = o.OrderID
             WHERE t.VendorID = ? 
+              AND t.OrderID IS NOT NULL
               AND t.CreatedAt >= ? AND t.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
         """);
         List<Object> params = new ArrayList<>(List.of(vendorId, startDate, endDate));

@@ -95,7 +95,7 @@ export default function App() {
         <Route path="/payout-result" element={<PayoutResult />} />
         <Route path="/Page/VendorRegistration" element={<VendorRegistration />} />
       </Routes>
-      <ChatbotWidget />
+     <ChatbotWidget></ChatbotWidget>
     </div>
   );
 }
