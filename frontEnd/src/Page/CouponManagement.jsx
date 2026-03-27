@@ -12,6 +12,7 @@ const CouponManagement = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [products, setProducts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchCoupons = async () => {
     try {
@@ -218,57 +219,89 @@ const CouponManagement = () => {
           <p>You don't have any coupons yet.</p>
           <p style={{ fontSize: 13, color: "#64748b" }}>Click "+ Create Coupon" to get started.</p>
         </div>
-      ) : (
-        <div className="table-wrapper">
-          <table className="vendor-table">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Discount</th>
-                <th>Product</th>
-                <th>Tier</th>
-                <th>Used</th>
-                <th>Max</th>
-                <th>Expires</th>
-                <th>Status</th>
-                <th style={{ textAlign: "center" }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coupons.map((c) => {
-                const isExpired = c.expiresAt && new Date(c.expiresAt) < new Date();
-                const isMaxed = c.maxUses && c.currentUses >= c.maxUses;
-                const status = !c.isActive ? "Disabled" : isExpired ? "Expired" : isMaxed ? "Used Up" : "Active";
-                const badgeClass =
-                  status === "Active" ? "badge-success" :
-                  status === "Expired" ? "badge-error" :
-                  status === "Used Up" ? "badge-warning" : "badge-default";
+      ) : (() => {
+        const PAGE_SIZE = 6;
+        const totalPages = Math.ceil(coupons.length / PAGE_SIZE);
+        const paginated = coupons.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-                return (
-                  <tr key={c.couponId}>
-                    <td><code style={{ color: "#fbbf24", fontSize: 14 }}>{c.code}</code></td>
-                    <td>{c.discountPercent}%</td>
-                    <td style={{ color: "#94a3b8" }}>{c.product?.productName ?? "All"}</td>
-                    <td style={{ color: "#94a3b8" }}>{c.tier?.tierName ?? "All"}</td>
-                    <td>{c.currentUses ?? 0}</td>
-                    <td>{c.maxUses ?? "∞"}</td>
-                    <td>{formatDate(c.expiresAt)}</td>
-                    <td><span className={`badge ${badgeClass}`}>{status}</span></td>
-                    <td className="actions">
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(c.couponId)}
-                      >
-                        Delete
-                      </button>
-                    </td>
+        return (
+          <>
+            <div className="table-wrapper">
+              <table className="vendor-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Discount</th>
+                    <th>Product</th>
+                    <th>Tier</th>
+                    <th>Used</th>
+                    <th>Max</th>
+                    <th>Expires</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: "center" }}>Action</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                </thead>
+                <tbody>
+                  {paginated.map((c) => {
+                    const isExpired = c.expiresAt && new Date(c.expiresAt) < new Date();
+                    const isMaxed = c.maxUses && c.currentUses >= c.maxUses;
+                    const status = !c.isActive ? "Disabled" : isExpired ? "Expired" : isMaxed ? "Used Up" : "Active";
+                    const badgeClass =
+                      status === "Active" ? "badge-success" :
+                      status === "Expired" ? "badge-error" :
+                      status === "Used Up" ? "badge-warning" : "badge-default";
+
+                    return (
+                      <tr key={c.couponId}>
+                        <td><code style={{ color: "#fbbf24", fontSize: 14 }}>{c.code}</code></td>
+                        <td>{c.discountPercent}%</td>
+                        <td style={{ color: "#94a3b8" }}>{c.product?.productName ?? "All"}</td>
+                        <td style={{ color: "#94a3b8" }}>{c.tier?.tierName ?? "All"}</td>
+                        <td>{c.currentUses ?? 0}</td>
+                        <td>{c.maxUses ?? "∞"}</td>
+                        <td>{formatDate(c.expiresAt)}</td>
+                        <td><span className={`badge ${badgeClass}`}>{status}</span></td>
+                        <td className="actions">
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(c.couponId)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 16 }}>
+                <button
+                  className="btn btn-sm"
+                  style={{ backgroundColor: currentPage === 1 ? "#334155" : "#3b82f6", color: "#fff", padding: "6px 16px", borderRadius: 8 }}
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => p - 1)}
+                >
+                  ← Previous
+                </button>
+                <span style={{ color: "#94a3b8", fontSize: 14 }}>
+                  Page {currentPage} / {totalPages}
+                </span>
+                <button
+                  className="btn btn-sm"
+                  style={{ backgroundColor: currentPage === totalPages ? "#334155" : "#3b82f6", color: "#fff", padding: "6px 16px", borderRadius: 8 }}
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => p + 1)}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 };

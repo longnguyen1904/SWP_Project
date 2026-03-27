@@ -25,14 +25,16 @@ const VendorShop = () => {
   const [followLoading, setFollowLoading] = useState(false);
   const [showUnfollowOption, setShowUnfollowOption] = useState(false);
 
-  const isLoggedIn = (() => {
+  const currentUser = (() => {
     try {
-      const u = JSON.parse(localStorage.getItem("user") || "{}");
-      return !!(u.userID || u.userId);
+      return JSON.parse(localStorage.getItem("user") || "{}");
     } catch {
-      return false;
+      return {};
     }
   })();
+  const isLoggedIn = !!(currentUser.userID || currentUser.userId);
+  const currentUserId = String(currentUser.userID || currentUser.userId || "");
+  const isOwnShop = isLoggedIn && vendor && String(vendor.userId ?? "") === currentUserId;
 
   useEffect(() => {
     if (!vendorId) return;
@@ -194,37 +196,39 @@ const VendorShop = () => {
             <span>{followerCount} followers</span>
           </div>
 
-          {!following ? (
-            <button
-              className="btn vendor-shop__follow-btn"
-              onClick={handleToggleFollow}
-              disabled={followLoading}
-            >
-              {followLoading ? "..." : "+ Follow"}
-            </button>
-          ) : (
-            <div className="vendor-shop__follow-wrapper">
+          {!isOwnShop && (
+            !following ? (
               <button
-                className="btn vendor-shop__follow-btn vendor-shop__follow-btn--active"
-                onClick={() => setShowUnfollowOption((p) => !p)}
+                className="btn vendor-shop__follow-btn"
+                onClick={handleToggleFollow}
                 disabled={followLoading}
               >
-                {followLoading ? "..." : "✓ Following"}
+                {followLoading ? "..." : "+ Follow"}
               </button>
-              {showUnfollowOption && (
+            ) : (
+              <div className="vendor-shop__follow-wrapper">
                 <button
-                  className="btn vendor-shop__unfollow-btn"
-                  onClick={() => {
-                    if (window.confirm("Are you sure you want to unfollow this vendor?")) {
-                      handleToggleFollow();
-                      setShowUnfollowOption(false);
-                    }
-                  }}
+                  className="btn vendor-shop__follow-btn vendor-shop__follow-btn--active"
+                  onClick={() => setShowUnfollowOption((p) => !p)}
+                  disabled={followLoading}
                 >
-                  ✕ Unfollow
+                  {followLoading ? "..." : "✓ Following"}
                 </button>
-              )}
-            </div>
+                {showUnfollowOption && (
+                  <button
+                    className="btn vendor-shop__unfollow-btn"
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to unfollow this vendor?")) {
+                        handleToggleFollow();
+                        setShowUnfollowOption(false);
+                      }
+                    }}
+                  >
+                    ✕ Unfollow
+                  </button>
+                )}
+              </div>
+            )
           )}
         </div>
       </div>

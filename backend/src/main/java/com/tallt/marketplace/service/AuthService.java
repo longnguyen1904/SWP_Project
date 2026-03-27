@@ -22,14 +22,8 @@ import com.tallt.marketplace.exception.AppException;
 import com.tallt.marketplace.repository.RoleRepository;
 import com.tallt.marketplace.repository.UserRepository;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-
 @Service
 public class AuthService {
-
-    private static final int MAX_FAILED_ATTEMPTS = 5;
-    private static final int LOCKOUT_DURATION_MINUTES = 5;
 
     @Autowired
     private UserRepository userRepository;
@@ -45,39 +39,9 @@ public class AuthService {
             throw new AppException("Invalid email or password");
         }
 
-        // Check if account is locked
-        if (user.getLockoutUntil() != null && LocalDateTime.now().isBefore(user.getLockoutUntil())) {
-            long secondsLeft = ChronoUnit.SECONDS.between(LocalDateTime.now(), user.getLockoutUntil());
-            long minutesLeft = (secondsLeft / 60) + 1;
-            throw new AppException("Tài khoản bị khóa tạm thời. Thử lại sau " + minutesLeft + " phút.");
-        }
-
-        // If lockout has expired, reset counters
-        if (user.getLockoutUntil() != null && LocalDateTime.now().isAfter(user.getLockoutUntil())) {
-            user.setFailedLoginAttempts(0);
-            user.setLockoutUntil(null);
-        }
-
-        // Check password
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            int attempts = (user.getFailedLoginAttempts() != null ? user.getFailedLoginAttempts() : 0) + 1;
-            user.setFailedLoginAttempts(attempts);
-
-            if (attempts >= MAX_FAILED_ATTEMPTS) {
-                user.setLockoutUntil(LocalDateTime.now().plusMinutes(LOCKOUT_DURATION_MINUTES));
-                userRepository.save(user);
-                throw new AppException("Sai mật khẩu " + MAX_FAILED_ATTEMPTS + " lần. Tài khoản bị khóa " + LOCKOUT_DURATION_MINUTES + " phút.");
-            }
-
-            userRepository.save(user);
-            int remaining = MAX_FAILED_ATTEMPTS - attempts;
-            throw new AppException("Sai mật khẩu. Còn " + remaining + " lần thử trước khi bị khóa.");
+            throw new AppException("Invalid email or password");
         }
-
-        // Login success → reset lockout
-        user.setFailedLoginAttempts(0);
-        user.setLockoutUntil(null);
-        userRepository.save(user);
 
         String token = "TOKEN_" + user.getUserID() + "_" + System.currentTimeMillis();
 

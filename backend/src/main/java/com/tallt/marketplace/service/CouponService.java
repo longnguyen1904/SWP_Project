@@ -53,8 +53,23 @@ public class CouponService {
         if (discountPercent < 1 || discountPercent > 100) {
             throw new AppException("Phần trăm giảm giá phải từ 1 đến 100");
         }
-        if (couponRepository.findByCodeIgnoreCase(code).isPresent()) {
-            throw new AppException("Mã coupon đã tồn tại");
+        if (expiresAtStr != null && !expiresAtStr.isEmpty()) {
+            LocalDateTime expiresAt = LocalDateTime.parse(expiresAtStr);
+            if (expiresAt.isBefore(LocalDateTime.now())) {
+                throw new AppException("Expiry date must be in the future");
+            }
+        }
+        // Check duplicate: same code + same vendor + same product
+        if (couponRepository.existsByCodeIgnoreCaseAndVendor_VendorIDAndProduct_ProductID(code, vendor.getVendorID(), productId)) {
+            throw new AppException("Coupon code '" + code + "' already exists for this product.");
+        }
+        // If creating for "All products" (null), block if same code exists for ANY specific product
+        if (productId == null && couponRepository.existsByCodeIgnoreCaseAndVendor_VendorIDAndProductIsNotNull(code, vendor.getVendorID())) {
+            throw new AppException("Coupon code '" + code + "' already exists for a specific product. Cannot create an 'All products' coupon with the same code.");
+        }
+        // If creating for a specific product, block if same code already exists for "All products"
+        if (productId != null && couponRepository.existsByCodeIgnoreCaseAndVendor_VendorIDAndProductIsNull(code, vendor.getVendorID())) {
+            throw new AppException("Coupon code '" + code + "' already exists for 'All products'. Cannot reuse the same code for a specific product.");
         }
 
         Coupon coupon = new Coupon();
@@ -65,11 +80,7 @@ public class CouponService {
         coupon.setIsActive(true);
 
         if (expiresAtStr != null && !expiresAtStr.isEmpty()) {
-            LocalDateTime expiresAt = LocalDateTime.parse(expiresAtStr);
-            if (expiresAt.isBefore(LocalDateTime.now())) {
-                throw new AppException("Expiry date must be in the future");
-            }
-            coupon.setExpiresAt(expiresAt);
+            coupon.setExpiresAt(LocalDateTime.parse(expiresAtStr));
         }
 
         if (productId != null) {

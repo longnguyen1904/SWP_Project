@@ -215,6 +215,7 @@ public class VendorService {
 
         VendorShopResponse response = new VendorShopResponse();
         response.setVendorId(vendor.getVendorID());
+        response.setUserId(vendor.getUser() != null ? vendor.getUser().getUserID() : null);
         response.setCompanyName(vendor.getCompanyName());
         response.setType(vendor.getType() != null ? vendor.getType().name() : null);
         response.setIsVerified(vendor.getIsVerified());

@@ -33,8 +33,10 @@ export default function Navbar() {
   const registerDialog = useRef();
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
   const [role, setRole] = useState(getRole());
+  const [prefillCredentials, setPrefillCredentials] = useState(null);
 
-  function openLogin() {
+  function openLogin(credentials) {
+    if (credentials?.email) setPrefillCredentials(credentials);
     loginDialog.current.showModal();
   }
 
@@ -68,7 +70,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="navbar">
-        <LogIn ref={loginDialog} onSwitchToRegister={openRegister} />
+        <LogIn ref={loginDialog} onSwitchToRegister={openRegister} prefillCredentials={prefillCredentials} onCredentialsConsumed={() => setPrefillCredentials(null)} />
         <Register ref={registerDialog} onSwitchToLogin={openLogin} />
 
         <h1 className="logo">
