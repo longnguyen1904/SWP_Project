@@ -142,6 +142,15 @@ public class SupportTicketService {
     }
 
     // =====================================================
+    // UPDATE SUBJECT (NEW)
+    // =====================================================
+    public SupportTicket updateSubject(Integer ticketId, String newSubject) {
+        SupportTicket ticket = getTicketById(ticketId);
+        ticket.setSubject(newSubject);
+        return ticketRepository.save(ticket);
+    }
+
+    // =====================================================
     // DELETE TICKET (GIỮ NGUYÊN)
     // =====================================================
     public void deleteTicket(Integer ticketId) {

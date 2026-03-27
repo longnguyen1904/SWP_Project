@@ -223,6 +223,30 @@ public class SupportTicketController {
     }
 
     // =========================================
+    // CẬP NHẬT TIÊU ĐỀ TICKET (KHI BỔ SUNG YÊU CẦU)
+    // =========================================
+    @PutMapping("/{ticketId}/subject")
+    public ResponseEntity<?> updateSubject(
+            @PathVariable Integer ticketId,
+            @RequestBody Map<String, String> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        try {
+            getUserIdFromToken(authHeader); 
+            String newSubject = body.get("subject");
+            
+            if (newSubject == null || newSubject.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Tiêu đề không được để trống"));
+            }
+            
+            ticketService.updateSubject(ticketId, newSubject);
+            return ResponseEntity.ok(Map.of("message", "Đã cập nhật tiêu đề thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // =========================================
     // 6. LẤY DANH SÁCH TICKET (CUSTOMER)
     // =========================================
     @GetMapping("/customer")

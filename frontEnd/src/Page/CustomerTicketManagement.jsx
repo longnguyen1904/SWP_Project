@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 
 export default function CustomerTicketManagement() {
   const token = localStorage.getItem('accessToken');
   const currentUserId = token ? token.split('_')[1] : null;
+  const location = useLocation();
+  const openTicketId = location.state?.openTicketId;
 
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -32,6 +35,14 @@ export default function CustomerTicketManagement() {
     try {
       const res = await axios.get("http://localhost:8081/api/tickets/customer", { headers: { Authorization: `Bearer ${token}` } });
       setTickets(res.data);
+
+      if (openTicketId) {
+        const ticketToOpen = res.data.find(t => t.ticketId === openTicketId);
+        if (ticketToOpen) {
+          handleSelectTicket(ticketToOpen);
+          window.history.replaceState({}, document.title);
+        }
+      }
     } catch (err) { console.error("Lỗi fetchTickets:", err); }
     finally { setIsLoading(false); }
   };
