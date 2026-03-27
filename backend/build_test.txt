@@ -26,8 +26,8 @@
 [INFO] -------------------------------------------------------
 [INFO] Running com.tallt.marketplace.UpdateDBTest
 Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
-04:48:49.528 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.tallt.marketplace.UpdateDBTest]: UpdateDBTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-04:48:49.621 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.tallt.marketplace.MarketplaceApplication for test class com.tallt.marketplace.UpdateDBTest
+04:54:34.944 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.tallt.marketplace.UpdateDBTest]: UpdateDBTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+04:54:35.040 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.tallt.marketplace.MarketplaceApplication for test class com.tallt.marketplace.UpdateDBTest
 
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
@@ -38,19 +38,19 @@ Standard Commons Logging discovery in action with spring-jcl: please remove comm
 
  :: Spring Boot ::                (v3.5.9)
 
-2026-03-28T04:48:49.954+07:00  INFO 15964 --- [marketplace] [           main] com.tallt.marketplace.UpdateDBTest       : Starting UpdateDBTest using Java 25.0.2 with PID 15964 (started by long moi in D:\Semester5\SWP391\SWP_Project\backend)
-2026-03-28T04:48:49.954+07:00  INFO 15964 --- [marketplace] [           main] com.tallt.marketplace.UpdateDBTest       : No active profile set, falling back to 1 default profile: "default"
-2026-03-28T04:48:50.760+07:00  INFO 15964 --- [marketplace] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-03-28T04:48:50.834+07:00  INFO 15964 --- [marketplace] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 64 ms. Found 23 JPA repository interfaces.
-2026-03-28T04:48:51.307+07:00  INFO 15964 --- [marketplace] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-03-28T04:48:51.362+07:00  INFO 15964 --- [marketplace] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.39.Final
-2026-03-28T04:48:51.398+07:00  INFO 15964 --- [marketplace] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
-2026-03-28T04:48:51.637+07:00  INFO 15964 --- [marketplace] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-03-28T04:48:51.656+07:00  INFO 15964 --- [marketplace] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-03-28T04:48:51.771+07:00  INFO 15964 --- [marketplace] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@49f6c25e
-2026-03-28T04:48:51.773+07:00  INFO 15964 --- [marketplace] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-03-28T04:48:51.810+07:00  WARN 15964 --- [marketplace] [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-03-28T04:48:51.823+07:00  INFO 15964 --- [marketplace] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+2026-03-28T04:54:35.355+07:00  INFO 7724 --- [marketplace] [           main] com.tallt.marketplace.UpdateDBTest       : Starting UpdateDBTest using Java 25.0.2 with PID 7724 (started by long moi in D:\Semester5\SWP391\SWP_Project\backend)
+2026-03-28T04:54:35.356+07:00  INFO 7724 --- [marketplace] [           main] com.tallt.marketplace.UpdateDBTest       : No active profile set, falling back to 1 default profile: "default"
+2026-03-28T04:54:36.184+07:00  INFO 7724 --- [marketplace] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-28T04:54:36.255+07:00  INFO 7724 --- [marketplace] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 60 ms. Found 23 JPA repository interfaces.
+2026-03-28T04:54:36.735+07:00  INFO 7724 --- [marketplace] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-28T04:54:36.785+07:00  INFO 7724 --- [marketplace] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.39.Final
+2026-03-28T04:54:36.816+07:00  INFO 7724 --- [marketplace] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-28T04:54:37.007+07:00  INFO 7724 --- [marketplace] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-28T04:54:37.027+07:00  INFO 7724 --- [marketplace] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-28T04:54:37.151+07:00  INFO 7724 --- [marketplace] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@3e12c5de
+2026-03-28T04:54:37.153+07:00  INFO 7724 --- [marketplace] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-28T04:54:37.189+07:00  WARN 7724 --- [marketplace] [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-03-28T04:54:37.200+07:00  INFO 7724 --- [marketplace] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
 	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
 	Database driver: undefined/unknown
 	Database version: 8.4.5
@@ -58,21 +58,22 @@ Standard Commons Logging discovery in action with spring-jcl: please remove comm
 	Isolation level: undefined/unknown
 	Minimum pool size: undefined/unknown
 	Maximum pool size: undefined/unknown
-2026-03-28T04:48:52.702+07:00  INFO 15964 --- [marketplace] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-03-28T04:48:52.952+07:00  INFO 15964 --- [marketplace] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-03-28T04:48:53.138+07:00  INFO 15964 --- [marketplace] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-03-28T04:48:54.355+07:00  WARN 15964 --- [marketplace] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-03-28T04:48:55.106+07:00  INFO 15964 --- [marketplace] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
-2026-03-28T04:48:55.179+07:00  INFO 15964 --- [marketplace] [           main] com.tallt.marketplace.UpdateDBTest       : Started UpdateDBTest in 5.462 seconds (process running for 6.124)
+2026-03-28T04:54:38.244+07:00  INFO 7724 --- [marketplace] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-28T04:54:38.515+07:00  INFO 7724 --- [marketplace] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-28T04:54:38.756+07:00  INFO 7724 --- [marketplace] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-28T04:54:40.150+07:00  WARN 7724 --- [marketplace] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-28T04:54:41.098+07:00  INFO 7724 --- [marketplace] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-03-28T04:54:41.199+07:00  INFO 7724 --- [marketplace] [           main] com.tallt.marketplace.UpdateDBTest       : Started UpdateDBTest in 6.065 seconds (process running for 6.745)
 Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
 Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 WARNING: A Java agent has been loaded dynamically (C:\Users\nguye\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.8\byte-buddy-agent-1.17.8.jar)
 WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
 WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
 WARNING: Dynamic loading of agents will be disallowed by default in a future release
-TEST_STDOUT: Updated 2 rows for ProductID = 2
-TEST_STDOUT: Updated 1 rows for ProductID = 3
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.040 s -- in com.tallt.marketplace.UpdateDBTest
+TEST_STDOUT: Updated 5 rows for ProductID = 4
+TEST_STDOUT: Updated 1 rows for ProductID = 5
+TEST_STDOUT: Updated 1 rows for ProductID = 6
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.760 s -- in com.tallt.marketplace.UpdateDBTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -81,6 +82,6 @@ TEST_STDOUT: Updated 1 rows for ProductID = 3
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  7.932 s
-[INFO] Finished at: 2026-03-28T04:48:55+07:00
+[INFO] Total time:  8.793 s
+[INFO] Finished at: 2026-03-28T04:54:41+07:00
 [INFO] ------------------------------------------------------------------------

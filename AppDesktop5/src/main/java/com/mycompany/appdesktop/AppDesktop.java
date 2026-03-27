@@ -10,7 +10,7 @@ package com.mycompany.appdesktop;
 public class AppDesktop {
     public static void main(String[] args) {
         // Khởi tạo SDK bảo vệ với ID sản phẩm là 05
-        TalltLicenseGuard guard = new TalltLicenseGuard("81");
+        TalltLicenseGuard guard = new TalltLicenseGuard("5");
 
         // Bắt buộc nhập License thành công thì mới chạy hàm bên trong
         guard.requireLicenseToLaunch(() -> {
@@ -18,7 +18,7 @@ public class AppDesktop {
             System.out.println("Đang mở phần mềm chính...");
 
             // Tạo một cửa sổ giả lập để app không bị tắt ngay lập tức
-            javax.swing.JFrame frame = new javax.swing.JFrame("Main Vendor App");
+            javax.swing.JFrame frame = new javax.swing.JFrame("Main Vendor App 5");
             frame.setSize(400, 300);
 
             frame.setDefaultCloseOperation(javax.swing.JFrame.DO_NOTHING_ON_CLOSE);
@@ -31,7 +31,7 @@ public class AppDesktop {
                 }
             });
             frame.setLocationRelativeTo(null);
-            javax.swing.JLabel label = new javax.swing.JLabel("Phần mềm chính đang hoạt động...",
+            javax.swing.JLabel label = new javax.swing.JLabel("Phần mềm chính 5 đang hoạt động...",
                     javax.swing.JLabel.CENTER);
             label.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 16));
             frame.add(label);
