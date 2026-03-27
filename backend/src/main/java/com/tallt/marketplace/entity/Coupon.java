@@ -5,7 +5,9 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Coupons")
+@Table(name = "Coupons", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"Code", "VendorID", "ProductID"})
+})
 @Data
 public class Coupon {
     @Id
@@ -13,7 +15,7 @@ public class Coupon {
     @Column(name = "CouponID")
     private Integer couponId;
 
-    @Column(name = "Code", nullable = false, unique = true, length = 50)
+    @Column(name = "Code", nullable = false, length = 50)
     private String code;
 
     @Column(name = "DiscountPercent", nullable = false)

@@ -13,7 +13,6 @@ const VS = {
 export default function VendorDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
 
   const [vendorStatus, setVendorStatus] = useState(null); // null = loading
   const [statusNote, setStatusNote] = useState(""); // reason for suspension or rejection
@@ -597,65 +596,6 @@ export default function VendorDashboard() {
               Profile Settings
             </NavLink>
           </li>
-          {[
-            {
-              to: "/Page/Vendor/RevenueDashboard",
-              icon: "bi-graph-up",
-              label: "Revenue Dashboard",
-            },
-            {
-              to: "/Page/Vendor/QualityAnalyticsDashboard",
-              icon: "bi-graph-up",
-              label: "Quality Analytics",
-            },
-            {
-              to: "/Page/Vendor/VendorTicketManagement",
-              icon: "bi-box-seam",
-              label: "Ticket Management",
-            },
-            {
-              to: "/Page/Vendor/MyProducts",
-              icon: "bi-box-seam",
-              label: "My Products",
-            },
-            {
-              to: "/Page/Vendor/VersionControl",
-              icon: "bi-clock-history",
-              label: "Version Control",
-            },
-            {
-              to: "/Page/Vendor/LicenseTiers",
-              icon: "bi-layers",
-              label: "License Tiers",
-            },
-            {
-              to: "/Page/Vendor/CouponManagement",
-              icon: "bi-ticket-perforated",
-              label: "Coupons",
-            },
-            {
-              to: "/Page/Vendor/Wallet",
-              icon: "bi-wallet2",
-              label: "Wallet & Payouts",
-            },
-            {
-              to: "/Page/Vendor/Profile",
-              icon: "bi-person-gear",
-              label: "Profile Settings",
-            },
-          ].map(({ to, icon, label }) => (
-            <li key={to} className="nav-item mb-2">
-              <NavLink
-                to={to}
-                className={({ isActive }) =>
-                  `nav-link d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${isActive ? "bg-success text-white shadow" : "text-light opacity-75"}`
-                }
-              >
-                <i className={`bi ${icon} me-3`}></i>
-                {label}
-              </NavLink>
-            </li>
-          ))}
         </ul>
 
         <hr className="border-secondary opacity-50" />
