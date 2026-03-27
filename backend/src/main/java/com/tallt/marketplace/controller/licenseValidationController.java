@@ -169,4 +169,26 @@ public class licenseValidationController {
         }
         return ResponseEntity.status(403).build(); 
     }
+
+    @GetMapping("/{licenseKey}/sessions")
+    public ResponseEntity<?> getLicenseSessions(@PathVariable String licenseKey) {
+        if (licenseKey == null || licenseKey.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "License key trống"));
+        }
+        java.util.List<LicenseSession> sessions = sessionRepo.findByLicense_LicenseKey(licenseKey.trim());
+        
+        java.util.List<Map<String, Object>> responseList = sessions.stream().map(s -> {
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("sessionID", s.getSessionID());
+            map.put("deviceIdentifier", s.getDeviceIdentifier());
+            map.put("deviceName", s.getDeviceName());
+            map.put("ipAddress", s.getIpAddress());
+            map.put("loginTime", s.getLoginTime());
+            map.put("lastActive", s.getLastActive());
+            map.put("isActive", s.getIsActive());
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(Map.of("status", "success", "sessions", responseList));
+    }
 }

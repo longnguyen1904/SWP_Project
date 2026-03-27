@@ -18,7 +18,6 @@ import java.time.Duration;
  */
 public class TalltLicenseGuard {
     private final String productId; // Mã sản phẩm được TALLT cấp
-    // Đổi thành URL deploy thực tế của TALLT Market
     private final String MARKET_API_URL = "http://localhost:8081/api/v1/licenses/verify";
 
     public TalltLicenseGuard(String productId) {
@@ -41,7 +40,7 @@ public class TalltLicenseGuard {
         submitBtn.addActionListener(e -> {
             String licenseKey = keyField.getText().trim();
 
-            // 1. CHECK OFFLINE: Tách 2 ký tự đầu xem có đúng mã sản phẩm không
+            // 1. CHECK OFFLINE: Theo yêu cầu mới, ID sản phẩm luôn nằm ở 2 ký tự đầu tiên
             if (licenseKey.length() < 2 || !licenseKey.substring(0, 2).equals(this.productId)) {
                 JOptionPane.showMessageDialog(frame, 
                     "License Key sai định dạng hoặc không dành cho ứng dụng này!\n(Mã ứng dụng: " + this.productId + ")", 
@@ -105,6 +104,7 @@ public class TalltLicenseGuard {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(MARKET_API_URL))
                     .header("Content-Type", "application/json")
+                    .header("Bypass-Tunnel-Reminder", "true")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 

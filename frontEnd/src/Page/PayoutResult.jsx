@@ -86,8 +86,8 @@ function PayoutResult() {
           }}
         >
           {isSuccess
-            ? "Thanh toán payout qua VNPay thành công. Tiền đã được chuyển vào ví Vendor."
-            : "Thanh toán payout qua VNPay thất bại. Payout sẽ được reset về PENDING, bạn có thể thử lại."}
+            ? "The payout via VNPay was successful. The funds have been credited to both the Admin and Vendor wallets."
+            : "The payout via VNPay failed. The payout has been reset to PENDING, and you can try again."}
         </p>
 
         {payoutId && (
@@ -98,7 +98,10 @@ function PayoutResult() {
               marginBottom: "30px",
             }}
           >
-            Payout ID: <span style={{ color: COLORS.accent, fontWeight: "600" }}>#{payoutId}</span>
+            Payout ID:{" "}
+            <span style={{ color: COLORS.accent, fontWeight: "600" }}>
+              #{payoutId}
+            </span>
           </p>
         )}
 
@@ -114,7 +117,6 @@ function PayoutResult() {
             fontWeight: "700",
             fontSize: "14px",
             textDecoration: "none",
-            transition: "opacity 0.2s",
           }}
         >
           ← Back to Payout Management
