@@ -232,7 +232,7 @@ export default function RevenueDashboard() {
             onMouseOver={e => e.currentTarget.style.backgroundColor = "rgba(59, 130, 246, 0.25)"}
             onMouseOut={e => e.currentTarget.style.backgroundColor = "rgba(59, 130, 246, 0.15)"}
           >
-            📖 Xem Sổ cái chi tiết
+             Xem Sổ cái chi tiết
           </button>
           {/* LỌC SẢN PHẨM Ở GÓC PHẢI HEADER */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>

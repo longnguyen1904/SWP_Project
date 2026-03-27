@@ -294,9 +294,9 @@ public class RevenueAnalyticsService {
         List<Object> params = new ArrayList<>(List.of(vendorId, startDate, endDate));
 
         if (search != null && !search.trim().isEmpty()) {
-            sql.append(" AND (p.ProductName LIKE ? OR o.OrderID LIKE ? OR u.FullName LIKE ?)");
+            sql.append(" AND (p.ProductName LIKE ? OR wt.TransactionID LIKE ? OR o.OrderID LIKE ? OR u.FullName LIKE ?)");
             String searchParam = "%" + search + "%";
-            params.addAll(List.of(searchParam, searchParam, searchParam));
+            params.addAll(List.of(searchParam, searchParam, searchParam, searchParam));
         }
 
         sql.append(" ORDER BY wt.CreatedAt DESC");
@@ -386,8 +386,8 @@ public class RevenueAnalyticsService {
         List<Object> params = new ArrayList<>(List.of(vendorId, startDate, endDate));
 
         if (search != null && !search.isEmpty()) {
-            sql.append(" AND (p.ProductName LIKE ? OR o.OrderID LIKE ? OR u.FullName LIKE ?)");
-            params.add("%" + search + "%"); params.add("%" + search + "%"); params.add("%" + search + "%");
+            sql.append(" AND (p.ProductName LIKE ? OR wt.TransactionID LIKE ? OR o.OrderID LIKE ? OR u.FullName LIKE ?)");
+            params.add("%" + search + "%"); params.add("%" + search + "%"); params.add("%" + search + "%"); params.add("%" + search + "%");
         }
         if (productId != null) { sql.append(" AND p.ProductID = ?"); params.add(productId); }
         if (minPrice != null) { sql.append(" AND o.TotalAmount >= ?"); params.add(minPrice); }

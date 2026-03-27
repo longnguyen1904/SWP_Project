@@ -107,7 +107,8 @@ public class SupportTicketController {
                 SELECT t.TicketID AS ticketId, t.Subject AS subject, t.Status AS status,
                        u.FullName AS customerName, t.OrderID AS orderId,
                        p.ProductID AS productId, COALESCE(p.ProductName, 'N/A') AS productName,
-                       t.CreatedAt AS createdAt
+                       t.CreatedAt AS createdAt,
+                       COALESCE((SELECT MAX(CreatedAt) FROM TicketMessages WHERE TicketID = t.TicketID), t.CreatedAt) AS lastMessageAt
                 FROM SupportTickets t
                 JOIN Vendors v ON t.VendorID = v.VendorID
                 JOIN Users vu ON v.UserID = vu.UserID
@@ -242,6 +243,18 @@ public class SupportTicketController {
                     map.put("vendorName", vendorName);
                     map.put("orderId", t.getOrder() != null ? t.getOrder().getOrderID() : null);
                     map.put("createdAt", t.getCreatedAt());
+                    
+                    java.time.LocalDateTime lastMsgTime = t.getCreatedAt();
+                    List<TicketMessage> msgs = ticketService.getMessagesByTicket(t.getTicketId());
+                    if (msgs != null && !msgs.isEmpty()) {
+                        for (TicketMessage msg : msgs) {
+                            if (msg.getCreatedAt() != null && msg.getCreatedAt().isAfter(lastMsgTime)) {
+                                lastMsgTime = msg.getCreatedAt();
+                            }
+                        }
+                    }
+                    map.put("lastMessageAt", lastMsgTime);
+                    
                     response.add(map);
                 }
             }

@@ -19,6 +19,7 @@ export default function TransactionLedger() {
   const [activeRange, setActiveRange] = useState("30d"); // Mặc định là 30 ngày
   
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [sortBy, setSortBy] = useState("date_desc");
 
@@ -55,12 +56,19 @@ export default function TransactionLedger() {
     loadProducts();
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const fetchLedger = async () => {
     if (role !== "VENDOR" && role !== "ADMIN") return;
     setIsLoading(true);
     try {
       const res = await axios.get("http://localhost:8081/api/vendor/revenue/ledger", {
-        params: { startDate, endDate, search: searchTerm, productId: selectedProductId, sortBy },
+        params: { startDate, endDate, search: debouncedSearchTerm, productId: selectedProductId, sortBy },
         headers: { Authorization: `Bearer ${token}` }
       });
       setLedgerData(res.data || []);
@@ -69,7 +77,7 @@ export default function TransactionLedger() {
     finally { setIsLoading(false); }
   };
 
-  useEffect(() => { fetchLedger(); }, [startDate, endDate, selectedProductId, sortBy]);
+  useEffect(() => { fetchLedger(); }, [startDate, endDate, selectedProductId, sortBy, debouncedSearchTerm]);
 
   // --- LOGIC NÉN ZIP (TRỊ IDM) ---
   const handleBulkPDF = async () => {
@@ -191,7 +199,10 @@ export default function TransactionLedger() {
             {/* Search */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
               <label style={{ fontSize: "11px", color: "#a1a1aa" }}>TÌM KIẾM</label>
-              <input type="text" placeholder="Tên khách, Mã GD..." style={{ ...s.input, width: "100%" }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+                <input type="text" placeholder="Tên khách, Mã GD..." style={{ ...s.input, flex: 1 }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') setDebouncedSearchTerm(e.target.value); }} />
+                <button onClick={() => setDebouncedSearchTerm(searchTerm)} style={{ background: "#3b82f6", color: "white", padding: "10px 16px", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "600", transition: "0.2s", whiteSpace: "nowrap" }} onMouseOver={e => e.currentTarget.style.background = "#2563eb"} onMouseOut={e => e.currentTarget.style.background = "#3b82f6"}>Lọc</button>
+              </div>
             </div>
           </div>
         </div>
