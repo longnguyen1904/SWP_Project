@@ -2,7 +2,6 @@ package com.tallt.marketplace.service;
 
 import com.tallt.marketplace.config.VNPayConfig;
 import com.tallt.marketplace.entity.Order;
-import com.tallt.marketplace.entity.VendorPayout;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -19,8 +18,8 @@ import java.util.TreeMap;
  *
  * Trách nhiệm duy nhất (SRP): chỉ lo giao tiếp với VNPay API.
  * Hỗ trợ 2 loại giao dịch:
- *   - Checkout thông thường (Order của Customer)
- *   - Admin Payout (chuyển tiền cho Vendor qua VNPay)
+ * - Checkout thông thường (Order của Customer)
+ * - Admin Payout (chuyển tiền cho Vendor qua VNPay)
  */
 @Service
 public class VNPayService {
@@ -70,63 +69,12 @@ public class VNPayService {
         return vnPayConfig.getPayUrl() + "?" + queryString + "&vnp_SecureHash=" + secureHash;
     }
 
-    // ==================== ADMIN PAYOUT (Admin chuyển tiền cho Vendor) ====================
-
-    /**
-     * Tạo URL thanh toán VNPay cho Admin Payout.
-     * TxnRef dùng prefix "PAYOUT_" để phân biệt với checkout thông thường.
-     *
-     * @param payout    VendorPayout đã được validate và đánh dấu PROCESSING
-     * @param ipAddress IP của Admin
-     * @return URL đầy đủ để redirect browser Admin sang VNPay gateway
-     */
-    public String createPayoutPaymentUrl(VendorPayout payout, String ipAddress) {
-        // netAmount là số tiền vendor nhận — Admin thanh toán số này qua VNPay
-        long amountInVNPay = payout.getNetAmount().longValue() * 100;
-
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        String createDate = LocalDateTime.now().format(fmt);
-        String expireDate = LocalDateTime.now().plusMinutes(15).format(fmt);
-
-        // Dùng prefix PAYOUT_ để callback controller phân biệt loại giao dịch
-        String txnRef = "PAYOUT_" + payout.getPayoutID();
-
-        TreeMap<String, String> params = new TreeMap<>();
-        params.put("vnp_Version", vnPayConfig.getVersion());
-        params.put("vnp_Command", vnPayConfig.getCommand());
-        params.put("vnp_TmnCode", vnPayConfig.getTmnCode());
-        params.put("vnp_Amount", String.valueOf(amountInVNPay));
-        params.put("vnp_CurrCode", "VND");
-        params.put("vnp_TxnRef", txnRef);
-        params.put("vnp_OrderInfo", "Admin payout #" + payout.getPayoutID()
-                + " for Vendor " + payout.getVendor().getVendorID());
-        params.put("vnp_OrderType", "other");
-        params.put("vnp_Locale", "vn");
-        params.put("vnp_ReturnUrl", vnPayConfig.getPayoutReturnUrl());
-        params.put("vnp_IpAddr", ipAddress != null ? ipAddress : "127.0.0.1");
-        params.put("vnp_CreateDate", createDate);
-        params.put("vnp_ExpireDate", expireDate);
-
-        String queryString = buildQueryString(params);
-        String secureHash = hmacSHA512(vnPayConfig.getHashSecret(), queryString);
-
-        return vnPayConfig.getPayUrl() + "?" + queryString + "&vnp_SecureHash=" + secureHash;
-    }
-
-    // ==================== CALLBACK VALIDATION ====================
-
-    /**
-     * Xác minh chữ ký số callback từ VNPay.
-     * Dùng chung cho cả checkout và payout callback.
-     *
-     * @param params tất cả query params VNPay gửi về
-     * @return true nếu chữ ký hợp lệ
-     */
     public boolean validateCallback(Map<String, String> params) {
         String receivedHash = params.get("vnp_SecureHash");
-        if (receivedHash == null) return false;
+        if (receivedHash == null)
+            return false;
 
-        // Loại bỏ các field hash trước khi tính lại
+        // Loại bỏ vnp_SecureHash và vnp_SecureHashType trước khi tính lại
         TreeMap<String, String> sortedParams = new TreeMap<>(params);
         sortedParams.remove("vnp_SecureHash");
         sortedParams.remove("vnp_SecureHashType");
@@ -137,8 +85,6 @@ public class VNPayService {
         return calculatedHash.equalsIgnoreCase(receivedHash);
     }
 
-    // ==================== PRIVATE METHODS ====================
-
     /**
      * Build query string từ TreeMap (đã sắp xếp alphabet — yêu cầu của VNPay).
      */
@@ -146,7 +92,8 @@ public class VNPayService {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : params.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                if (sb.length() > 0) sb.append("&");
+                if (sb.length() > 0)
+                    sb.append("&");
                 sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
                 sb.append("=");
                 sb.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
@@ -169,7 +116,8 @@ public class VNPayService {
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
+                if (hex.length() == 1)
+                    hexString.append('0');
                 hexString.append(hex);
             }
             return hexString.toString();

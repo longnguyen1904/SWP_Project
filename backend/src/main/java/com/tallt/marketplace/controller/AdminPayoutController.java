@@ -71,35 +71,7 @@ public class AdminPayoutController {
         return ResponseEntity.ok(Map.of("message", "Payout approved successfully"));
     }
 
-    @PostMapping("/{id}/approve-vnpay")
-    public ResponseEntity<?> approvePayoutViaVNPay(
-            @PathVariable Integer id,
-            HttpServletRequest request) {
 
-        String ip = getClientIp(request);
-        String paymentUrl = adminPayoutService.initiateVNPayPayout(id, ip);
-
-        return ResponseEntity.ok(Map.of("paymentUrl", paymentUrl));
-    }
-
-    @GetMapping("/vnpay-payout-return")
-    public ResponseEntity<Void> vnpayPayoutReturn(
-            @RequestParam Map<String, String> params) {
-
-        boolean success = adminPayoutService.processVNPayPayoutReturn(params);
-
-        String txnRef = params.get("vnp_TxnRef"); // "PAYOUT_{id}"
-        String payoutId = (txnRef != null) ? txnRef.replace("PAYOUT_", "") : "";
-        String baseUrl = vnPayConfig.getFrontendUrl();
-
-        String redirectUrl = baseUrl + "/payout-result?status="
-                + (success ? "success" : "failed")
-                + "&payoutId=" + payoutId;
-
-        return ResponseEntity.status(302)
-                .header("Location", redirectUrl)
-                .build();
-    }
 
 
     @PostMapping("/{id}/reject")
