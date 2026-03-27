@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { vendorAPI, uploadAPI } from "../../services/api";
 import useVendorProducts from "../../services/useVendorProducts";
 import "../../Style/Vendor.css";
@@ -12,8 +13,14 @@ const formatFileSize = (bytes) => {
 };
 
 const VersionControlManager = () => {
+  const [searchParams] = useSearchParams();
   const { products, loading: productsLoading } = useVendorProducts();
   const [selectedProductId, setSelectedProductId] = useState("");
+
+  useEffect(() => {
+    const pid = searchParams.get("productId");
+    if (pid && !selectedProductId) setSelectedProductId(pid);
+  }, [searchParams]);
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [versionLoading, setVersionLoading] = useState(false);
@@ -135,7 +142,8 @@ const VersionControlManager = () => {
   };
 
   const getProductName = () => {
-    const p = products.find((p) => (p.productId ?? p.id) === selectedProductId);
+    const numId = Number(selectedProductId);
+    const p = products.find((p) => (p.productId ?? p.id) === numId);
     return p?.productName ?? p?.name ?? "";
   };
 

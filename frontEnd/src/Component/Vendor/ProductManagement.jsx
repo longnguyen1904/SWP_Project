@@ -256,6 +256,10 @@ const ProductManagement = () => {
                       <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(product)}>Delete</button>
                     )}
                   </div>
+                  <div className="product-card-actions" style={{ marginTop: 6 }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/Page/Vendor/VersionControl?productId=${pid}`)}>Versions</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/Page/Vendor/LicenseTiers?productId=${pid}`)}>License Tiers</button>
+                  </div>
                 </div>
               );
             })}

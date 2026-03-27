@@ -174,7 +174,7 @@ public class CheckoutService {
             creditAdminWallet(order);
 
             if (order.getCouponCode() != null && !order.getCouponCode().isEmpty()) {
-                try { couponService.useCoupon(order.getCouponCode()); } catch (Exception ignored) {}
+                try { couponService.useCoupon(order.getCouponCode(), order.getProduct().getProductID(), order.getTier().getTierID()); } catch (Exception ignored) {}
             }
 
             return new CheckoutResponse(order.getOrderID(), null, warning);
@@ -230,7 +230,7 @@ public class CheckoutService {
             // Only increment coupon usage after confirmed payment
             if (order.getCouponCode() != null && !order.getCouponCode().isEmpty()) {
                 try {
-                    couponService.useCoupon(order.getCouponCode());
+                    couponService.useCoupon(order.getCouponCode(), order.getProduct().getProductID(), order.getTier().getTierID());
                 } catch (Exception ignored) {
                 }
             }
