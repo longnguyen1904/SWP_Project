@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.UUID;
+
 
 /**
  * Service xử lý nghiệp vụ Checkout:
@@ -264,7 +264,10 @@ public class CheckoutService {
      */
     private void createLicense(Order order) {
         License license = new License();
-        license.setLicenseKey(UUID.randomUUID().toString().toUpperCase());
+        license.setLicenseKey(com.tallt.marketplace.controller.LicenseKeyGenerator.generateKey(order.getProduct().getProductID()));
+        while (licenseRepository.existsByLicenseKey(license.getLicenseKey())) {
+            license.setLicenseKey(com.tallt.marketplace.controller.LicenseKeyGenerator.generateKey(order.getProduct().getProductID()));
+        }
         license.setOrder(order);
         license.setUser(order.getUser());
         license.setProduct(order.getProduct());
