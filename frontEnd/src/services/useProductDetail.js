@@ -145,6 +145,7 @@ const useProductDetail = (productId) => {
     isAdmin,
     isVendor,
     showBuyButton,
+    isOwnProduct,
     latestVersion,
     refetchReviewsAndProduct,
   };
