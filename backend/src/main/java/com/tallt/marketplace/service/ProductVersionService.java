@@ -78,9 +78,6 @@ public class ProductVersionService {
         version.setReleaseNotes(request.getReleaseNotes());
         productVersionRepository.save(version);
 
-        // UC13: Send email notification to all buyers
-        notifyBuyersOfNewVersion(product, version);
-
         return toResponse(version);
     }
 

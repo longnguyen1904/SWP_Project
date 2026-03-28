@@ -4,6 +4,7 @@ import com.tallt.marketplace.dto.admin.AdminProductReviewDTO;
 import com.tallt.marketplace.entity.Product;
 import com.tallt.marketplace.entity.ProductVersion;
 import com.tallt.marketplace.exception.AppException;
+import com.tallt.marketplace.repository.OrderRepository;
 import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.ProductVersionRepository;
 import com.tallt.marketplace.repository.VendorFollowerRepository;
@@ -30,6 +31,7 @@ public class AdminReviewService {
     private final VirusTotalService virusTotalService;
     private final EmailService emailService;
     private final VendorFollowerRepository followerRepository;
+    private final OrderRepository orderRepository;
 
     @Value("${frontend.base-url:http://localhost:5173}")
     private String frontendBaseUrl;
@@ -94,13 +96,19 @@ public class AdminReviewService {
         latestVersion.setScanStatus("CLEAN");
         versionRepository.save(latestVersion);
 
+        boolean wasAlreadyApproved = product.getStatus() == Product.ProductStatus.APPROVED;
+
         product.setStatus(Product.ProductStatus.APPROVED);
         product.setRejectionNote(null);
         productRepository.save(product);
 
         log.info("[AdminReview] Product {} APPROVED successfully", productId);
 
-        notifyFollowersOfNewProduct(product);
+        if (wasAlreadyApproved) {
+            notifyBuyersOfNewVersion(product, latestVersion);
+        } else {
+            notifyFollowersOfNewProduct(product);
+        }
 
         return "Product approved successfully.";
     }
@@ -206,5 +214,46 @@ public class AdminReviewService {
                                 f.getUser().getEmail(), e.getMessage());
                     }
                 });
+    }
+
+    /**
+     * UC13: Send email notification about new approved version to all Customers who purchased the product.
+     */
+    private void notifyBuyersOfNewVersion(Product product, ProductVersion version) {
+        try {
+            List<String> emails = orderRepository
+                    .findBuyerEmailsByProductId(product.getProductID());
+
+            if (emails.isEmpty()) return;
+
+            String subject = "New Update: " + product.getProductName()
+                    + " v" + version.getVersionNumber();
+
+            String title = "Product Update Available";
+            String body = "<p>Hello,</p>"
+                    + "<p>The product <strong>" + product.getProductName()
+                    + "</strong> that you purchased has a new version:</p>"
+                    + "<div style='background:#2d3748;border-left:4px solid #667eea;padding:16px 20px;border-radius:6px;margin:16px 0;'>"
+                    + "<p style='margin:0 0 8px;color:#e2e8f0;font-size:16px;font-weight:600;'>Version "
+                    + version.getVersionNumber() + "</p>"
+                    + "<p style='margin:0;color:#a0aec0;'>"
+                    + (version.getReleaseNotes() != null ? version.getReleaseNotes() : "No release notes")
+                    + "</p></div>"
+                    + "<p style='text-align:center;margin:24px 0;'>"
+                    + "<a href='" + frontendBaseUrl + "/products/" + product.getProductID() + "' "
+                    + "style='display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);"
+                    + "color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;"
+                    + "font-size:16px;font-weight:600;'>View Update →</a></p>";
+
+            for (String email : emails) {
+                try {
+                    emailService.sendEmail(email, subject, title, body);
+                } catch (Exception e) {
+                    log.error("[BuyerNotify] Failed to send email to {}: {}", email, e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("[BuyerNotify] Error notifying buyers: {}", e.getMessage());
+        }
     }
 }
