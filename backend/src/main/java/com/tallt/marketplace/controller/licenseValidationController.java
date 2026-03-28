@@ -86,7 +86,7 @@ public class licenseValidationController {
             session.setIpAddress(request.getRemoteAddr());
             sessionRepo.save(session);
         } else {
-            // Trúng kích hoạt trinh nữ (Lần đầu tiên dùng License) -> Tính ngày hết hạn
+            // Trúng kích hoạt (Lần đầu tiên dùng License) -> Tính ngày hết hạn
             if (license.getExpireAt() == null) {
                 Integer durationDays = license.getTier().getDurationDays();
                 if (durationDays != null && durationDays > 0) {
@@ -119,7 +119,6 @@ public class licenseValidationController {
             newSession.setIsActive(true); // <-- THÊM DÒNG NÀY CHO CHẮC CÚ
             sessionRepo.save(newSession);
         }
-
         return ResponseEntity.ok(
                 Map.of(
                         "status", "success",
