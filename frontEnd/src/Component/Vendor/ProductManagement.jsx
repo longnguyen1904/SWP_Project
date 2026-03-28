@@ -29,7 +29,7 @@ const ProductManagement = () => {
   const fetchProducts = async () => {
     setLoading(true); setError("");
     try {
-      const response = await vendorAPI.getVendorProducts({ page, size: 12 });
+      const response = await vendorAPI.getVendorProducts({ page, size: 6 });
       const data = response.data?.data ?? response.data;
       const content = data?.content ?? data?.products ?? (Array.isArray(data) ? data : []);
       setProducts(Array.isArray(content) ? content : []);
