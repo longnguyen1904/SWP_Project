@@ -10,6 +10,8 @@ const CreateSupportTicketWizard = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [existingTickets, setExistingTickets] = useState([]);
+  const [isUpdatingExistingTicket, setIsUpdatingExistingTicket] = useState(false);
   
   const [orders, setOrders] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
@@ -89,6 +91,14 @@ const CreateSupportTicketWizard = () => {
 
   useEffect(() => {
     fetchProducts();
+    const fetchExistingTickets = async () => {
+      if (!token) return;
+      try {
+        const res = await api.get('/api/tickets/customer', { headers: { Authorization: `Bearer ${token}` } });
+        setExistingTickets(res.data);
+      } catch (err) { console.warn("Lỗi fetch existing tickets:", err); }
+    };
+    fetchExistingTickets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -102,12 +112,18 @@ const CreateSupportTicketWizard = () => {
     if (ticketContext === 'PURCHASED' && p.paymentStatus !== 'COMPLETED') return false;
     if (ticketContext === 'UNPAID' && p.paymentStatus === 'COMPLETED') return false;
       
+    const searchClean = searchTerm.toLowerCase().trim().replace(/^#/, '');
     const matchSearch = (p.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        (p.orderId && String(p.orderId).includes(searchTerm));
+                        (p.orderId && String(p.orderId).includes(searchClean));
     const matchCategory = selectedCategory === '' || p.categoryName === selectedCategory;
     
     return matchSearch && matchCategory;
   });
+
+  const existingTicketForProduct = selectedProduct && selectedProduct.isOrder
+    ? existingTickets.find(t => t.orderId === selectedProduct.orderId && t.status !== 'Closed') ||
+      existingTickets.find(t => t.orderId === selectedProduct.orderId)
+    : null;
 
   const handleTabSwitch = (tabContext) => {
     setTicketContext(tabContext);
@@ -169,12 +185,36 @@ const CreateSupportTicketWizard = () => {
       formData.append('priority', issueForm.priority);
       if (issueForm.file) formData.append('file', issueForm.file);
 
-      const response = await api.post('/api/tickets/create', formData, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-      });
-
       const pad = (s) => String(s || '0').replace(/[^0-9]/g, '').padStart(6, '0');
-      setSuccessTicketId(response.data.ticketId ? `TCK-2026-${pad(response.data.ticketId)}` : `TCK-2026-${pad('0')}`);
+
+      if (isUpdatingExistingTicket && existingTicketForProduct) {
+        const ticketId = existingTicketForProduct.ticketId;
+        const replyFormData = new FormData();
+        replyFormData.append('content', `[Yêu cầu mới: ${issueForm.type}] ${issueForm.title}\n\n${issueForm.description}`);
+        if (issueForm.file) replyFormData.append('file', issueForm.file);
+
+        await api.post(`/api/tickets/${ticketId}/reply`, replyFormData, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+
+        if (existingTicketForProduct.status !== 'Open') {
+          await api.put(`/api/tickets/${ticketId}/status`, { status: 'Open' }, {
+             headers: { 'Authorization': `Bearer ${token}` }
+          });
+        }
+
+        await api.put(`/api/tickets/${ticketId}/subject`, { subject: `[${issueForm.type}] ${issueForm.title}` }, {
+           headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        setSuccessTicketId(`TCK-2026-${pad(ticketId)}`);
+      } else {
+        const response = await api.post('/api/tickets/create', formData, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+        setSuccessTicketId(response.data.ticketId ? `TCK-2026-${pad(response.data.ticketId)}` : `TCK-2026-${pad('0')}`);
+      }
+
       setStep(4);
     } catch (err) {
       console.error("LỖI KHI GỌI API:", err);
@@ -325,10 +365,34 @@ const CreateSupportTicketWizard = () => {
                 </div>
               )}
               
+              {existingTicketForProduct && (
+                <div className="mx-2 mt-3 p-3 rounded-3 animate-shake" style={{ backgroundColor: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.3)', color: '#fdba74' }}>
+                  <i className="bi bi-info-circle-fill me-2 fw-bold"></i> 
+                  Đơn hàng này đã có Ticket hỗ trợ (#{existingTicketForProduct.ticketId}). Bạn có thể mở Ticket cũ hoặc thêm yêu cầu rắc rối mới vào Ticket này.
+                </div>
+              )}
+
               <div className="t-footer-actions mx-2 mt-4 pt-4">
-                <div></div>
-                <button onClick={handleNextToStep2} disabled={!selectedProduct} className="t-btn t-btn-primary px-4">
-                  Tiếp Tục <i className="bi bi-arrow-right ms-2"></i>
+                <div>
+                  {existingTicketForProduct && (
+                    <button 
+                      onClick={() => navigate('/Page/Customer/CustomerTicketManagement', { state: { openTicketId: existingTicketForProduct.ticketId } })}
+                      className="t-btn t-btn-outline px-4 text-warning border-warning"
+                    >
+                      <i className="bi bi-box-arrow-up-right me-2"></i> Mở Ticket Cũ
+                    </button>
+                  )}
+                </div>
+                <button 
+                  onClick={() => { 
+                    if (existingTicketForProduct) setIsUpdatingExistingTicket(true);
+                    else setIsUpdatingExistingTicket(false);
+                    handleNextToStep2(); 
+                  }} 
+                  disabled={!selectedProduct} 
+                  className={existingTicketForProduct ? "t-btn t-btn-warning px-4 text-dark" : "t-btn t-btn-primary px-4"}
+                >
+                  {existingTicketForProduct ? 'Tạo Yêu Cầu Bổ Sung' : 'Tiếp Tục'} <i className="bi bi-arrow-right ms-2"></i>
                 </button>
               </div>
             </div>
@@ -337,7 +401,7 @@ const CreateSupportTicketWizard = () => {
           {/* ================= STEP 2: MÔ TẢ ================= */}
           {step === 2 && (
             <div className="fade-in px-2">
-              <h4 className="t-heading-md mb-4">Chi tiết yêu cầu hỗ trợ</h4>
+              <h4 className="t-heading-md mb-4">{isUpdatingExistingTicket ? 'Chi tiết yêu cầu bổ sung' : 'Chi tiết yêu cầu hỗ trợ'}</h4>
               
               <div className="row g-4 mb-4">
                 <div className="col-md-6">
@@ -345,26 +409,26 @@ const CreateSupportTicketWizard = () => {
                   <select className="t-input t-select py-3" value={issueForm.type} onChange={(e) => setIssueForm({ ...issueForm, type: e.target.value })}>
                     {ticketContext === 'PURCHASED' && (
                       <>
-                        <option value="Bug">🐛 Lỗi phần mềm (Bug)</option>
-                        <option value="Installation">⚙️ Vấn đề cài đặt / Hướng dẫn</option>
-                        <option value="License">🔑 Kích hoạt bản quyền / Thu hồi máy</option>
-                        <option value="Other">💬 Vấn đề khác</option>
+                        <option value="Bug"> Lỗi phần mềm (Bug)</option>
+                        <option value="Installation"> Vấn đề cài đặt / Hướng dẫn</option>
+                        <option value="License"> Kích hoạt bản quyền / Thu hồi máy</option>
+                        <option value="Other"> Vấn đề khác</option>
                       </>
                     )}
                     {ticketContext === 'UNPAID' && (
                       <>
-                        <option value="Payment">💳 Lỗi thanh toán / VNPay lỗi</option>
-                        <option value="Delivery">📦 Đã trừ tiền nhưng đơn hàng chưa duyệt</option>
-                        <option value="Coupon">🎫 Lỗi nhập Mã giảm giá</option>
-                        <option value="Other">💬 Vấn đề khác</option>
+                        <option value="Payment"> Lỗi thanh toán / VNPay lỗi</option>
+                        <option value="Delivery"> Đã trừ tiền nhưng đơn hàng chưa duyệt</option>
+                        <option value="Coupon"> Lỗi nhập Mã giảm giá</option>
+                        <option value="Other"> Vấn đề khác</option>
                       </>
                     )}
                     {ticketContext === 'PLATFORM' && (
                       <>
-                        <option value="Pre-sale Inquiry">❓ Tư vấn thông tin trước khi mua</option>
-                        <option value="Feature Question">💡 Hỏi đáp tính năng chi tiết</option>
-                        <option value="Report">⚠️ Báo cáo phần mềm vi phạm / Độc hại</option>
-                        <option value="Other">💬 Vấn đề khác</option>
+                        <option value="Pre-sale Inquiry"> Tư vấn thông tin trước khi mua</option>
+                        <option value="Feature Question"> Hỏi đáp tính năng chi tiết</option>
+                        <option value="Report"> Báo cáo phần mềm vi phạm / Độc hại</option>
+                        <option value="Other"> Vấn đề khác</option>
                       </>
                     )}
                   </select>
@@ -425,7 +489,7 @@ const CreateSupportTicketWizard = () => {
           {/* ================= STEP 3: XÁC NHẬN ================= */}
           {step === 3 && (
             <div className="fade-in px-2">
-              <h4 className="t-heading-md mb-4">Xác nhận thông tin</h4>
+              <h4 className="t-heading-md mb-4">{isUpdatingExistingTicket ? 'Xác nhận thông tin yêu cầu bổ sung' : 'Xác nhận thông tin'}</h4>
               <div className="t-summary-box mb-4 p-4">
                 <h6 className="t-summary-title mb-3">Đối tượng hỗ trợ</h6>
                 <div className="d-flex align-items-center mt-3">

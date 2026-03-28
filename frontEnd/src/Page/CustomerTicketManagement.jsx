@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 
 export default function CustomerTicketManagement() {
   const token = localStorage.getItem('accessToken');
   const currentUserId = token ? token.split('_')[1] : null;
+  const location = useLocation();
+  const openTicketId = location.state?.openTicketId;
 
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -11,7 +14,7 @@ export default function CustomerTicketManagement() {
   const [replyText, setReplyText] = useState("");
   const [replyFile, setReplyFile] = useState(null);
 
-  const [filterStatus, setFilterStatus] = useState("Open");
+  const [filterStatus, setFilterStatus] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -32,11 +35,28 @@ export default function CustomerTicketManagement() {
     try {
       const res = await axios.get("http://localhost:8081/api/tickets/customer", { headers: { Authorization: `Bearer ${token}` } });
       setTickets(res.data);
+
+      if (openTicketId) {
+        const ticketToOpen = res.data.find(t => t.ticketId === openTicketId);
+        if (ticketToOpen) {
+          handleSelectTicket(ticketToOpen);
+          window.history.replaceState({}, document.title);
+        }
+      }
     } catch (err) { console.error("Lỗi fetchTickets:", err); }
     finally { setIsLoading(false); }
   };
 
   useEffect(() => { fetchTickets(); }, []);
+
+  const handleRefresh = () => {
+    setFilterStatus("All");
+    setSearchTerm("");
+    setStartDate("");
+    setEndDate("");
+    setSelectedTicket(null);
+    fetchTickets();
+  };
 
   const handleSelectTicket = async (ticket) => {
     setSelectedTicket(ticket);
@@ -80,6 +100,12 @@ export default function CustomerTicketManagement() {
         msg.messageId === tempId
           ? { ...msg, messageId: Date.now(), attachmentUrl: res.data.fileUrl || localFileUrl, isSending: false }
           : msg
+      ));
+
+      setTickets(prev => prev.map(t =>
+        t.ticketId === selectedTicket.ticketId
+          ? { ...t, lastMessageAt: new Date().toISOString() }
+          : t
       ));
     } catch (err) {
       setMessages(prev => prev.filter(msg => msg.messageId !== tempId));
@@ -189,7 +215,7 @@ export default function CustomerTicketManagement() {
       const matchEnd = endDate ? ticketDate <= endDate : true;
       return matchStatus && matchSearch && matchStart && matchEnd;
     })
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    .sort((a, b) => new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt));
 
   const openTickets = filteredTickets.filter(t => t.status === "Open");
   const resolvedTickets = filteredTickets.filter(t => t.status === "Resolved");
@@ -245,7 +271,7 @@ export default function CustomerTicketManagement() {
             <h2 style={{ fontSize: "20px", fontWeight: "700", margin: 0, color: "#f9fafb" }}>Lịch sử Hỗ trợ</h2>
 
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={fetchTickets} style={{ ...s.btn, background: "rgba(39, 39, 42, 0.8)", color: "white", border: "1px solid rgba(82, 82, 91, 0.5)" }}><i className="bi bi-arrow-clockwise me-1"></i> Làm mới</button>
+              <button onClick={handleRefresh} style={{ ...s.btn, background: "rgba(39, 39, 42, 0.8)", color: "white", border: "1px solid rgba(82, 82, 91, 0.5)" }}><i className="bi bi-arrow-clockwise me-1"></i> Làm mới</button>
 
               {isKanbanMode && (
                 <button onClick={handleConfirmChanges} style={{ ...s.btn, background: "#10b981", color: "white" }}><i className="bi bi-check2-circle me-1"></i> Xác nhận</button>

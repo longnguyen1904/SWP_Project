@@ -14,7 +14,7 @@ export default function VendorTicketManagement() {
   const [replyText, setReplyText] = useState("");
   const [replyFile, setReplyFile] = useState(null);
 
-  const [filterStatus, setFilterStatus] = useState("Open");
+  const [filterStatus, setFilterStatus] = useState("All");
   const [filterContext, setFilterContext] = useState("ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -47,6 +47,16 @@ export default function VendorTicketManagement() {
   };
 
   useEffect(() => { fetchTickets(); }, []);
+
+  const handleRefresh = () => {
+    setFilterStatus("All");
+    setFilterContext("ALL");
+    setSearchTerm("");
+    setStartDate("");
+    setEndDate("");
+    setSelectedTicket(null);
+    fetchTickets();
+  };
 
   const handleSelectTicket = async (ticket) => {
     setSelectedTicket(ticket);
@@ -105,6 +115,12 @@ export default function VendorTicketManagement() {
         msg.messageId === tempId
           ? { ...msg, messageId: Date.now(), attachmentUrl: res.data.fileUrl || localFileUrl, isSending: false }
           : msg
+      ));
+
+      setTickets(prev => prev.map(t =>
+        t.ticketId === selectedTicket.ticketId
+          ? { ...t, lastMessageAt: new Date().toISOString() }
+          : t
       ));
 
       if (selectedTicket.status === "Open") {
@@ -212,7 +228,7 @@ export default function VendorTicketManagement() {
       const matchContext = filterContext === 'ALL' || getTicketContext(t) === filterContext;
       return matchStatus && matchSearch && matchStart && matchEnd && matchContext;
     })
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    .sort((a, b) => new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt));
 
   const openTickets = filteredTickets.filter(t => t.status === "Open");
   const resolvedTickets = filteredTickets.filter(t => t.status === "Resolved");
@@ -273,7 +289,7 @@ export default function VendorTicketManagement() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
             <h2 style={{ fontSize: "20px", fontWeight: "700", margin: 0, color: "#f9fafb" }}>Quản lý Ticket</h2>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={fetchTickets} style={{ ...s.btn, background: "rgba(39, 39, 42, 0.8)", color: "white", border: "1px solid rgba(82, 82, 91, 0.5)" }}><i className="bi bi-arrow-clockwise me-1"></i> Làm mới</button>
+              <button onClick={handleRefresh} style={{ ...s.btn, background: "rgba(39, 39, 42, 0.8)", color: "white", border: "1px solid rgba(82, 82, 91, 0.5)" }}><i className="bi bi-arrow-clockwise me-1"></i> Làm mới</button>
               {isKanbanMode && ( <button onClick={handleConfirmChanges} style={{ ...s.btn, background: "#10b981", color: "white" }}><i className="bi bi-check2-circle me-1"></i>Xác nhận</button> )}
               <button onClick={handleToggleKanban} style={{ ...s.btn, background: isKanbanMode ? "#f97316" : "rgba(39, 39, 42, 0.8)", color: isKanbanMode ? "white" : "#a1a1aa", border: `1px solid ${isKanbanMode ? "#f97316" : "rgba(82, 82, 91, 0.5)"}` }}>
                 {isKanbanMode ? <><i className="bi bi-x-lg me-1"></i>Đóng</> : <><i className="bi bi-kanban me-1"></i>Xử lý ticket</>}

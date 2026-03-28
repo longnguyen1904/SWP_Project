@@ -20,6 +20,7 @@ import com.tallt.marketplace.entity.Wallet;
 import com.tallt.marketplace.entity.WalletTransaction;
 import com.tallt.marketplace.repository.OrderRepository;
 import com.tallt.marketplace.repository.PlatformCommissionRepository;
+import com.tallt.marketplace.repository.ProductImageRepository;
 import com.tallt.marketplace.repository.ProductRepository;
 import com.tallt.marketplace.repository.WalletRepository;
 import com.tallt.marketplace.repository.WalletTransactionRepository;
@@ -42,6 +43,9 @@ public class OrderService {
 
     @Autowired
     private WalletTransactionRepository walletTransactionRepository;
+
+    @Autowired
+    private ProductImageRepository productImageRepository;
 
     public List<Order> getOrdersByUser(Integer userId) {
         return orderRepository.findByUser_UserID(userId);
@@ -75,7 +79,12 @@ public class OrderService {
             if (o.getProduct() != null) {
                 map.put("productId", o.getProduct().getProductID());
                 map.put("productName", o.getProduct().getProductName());
-                map.put("productImage", null);
+                
+                productImageRepository.findTopByProduct_ProductIDOrderBySortOrderAsc(o.getProduct().getProductID())
+                    .ifPresentOrElse(
+                        img -> map.put("productImage", img.getImageUrl()),
+                        () -> map.put("productImage", "https://via.placeholder.com/64")
+                    );
                 
                 if (o.getProduct().getVendor() != null) {
                     map.put("vendorId", o.getProduct().getVendor().getVendorID());
@@ -105,7 +114,12 @@ public class OrderService {
                 
                 map.put("productId", p.getProductID());
                 map.put("productName", p.getProductName());
-                map.put("productImage", null);
+
+                productImageRepository.findTopByProduct_ProductIDOrderBySortOrderAsc(p.getProductID())
+                    .ifPresentOrElse(
+                        img -> map.put("productImage", img.getImageUrl()),
+                        () -> map.put("productImage", "https://via.placeholder.com/64")
+                    );
                 
                 if (p.getVendor() != null) {
                     map.put("vendorId", p.getVendor().getVendorID());

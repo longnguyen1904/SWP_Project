@@ -19,6 +19,7 @@ export default function TransactionLedger() {
   const [activeRange, setActiveRange] = useState("30d"); // Mặc định là 30 ngày
   
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [sortBy, setSortBy] = useState("date_desc");
 
@@ -55,12 +56,19 @@ export default function TransactionLedger() {
     loadProducts();
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const fetchLedger = async () => {
     if (role !== "VENDOR" && role !== "ADMIN") return;
     setIsLoading(true);
     try {
       const res = await axios.get("http://localhost:8081/api/vendor/revenue/ledger", {
-        params: { startDate, endDate, search: searchTerm, productId: selectedProductId, sortBy },
+        params: { startDate, endDate, search: debouncedSearchTerm, productId: selectedProductId, sortBy },
         headers: { Authorization: `Bearer ${token}` }
       });
       setLedgerData(res.data || []);
@@ -69,7 +77,7 @@ export default function TransactionLedger() {
     finally { setIsLoading(false); }
   };
 
-  useEffect(() => { fetchLedger(); }, [startDate, endDate, selectedProductId, sortBy]);
+  useEffect(() => { fetchLedger(); }, [startDate, endDate, selectedProductId, sortBy, debouncedSearchTerm]);
 
   // --- LOGIC NÉN ZIP (TRỊ IDM) ---
   const handleBulkPDF = async () => {
@@ -113,8 +121,8 @@ export default function TransactionLedger() {
 
   const handleBulkCSV = () => {
     const selectedRows = ledgerData.filter(row => selectedIds.includes(row.transactionId));
-    const header = "Ma GD,Ngay,San pham,Khach hang,Gia ban,Phi san (10%),Thuc nhan\n";
-    const rows = selectedRows.map(r => `${r.transactionId},${r.transactionDate},${r.productName},${r.customerName},${r.grossAmount},${r.platformFee},${r.netAmount}`).join("\n");
+    const header = "Ma GD,Ngay,San pham,Khach hang,Gia ban,Phi san,Thue,Thuc nhan\n";
+    const rows = selectedRows.map(r => `${r.transactionId},${r.transactionDate},${r.productName},${r.customerName},${r.grossAmount},${r.platformFee},${r.taxAmount || 0},${r.netAmount}`).join("\n");
     const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -191,7 +199,10 @@ export default function TransactionLedger() {
             {/* Search */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
               <label style={{ fontSize: "11px", color: "#a1a1aa" }}>TÌM KIẾM</label>
-              <input type="text" placeholder="Tên khách, Mã GD..." style={{ ...s.input, width: "100%" }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+                <input type="text" placeholder="Tên khách, Mã GD..." style={{ ...s.input, flex: 1 }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') setDebouncedSearchTerm(e.target.value); }} />
+                <button onClick={() => setDebouncedSearchTerm(searchTerm)} style={{ background: "#3b82f6", color: "white", padding: "10px 16px", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "600", transition: "0.2s", whiteSpace: "nowrap" }} onMouseOver={e => e.currentTarget.style.background = "#2563eb"} onMouseOut={e => e.currentTarget.style.background = "#3b82f6"}>Lọc</button>
+              </div>
             </div>
           </div>
         </div>
@@ -218,7 +229,8 @@ export default function TransactionLedger() {
                     <th style={s.th}>Sản phẩm / Đơn hàng</th>
                     <th style={s.th}>Khách hàng</th>
                     <th style={{ ...s.th, textAlign: "right" }}>Giá Gốc</th>
-                    <th style={{ ...s.th, textAlign: "right", color: "#ef4444" }}>Phí Sàn (10%)</th>
+                    <th style={{ ...s.th, textAlign: "right", color: "#ef4444" }}>Phí Sàn</th>
+                    <th style={{ ...s.th, textAlign: "right", color: "#f59e0b" }}>Thuế</th>
                     <th style={{ ...s.th, textAlign: "right", color: "#10b981" }}>Thực Nhận</th>
                     <th style={{ ...s.th, textAlign: "center" }}>Ngày</th>
                   </tr>
@@ -237,6 +249,7 @@ export default function TransactionLedger() {
                       <td style={s.td}>{row.customerName}</td>
                       <td style={{ ...s.td, textAlign: "right" }}>{Number(row.grossAmount).toLocaleString()} đ</td>
                       <td style={{ ...s.td, textAlign: "right", color: "#ef4444" }}>-{Number(row.platformFee).toLocaleString()} đ</td>
+                      <td style={{ ...s.td, textAlign: "right", color: "#f59e0b" }}>-{Number(row.taxAmount || 0).toLocaleString()} đ</td>
                       <td style={{ ...s.td, textAlign: "right", color: "#10b981", fontWeight: "800" }}>{Number(row.netAmount).toLocaleString()} đ</td>
                       <td style={{ ...s.td, textAlign: "center", fontSize: "12px" }}>{new Date(row.transactionDate).toLocaleDateString("vi-VN")}</td>
                     </tr>

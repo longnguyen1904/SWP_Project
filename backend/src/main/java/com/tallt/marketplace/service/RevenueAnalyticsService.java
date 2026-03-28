@@ -271,35 +271,33 @@ public class RevenueAnalyticsService {
     public List<Map<String, Object>> getLedgerTransactions(int vendorId, LocalDate startDate, LocalDate endDate, String search) {
         StringBuilder sql = new StringBuilder("""
             SELECT 
-                wt.TransactionID AS transactionId,
-                o.OrderID AS orderId,
+                o.orderID AS transactionId,
+                o.orderID AS orderId,
                 p.ProductName AS productName,
                 u.FullName AS customerName,
                 u.Email AS customerEmail,
-                DATE_FORMAT(wt.CreatedAt, '%d/%m/%Y %H:%i') AS transactionDate,
-                o.TotalAmount AS grossAmount,
-                wt.Amount AS netAmount,
-                (o.TotalAmount - wt.Amount) AS platformFee
-            FROM WalletTransactions wt
-            JOIN Wallets w ON wt.WalletID = w.WalletID
-            JOIN Vendors v ON w.UserID = v.UserID
-            JOIN Orders o ON wt.ReferenceID = o.OrderID
+                DATE_FORMAT(o.createdAt, '%d/%m/%Y %H:%i') AS transactionDate,
+                o.totalAmount AS grossAmount,
+                o.VendorNetAmount AS netAmount,
+                o.PlatformFee AS platformFee,
+                o.TaxAmount AS taxAmount
+            FROM Orders o
             JOIN Products p ON o.ProductID = p.ProductID
             JOIN Users u ON o.UserID = u.UserID
-            WHERE v.VendorID = ? 
-              AND wt.Type = 'SALE_REVENUE'
-              AND wt.CreatedAt >= ? AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
+            WHERE p.VendorID = ? 
+              AND UPPER(o.paymentStatus) IN ('PAID','COMPLETED','SUCCESS')
+              AND o.createdAt >= ? AND o.createdAt < DATE_ADD(?, INTERVAL 1 DAY)
         """);
 
         List<Object> params = new ArrayList<>(List.of(vendorId, startDate, endDate));
 
         if (search != null && !search.trim().isEmpty()) {
-            sql.append(" AND (p.ProductName LIKE ? OR o.OrderID LIKE ? OR u.FullName LIKE ?)");
+            sql.append(" AND (p.ProductName LIKE ? OR o.orderID LIKE ? OR u.FullName LIKE ?)");
             String searchParam = "%" + search + "%";
             params.addAll(List.of(searchParam, searchParam, searchParam));
         }
 
-        sql.append(" ORDER BY wt.CreatedAt DESC");
+        sql.append(" ORDER BY o.createdAt DESC");
         return jdbcTemplate.queryForList(sql.toString(), params.toArray());
     }
 
@@ -309,14 +307,11 @@ public class RevenueAnalyticsService {
     public byte[] exportInvoicePdf(int vendorId, int transactionId) {
         // 1. Lấy thông tin giao dịch
         String sql = """
-            SELECT o.OrderID, p.ProductName, u.FullName, wt.CreatedAt, o.TotalAmount, wt.Amount
-            FROM WalletTransactions wt
-            JOIN Wallets w ON wt.WalletID = w.WalletID
-            JOIN Vendors v ON w.UserID = v.UserID
-            JOIN Orders o ON wt.ReferenceID = o.OrderID
+            SELECT o.orderID, p.ProductName, u.FullName, o.createdAt AS CreatedAt, o.totalAmount AS TotalAmount, o.VendorNetAmount AS Amount, o.PlatformFee, o.TaxAmount
+            FROM Orders o
             JOIN Products p ON o.ProductID = p.ProductID
             JOIN Users u ON o.UserID = u.UserID
-            WHERE v.VendorID = ? AND wt.TransactionID = ? AND wt.Type = 'SALE_REVENUE'
+            WHERE p.VendorID = ? AND o.orderID = ? AND UPPER(o.paymentStatus) IN ('PAID','COMPLETED','SUCCESS')
         """;
         
         Map<String, Object> data = jdbcTemplate.queryForMap(sql, vendorId, transactionId);
@@ -337,7 +332,7 @@ public class RevenueAnalyticsService {
             document.add(title);
 
             document.add(new Paragraph("Transaction ID: TCK-" + transactionId, normalFont));
-            document.add(new Paragraph("Order ID: #" + data.get("OrderID"), normalFont));
+            document.add(new Paragraph("Order ID: #" + data.get("orderID"), normalFont));
             document.add(new Paragraph("Date: " + data.get("CreatedAt"), normalFont));
             document.add(new Paragraph("Customer: " + data.get("FullName"), normalFont));
             
@@ -345,12 +340,13 @@ public class RevenueAnalyticsService {
             document.add(new Paragraph("Product: " + data.get("ProductName"), boldFont));
             document.add(new Paragraph("\nGross Amount (Customer Paid): " + data.get("TotalAmount") + " VND", normalFont));
             
-            BigDecimal gross = (BigDecimal) data.get("TotalAmount");
+            BigDecimal fee = (BigDecimal) data.get("PlatformFee");
+            BigDecimal tax = (BigDecimal) data.get("TaxAmount");
             BigDecimal net = (BigDecimal) data.get("Amount");
-            BigDecimal fee = gross.subtract(net);
             
-            document.add(new Paragraph("Platform Fee Deducted: -" + fee + " VND", normalFont));
-            document.add(new Paragraph("\nNet Profit (Vendor Received): " + net + " VND", boldFont));
+            document.add(new Paragraph("Platform Fee Deducted: -" + (fee != null ? fee : 0) + " VND", normalFont));
+            document.add(new Paragraph("Tax Calculated: " + (tax != null ? tax : 0) + " VND", normalFont));
+            document.add(new Paragraph("\nNet Profit (Vendor Received): " + (net != null ? net : 0) + " VND", boldFont));
             document.add(new Paragraph("\n--------------------------------------------------\n", normalFont));
             
             Paragraph footer = new Paragraph("Thank you for using Global Software Marketplace!", normalFont);
@@ -368,37 +364,35 @@ public class RevenueAnalyticsService {
                                                          Double minPrice, Double maxPrice, String sortBy) {
         StringBuilder sql = new StringBuilder("""
             SELECT 
-                wt.TransactionID AS transactionId, o.OrderID AS orderId,
+                o.orderID AS transactionId, o.orderID AS orderId,
                 p.ProductName AS productName, u.FullName AS customerName,
-                u.Email AS customerEmail, wt.CreatedAt AS transactionDate,
-                o.TotalAmount AS grossAmount, wt.Amount AS netAmount,
-                (o.TotalAmount - wt.Amount) AS platformFee
-            FROM WalletTransactions wt
-            JOIN Orders o ON wt.ReferenceID = o.OrderID
+                u.Email AS customerEmail, o.createdAt AS transactionDate,
+                o.totalAmount AS grossAmount, o.VendorNetAmount AS netAmount,
+                o.PlatformFee AS platformFee, o.TaxAmount AS taxAmount
+            FROM Orders o
             JOIN Products p ON o.ProductID = p.ProductID
             JOIN Users u ON o.UserID = u.UserID
-            JOIN Wallets w ON wt.WalletID = w.WalletID
-            JOIN Vendors v ON w.UserID = v.UserID
-            WHERE v.VendorID = ? AND wt.Type = 'SALE_REVENUE'
-              AND wt.CreatedAt >= ? AND wt.CreatedAt < DATE_ADD(?, INTERVAL 1 DAY)
+            WHERE p.VendorID = ? 
+              AND UPPER(o.paymentStatus) IN ('PAID','COMPLETED','SUCCESS')
+              AND o.createdAt >= ? AND o.createdAt < DATE_ADD(?, INTERVAL 1 DAY)
         """);
 
         List<Object> params = new ArrayList<>(List.of(vendorId, startDate, endDate));
 
         if (search != null && !search.isEmpty()) {
-            sql.append(" AND (p.ProductName LIKE ? OR o.OrderID LIKE ? OR u.FullName LIKE ?)");
+            sql.append(" AND (p.ProductName LIKE ? OR o.orderID LIKE ? OR u.FullName LIKE ?)");
             params.add("%" + search + "%"); params.add("%" + search + "%"); params.add("%" + search + "%");
         }
         if (productId != null) { sql.append(" AND p.ProductID = ?"); params.add(productId); }
-        if (minPrice != null) { sql.append(" AND o.TotalAmount >= ?"); params.add(minPrice); }
-        if (maxPrice != null) { sql.append(" AND o.TotalAmount <= ?"); params.add(maxPrice); }
+        if (minPrice != null) { sql.append(" AND o.totalAmount >= ?"); params.add(minPrice); }
+        if (maxPrice != null) { sql.append(" AND o.totalAmount <= ?"); params.add(maxPrice); }
 
         // Xử lý sắp xếp
         String orderSql = switch (sortBy) {
-            case "price_desc" -> " ORDER BY o.TotalAmount DESC";
-            case "price_asc" -> " ORDER BY o.TotalAmount ASC";
-            case "date_asc" -> " ORDER BY wt.CreatedAt ASC";
-            default -> " ORDER BY wt.CreatedAt DESC";
+            case "price_desc" -> " ORDER BY o.totalAmount DESC";
+            case "price_asc" -> " ORDER BY o.totalAmount ASC";
+            case "date_asc" -> " ORDER BY o.createdAt ASC";
+            default -> " ORDER BY o.createdAt DESC";
         };
         sql.append(orderSql);
 
