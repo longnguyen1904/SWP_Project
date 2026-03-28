@@ -25,7 +25,6 @@ public class ProductResponse {
     private List<String> tags;
     private String status;
     private String rejectionNote;
-    private String guideDocumentUrl;
     private String thumbnailUrl;
     private Double averageRating;
     private Long reviewCount;

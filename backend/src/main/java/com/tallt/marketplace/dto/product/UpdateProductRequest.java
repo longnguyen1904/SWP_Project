@@ -18,7 +18,4 @@ public class UpdateProductRequest {
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Giá phải lớn hơn 0")
     private BigDecimal basePrice;
-
-    /** URL tài liệu hướng dẫn. */
-    private String guideDocumentUrl;
 }

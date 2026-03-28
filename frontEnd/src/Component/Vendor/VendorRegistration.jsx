@@ -11,6 +11,7 @@ const VendorRegistration = () => {
   const [success, setSuccess] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState("");
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
 
   // Vendor status tracking
   const [checkingStatus, setCheckingStatus] = useState(true);
@@ -104,6 +105,9 @@ const VendorRegistration = () => {
     }
     if (activeStep === 2 && !formData.identificationDoc) {
       setError("Please upload identification document"); return;
+    }
+    if (activeStep === steps.length - 1 && !agreedToPolicy) {
+      setError("Please read and agree to the Vendor Policies to proceed"); return;
     }
     if (activeStep === steps.length - 1) { handleSubmit(); } else { setActiveStep((s) => s + 1); }
   };
@@ -304,6 +308,21 @@ const VendorRegistration = () => {
             </div>
             <div className="alert alert-info">
               Please ensure your identification documents are valid and clearly visible. This information is required for vendor verification.
+            </div>
+            <div className="form-group" style={{ marginTop: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+              <input 
+                type="checkbox" 
+                id="policyCheck" 
+                checked={agreedToPolicy} 
+                onChange={(e) => {
+                  setAgreedToPolicy(e.target.checked);
+                  setError("");
+                }} 
+                style={{ width: "18px", height: "18px", cursor: "pointer" }} 
+              />
+              <label htmlFor="policyCheck" style={{ cursor: "pointer", color: "#e2e8f0" }}>
+                I have read and agree to the <a href="/Page/Policy" target="_blank" style={{ color: "#38bdf8", textDecoration: "underline" }}>Vendor Policies and SDK Guidelines</a>
+              </label>
             </div>
           </>
         );

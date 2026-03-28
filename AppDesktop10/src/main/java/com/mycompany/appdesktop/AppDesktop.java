@@ -9,29 +9,29 @@ package com.mycompany.appdesktop;
  */
 public class AppDesktop {
     public static void main(String[] args) {
-        // Khởi tạo SDK bảo vệ với ID sản phẩm là 05
-        TalltLicenseGuard guard = new TalltLicenseGuard("81");
+        // Khá»Ÿi táº¡o SDK báº£o vá»‡ vá»›i ID sáº£n pháº©m lÃ  10
+        TalltLicenseGuard guard = new TalltLicenseGuard("10");
 
-        // Bắt buộc nhập License thành công thì mới chạy hàm bên trong
+        // Báº¯t buá»™c nháº­p License thÃ nh cÃ´ng thÃ¬ má»›i cháº¡y hÃ m bÃªn trong
         guard.requireLicenseToLaunch(() -> {
-            // Đặt code khởi chạy UI chính của Vendor ở đây
-            System.out.println("Đang mở phần mềm chính...");
+            // Äáº·t code khá»Ÿi cháº¡y UI chÃ­nh cá»§a Vendor á»Ÿ Ä‘Ã¢y
+            System.out.println("Äang má»Ÿ pháº§n má»m chÃ­nh...");
 
-            // Tạo một cửa sổ giả lập để app không bị tắt ngay lập tức
-            javax.swing.JFrame frame = new javax.swing.JFrame("Main Vendor App");
+            // Táº¡o má»™t cá»­a sá»• giáº£ láº­p Ä‘á»ƒ app khÃ´ng bá»‹ táº¯t ngay láº­p tá»©c
+            javax.swing.JFrame frame = new javax.swing.JFrame("Main Vendor App 10");
             frame.setSize(400, 300);
 
             frame.setDefaultCloseOperation(javax.swing.JFrame.DO_NOTHING_ON_CLOSE);
             frame.addWindowListener(new java.awt.event.WindowAdapter() {
                 @Override
                 public void windowClosing(java.awt.event.WindowEvent e) {
-                    System.out.println("Đang nhả License...");
+                    System.out.println("Äang nháº£ License...");
                     guard.releaseSession();
                     System.exit(0);
                 }
             });
             frame.setLocationRelativeTo(null);
-            javax.swing.JLabel label = new javax.swing.JLabel("Phần mềm chính đang hoạt động...",
+            javax.swing.JLabel label = new javax.swing.JLabel("Pháº§n má»m chÃ­nh 10 Ä‘ang hoáº¡t Ä‘á»™ng...",
                     javax.swing.JLabel.CENTER);
             label.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 16));
             frame.add(label);
