@@ -28,8 +28,5 @@ public class CreateProductRequest {
 
     private Integer trialDurationDays = 7;
 
-    /** URL tài liệu hướng dẫn (upload qua /api/upload/document rồi gửi URL). */
-    private String guideDocumentUrl;
-
     private List<String> tags;
 }

@@ -24,7 +24,7 @@ const ProductUploadForm = () => {
 
   const [productData, setProductData] = useState({
     productName: "", categoryId: "", description: "", basePrice: "",
-    hasTrial: false, trialDurationDays: 7, guideDocumentUrl: "", tags: [],
+    hasTrial: false, trialDurationDays: 7, tags: [],
   });
 
   const [images, setImages] = useState([]);
@@ -67,7 +67,7 @@ const ProductUploadForm = () => {
           productName: p.productName || "", categoryId: p.categoryId || "",
           description: p.description || "", basePrice: p.basePrice != null ? String(p.basePrice) : "",
           hasTrial: p.hasTrial || false, trialDurationDays: p.trialDurationDays || 7,
-          guideDocumentUrl: p.guideDocumentUrl || "", tags: p.tags || [],
+          tags: p.tags || [],
         });
 
         if (detail.images?.length > 0) {
@@ -168,7 +168,7 @@ const ProductUploadForm = () => {
           else {
             await vendorAPI.saveDraft(currentProductId, {
               productName: productData.productName, description: productData.description,
-              basePrice: parseFloat(productData.basePrice), guideDocumentUrl: productData.guideDocumentUrl || null,
+              basePrice: parseFloat(productData.basePrice),
             });
           }
           break;
@@ -200,7 +200,7 @@ const ProductUploadForm = () => {
       // Clear URL params before resetting
       window.history.replaceState({}, document.title, window.location.pathname);
       setActiveStep(0); setProductId(null);
-      setProductData({ productName: "", categoryId: "", description: "", basePrice: "", hasTrial: false, trialDurationDays: 7, guideDocumentUrl: "", tags: [] });
+      setProductData({ productName: "", categoryId: "", description: "", basePrice: "", hasTrial: false, trialDurationDays: 7, tags: [] });
       setImages([]); setVersion({ versionNumber: "", fileUrl: "", releaseNotes: "" }); setLicenseTiers([]);
     } catch (err) { setError(err.response?.data?.message || "Submit failed."); }
     finally { setLoading(false); }
@@ -224,7 +224,7 @@ const ProductUploadForm = () => {
       } else {
         await vendorAPI.saveDraft(productId, {
           productName: productData.productName || null, description: productData.description || null,
-          basePrice: productData.basePrice ? parseFloat(productData.basePrice) : null, guideDocumentUrl: productData.guideDocumentUrl || null,
+          basePrice: productData.basePrice ? parseFloat(productData.basePrice) : null,
         });
         setSuccess("Draft saved successfully!");
       }
