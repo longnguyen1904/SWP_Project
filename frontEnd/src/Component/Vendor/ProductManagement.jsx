@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { vendorAPI, uploadAPI } from "../../services/api";
 import "../../Style/Vendor.css";
@@ -24,12 +24,42 @@ const ProductManagement = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => { fetchProducts(); }, [page]);
+  // Search & Filter
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const debounceRef = useRef(null);
+
+  const handleSearchChange = useCallback((value) => {
+    setSearchInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearchQuery(value.trim());
+      setPage(0);
+    }, 400);
+  }, []);
+
+  const handleStatusChange = useCallback((value) => {
+    setStatusFilter(value);
+    setPage(0);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearchInput("");
+    setSearchQuery("");
+    setStatusFilter("");
+    setPage(0);
+  }, []);
+
+  useEffect(() => { fetchProducts(); }, [page, searchQuery, statusFilter]);
 
   const fetchProducts = async () => {
     setLoading(true); setError("");
     try {
-      const response = await vendorAPI.getVendorProducts({ page, size: 6 });
+      const params = { page, size: 6 };
+      if (searchQuery) params.q = searchQuery;
+      if (statusFilter) params.status = statusFilter;
+      const response = await vendorAPI.getVendorProducts(params);
       const data = response.data?.data ?? response.data;
       const content = data?.content ?? data?.products ?? (Array.isArray(data) ? data : []);
       setProducts(Array.isArray(content) ? content : []);
@@ -193,14 +223,53 @@ const ProductManagement = () => {
           </div>
         </div>
 
+        {/* Search & Filter Toolbar */}
+        <div className="product-toolbar">
+          <div className="search-input-wrapper">
+            <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              className="form-input search-input"
+              type="text"
+              placeholder="Search products by name..."
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+            {searchInput && (
+              <button className="search-clear-btn" onClick={() => handleSearchChange("")} title="Clear search">×</button>
+            )}
+          </div>
+          <select
+            className="form-input filter-select"
+            value={statusFilter}
+            onChange={(e) => handleStatusChange(e.target.value)}
+          >
+            <option value="">All Status</option>
+            <option value="DRAFT">Draft</option>
+            <option value="PENDING">Pending Review</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+        </div>
+
         {error && <div className="alert alert-error">{error}<button className="alert-close" onClick={() => setError("")}>×</button></div>}
         {success && <div className="alert alert-success">{success}<button className="alert-close" onClick={() => setSuccess("")}>×</button></div>}
 
         {!products || products.length === 0 ? (
           <div className="product-empty">
-            <h3>No products found</h3>
-            <p>Start by uploading your first product to the marketplace</p>
-            <button className="btn btn-primary" onClick={() => navigate(uploadPath)}>Upload Your First Product</button>
+            {(searchQuery || statusFilter) ? (
+              <>
+                <h3>No products match your search</h3>
+                <p>Try adjusting your search or filter criteria</p>
+                <button className="btn btn-secondary" onClick={clearFilters}>Clear Filters</button>
+              </>
+            ) : (
+              <>
+                <h3>No products found</h3>
+                <p>Start by uploading your first product to the marketplace</p>
+                <button className="btn btn-primary" onClick={() => navigate(uploadPath)}>Upload Your First Product</button>
+              </>
+            )}
           </div>
         ) : (
           <div className="product-grid">
