@@ -78,10 +78,6 @@ public class ProductVersionService {
         version.setReleaseNotes(request.getReleaseNotes());
         productVersionRepository.save(version);
 
-        if (product.getStatus() == Product.ProductStatus.APPROVED) {
-            notifyBuyersOfNewVersion(product, version);
-        }
-
         return toResponse(version);
     }
 
