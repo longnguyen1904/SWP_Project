@@ -4,7 +4,7 @@ import StarRating from "./StarRating";
 import { formatPrice } from "../../services/formatters";
 import { customerAPI } from "../../services/api";
 
-const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, latestVersion }) => {
+const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, latestVersion, isOwnProduct }) => {
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [trialLoading, setTrialLoading] = useState(false);
   const [wished, setWished] = useState(false);
@@ -148,7 +148,7 @@ const ProductInfoSection = ({ product, showBuyButton, onBuyNow, productId, lates
       {/* ── Section 3: Price & Purchase ── */}
       <div className="product-info__price-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '24px' }}>
         <p className="product-info__price" style={{ margin: 0 }}>{formatPrice(product.basePrice)}</p>
-        {productId && (
+        {productId && !isOwnProduct && (
           <button
             className="btn btn--outline"
             onClick={async (e) => {
