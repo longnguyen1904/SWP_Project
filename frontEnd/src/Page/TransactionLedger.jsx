@@ -121,8 +121,8 @@ export default function TransactionLedger() {
 
   const handleBulkCSV = () => {
     const selectedRows = ledgerData.filter(row => selectedIds.includes(row.transactionId));
-    const header = "Ma GD,Ngay,San pham,Khach hang,Gia ban,Phi san (10%),Thuc nhan\n";
-    const rows = selectedRows.map(r => `${r.transactionId},${r.transactionDate},${r.productName},${r.customerName},${r.grossAmount},${r.platformFee},${r.netAmount}`).join("\n");
+    const header = "Ma GD,Ngay,San pham,Khach hang,Gia ban,Phi san,Thue,Thuc nhan\n";
+    const rows = selectedRows.map(r => `${r.transactionId},${r.transactionDate},${r.productName},${r.customerName},${r.grossAmount},${r.platformFee},${r.taxAmount || 0},${r.netAmount}`).join("\n");
     const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -229,7 +229,8 @@ export default function TransactionLedger() {
                     <th style={s.th}>Sản phẩm / Đơn hàng</th>
                     <th style={s.th}>Khách hàng</th>
                     <th style={{ ...s.th, textAlign: "right" }}>Giá Gốc</th>
-                    <th style={{ ...s.th, textAlign: "right", color: "#ef4444" }}>Phí Sàn (10%)</th>
+                    <th style={{ ...s.th, textAlign: "right", color: "#ef4444" }}>Phí Sàn</th>
+                    <th style={{ ...s.th, textAlign: "right", color: "#f59e0b" }}>Thuế</th>
                     <th style={{ ...s.th, textAlign: "right", color: "#10b981" }}>Thực Nhận</th>
                     <th style={{ ...s.th, textAlign: "center" }}>Ngày</th>
                   </tr>
@@ -248,6 +249,7 @@ export default function TransactionLedger() {
                       <td style={s.td}>{row.customerName}</td>
                       <td style={{ ...s.td, textAlign: "right" }}>{Number(row.grossAmount).toLocaleString()} đ</td>
                       <td style={{ ...s.td, textAlign: "right", color: "#ef4444" }}>-{Number(row.platformFee).toLocaleString()} đ</td>
+                      <td style={{ ...s.td, textAlign: "right", color: "#f59e0b" }}>-{Number(row.taxAmount || 0).toLocaleString()} đ</td>
                       <td style={{ ...s.td, textAlign: "right", color: "#10b981", fontWeight: "800" }}>{Number(row.netAmount).toLocaleString()} đ</td>
                       <td style={{ ...s.td, textAlign: "center", fontSize: "12px" }}>{new Date(row.transactionDate).toLocaleDateString("vi-VN")}</td>
                     </tr>

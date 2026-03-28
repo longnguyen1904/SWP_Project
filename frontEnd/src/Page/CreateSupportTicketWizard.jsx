@@ -409,26 +409,26 @@ const CreateSupportTicketWizard = () => {
                   <select className="t-input t-select py-3" value={issueForm.type} onChange={(e) => setIssueForm({ ...issueForm, type: e.target.value })}>
                     {ticketContext === 'PURCHASED' && (
                       <>
-                        <option value="Bug">🐛 Lỗi phần mềm (Bug)</option>
-                        <option value="Installation">⚙️ Vấn đề cài đặt / Hướng dẫn</option>
-                        <option value="License">🔑 Kích hoạt bản quyền / Thu hồi máy</option>
-                        <option value="Other">💬 Vấn đề khác</option>
+                        <option value="Bug"> Lỗi phần mềm (Bug)</option>
+                        <option value="Installation"> Vấn đề cài đặt / Hướng dẫn</option>
+                        <option value="License"> Kích hoạt bản quyền / Thu hồi máy</option>
+                        <option value="Other"> Vấn đề khác</option>
                       </>
                     )}
                     {ticketContext === 'UNPAID' && (
                       <>
-                        <option value="Payment">💳 Lỗi thanh toán / VNPay lỗi</option>
-                        <option value="Delivery">📦 Đã trừ tiền nhưng đơn hàng chưa duyệt</option>
-                        <option value="Coupon">🎫 Lỗi nhập Mã giảm giá</option>
-                        <option value="Other">💬 Vấn đề khác</option>
+                        <option value="Payment"> Lỗi thanh toán / VNPay lỗi</option>
+                        <option value="Delivery"> Đã trừ tiền nhưng đơn hàng chưa duyệt</option>
+                        <option value="Coupon"> Lỗi nhập Mã giảm giá</option>
+                        <option value="Other"> Vấn đề khác</option>
                       </>
                     )}
                     {ticketContext === 'PLATFORM' && (
                       <>
-                        <option value="Pre-sale Inquiry">❓ Tư vấn thông tin trước khi mua</option>
-                        <option value="Feature Question">💡 Hỏi đáp tính năng chi tiết</option>
-                        <option value="Report">⚠️ Báo cáo phần mềm vi phạm / Độc hại</option>
-                        <option value="Other">💬 Vấn đề khác</option>
+                        <option value="Pre-sale Inquiry"> Tư vấn thông tin trước khi mua</option>
+                        <option value="Feature Question"> Hỏi đáp tính năng chi tiết</option>
+                        <option value="Report"> Báo cáo phần mềm vi phạm / Độc hại</option>
+                        <option value="Other"> Vấn đề khác</option>
                       </>
                     )}
                   </select>
