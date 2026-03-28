@@ -56,4 +56,3 @@ vnpay:
   version: "2.1.0"
   command: pay
   frontend-url: http://localhost:5173
-

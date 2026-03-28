@@ -39,6 +39,7 @@ const ProductDetail = () => {
     isAdmin,
     isVendor,
     showBuyButton,
+    isOwnProduct,
     latestVersion,
     refetchReviewsAndProduct,
   } = useProductDetail(productId);
@@ -147,6 +148,7 @@ const ProductDetail = () => {
           onBuyNow={handleBuyNow}
           productId={Number(productId)}
           latestVersion={latestVersion}
+          isOwnProduct={isOwnProduct}
         />
       </div>
 

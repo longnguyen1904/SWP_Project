@@ -39,6 +39,7 @@ public class CheckoutService {
     private final VNPayService vnPayService;
     private final CouponService couponService;
     private final CommissionService commissionService;
+    private final LicenseService licenseService;
 
     public CheckoutService(
             OrderRepository orderRepository,
@@ -50,7 +51,8 @@ public class CheckoutService {
             WalletTransactionRepository walletTransactionRepository,
             VNPayService vnPayService,
             CouponService couponService,
-            CommissionService commissionService) {
+            CommissionService commissionService,
+            LicenseService licenseService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.licenseTierRepository = licenseTierRepository;
@@ -61,6 +63,7 @@ public class CheckoutService {
         this.vnPayService = vnPayService;
         this.couponService = couponService;
         this.commissionService = commissionService;
+        this.licenseService = licenseService;
     }
 
     /**
@@ -114,7 +117,8 @@ public class CheckoutService {
         BigDecimal discountAmount = BigDecimal.ZERO;
         String couponCode = request.getCouponCode();
         if (couponCode != null && !couponCode.trim().isEmpty()) {
-            Map<String, Object> couponInfo = couponService.validateCoupon(couponCode, product.getProductID(), request.getTierId());
+            Map<String, Object> couponInfo = couponService.validateCoupon(couponCode, product.getProductID(),
+                    request.getTierId());
             int percent = (Integer) couponInfo.get("discountPercent");
             discountAmount = tier.getPrice()
                     .multiply(BigDecimal.valueOf(percent))
@@ -139,14 +143,15 @@ public class CheckoutService {
         // Tính toán các loại phí
         BigDecimal commissionPercent = commissionService.getCurrentCommission();
         BigDecimal platformFee = totalAmount.multiply(commissionPercent).divide(BigDecimal.valueOf(100));
-        
-        // Tính thuế theo loại Vendor (Cá nhân đóng 5% thuế nhà thầu/thu nhập, Công ty tự nộp thuế = 0%)
+
+        // Tính thuế theo loại Vendor (Cá nhân đóng 5% thuế nhà thầu/thu nhập, Công ty
+        // tự nộp thuế = 0%)
         Vendor orderVendor = product.getVendor();
-        boolean isCompany = orderVendor.getType() != null 
+        boolean isCompany = orderVendor.getType() != null
                 && "COMPANY".equals(orderVendor.getType().name());
         BigDecimal taxPercent = isCompany ? BigDecimal.ZERO : BigDecimal.valueOf(5);
         BigDecimal taxAmount2 = totalAmount.multiply(taxPercent).divide(BigDecimal.valueOf(100));
-        
+
         BigDecimal vendorNet = totalAmount.subtract(platformFee).subtract(taxAmount2);
 
         order.setPlatformFee(platformFee);
@@ -170,11 +175,15 @@ public class CheckoutService {
             order.setTransactionRef("FREE_ORDER");
             orderRepository.save(order);
 
-            createLicense(order);
+            licenseService.createLicenseForOrder(order.getOrderID());
             creditAdminWallet(order);
 
             if (order.getCouponCode() != null && !order.getCouponCode().isEmpty()) {
-                try { couponService.useCoupon(order.getCouponCode(), order.getProduct().getProductID(), order.getTier().getTierID()); } catch (Exception ignored) {}
+                try {
+                    couponService.useCoupon(order.getCouponCode(), order.getProduct().getProductID(),
+                            order.getTier().getTierID());
+                } catch (Exception ignored) {
+                }
             }
 
             return new CheckoutResponse(order.getOrderID(), null, warning);
@@ -202,7 +211,8 @@ public class CheckoutService {
         String responseCode = params.get("vnp_ResponseCode");
         String txnRef = params.get("vnp_TxnRef");
 
-        if (txnRef == null) return false;
+        if (txnRef == null)
+            return false;
 
         // Tìm Order (bảo vệ khỏi NumberFormatException)
         Order order;
@@ -211,7 +221,8 @@ public class CheckoutService {
         } catch (NumberFormatException e) {
             return false;
         }
-        if (order == null) return false;
+        if (order == null)
+            return false;
 
         // Nếu đã xử lý rồi thì bỏ qua (idempotent)
         if (!STATUS_PENDING.equalsIgnoreCase(order.getPaymentStatus())) {
@@ -224,13 +235,14 @@ public class CheckoutService {
             order.setTransactionRef(params.get("vnp_TransactionNo"));
             orderRepository.save(order);
 
-            createLicense(order);
+            licenseService.createLicenseForOrder(order.getOrderID());
             creditAdminWallet(order);
 
             // Only increment coupon usage after confirmed payment
             if (order.getCouponCode() != null && !order.getCouponCode().isEmpty()) {
                 try {
-                    couponService.useCoupon(order.getCouponCode(), order.getProduct().getProductID(), order.getTier().getTierID());
+                    couponService.useCoupon(order.getCouponCode(), order.getProduct().getProductID(),
+                            order.getTier().getTierID());
                 } catch (Exception ignored) {
                 }
             }
@@ -245,13 +257,15 @@ public class CheckoutService {
     }
 
     /**
-     * Lấy productId từ orderId (dùng để redirect về trang sản phẩm khi thanh toán thất bại).
+     * Lấy productId từ orderId (dùng để redirect về trang sản phẩm khi thanh toán
+     * thất bại).
      */
     public Integer getProductIdByOrderId(String orderIdStr) {
         try {
             Order order = orderRepository.findById(Integer.parseInt(orderIdStr)).orElse(null);
             return order != null && order.getProduct() != null
-                    ? order.getProduct().getProductID() : null;
+                    ? order.getProduct().getProductID()
+                    : null;
         } catch (NumberFormatException e) {
             return null;
         }
@@ -260,38 +274,18 @@ public class CheckoutService {
     // ==================== PRIVATE METHODS ====================
 
     /**
-     * Tạo License cho Customer sau thanh toán thành công.
-     */
-    private void createLicense(Order order) {
-        License license = new License();
-        license.setLicenseKey(UUID.randomUUID().toString().toUpperCase());
-        license.setOrder(order);
-        license.setUser(order.getUser());
-        license.setProduct(order.getProduct());
-        license.setTier(order.getTier());
-        license.setIsActive(true);
-        license.setIsTrial(false);
-        license.setCreatedAt(LocalDateTime.now());
-
-        // Tính ngày hết hạn = now + durationDays
-        int durationDays = order.getTier().getDurationDays() != null
-                ? order.getTier().getDurationDays() : 365;
-        license.setExpireAt(LocalDateTime.now().plusDays(durationDays));
-
-        licenseRepository.save(license);
-    }
-
-    /**
      * Cộng tiền bán hàng vào Wallet của Admin (platform thu tiền trước).
      * Việc tính phí sàn, thuế và chuyển tiền cho Vendor sẽ được xử lý riêng.
      */
     private void creditAdminWallet(Order order) {
         // Tìm user Admin theo role
         User admin = userRepository.findFirstByRole_RoleName("Admin");
-        if (admin == null) return;
+        if (admin == null)
+            return;
 
         Wallet wallet = walletRepository.findByUser_UserID(admin.getUserID()).orElse(null);
-        if (wallet == null) return;
+        if (wallet == null)
+            return;
 
         // Cộng toàn bộ số tiền đơn hàng vào ví Admin
         wallet.setBalance(wallet.getBalance().add(order.getTotalAmount()));

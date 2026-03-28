@@ -548,16 +548,17 @@
   margin-bottom: 12px;
 }
 .image-gallery__main-wrapper {
-  max-height: 520px;
+  height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--color-surface-raised);
+  overflow: hidden;
 }
 .image-gallery__main-img {
-  max-height: 520px;
   width: 100%;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
 }
 
 .image-gallery__thumbs { display: flex; gap: 10px; }

@@ -34,20 +34,17 @@ public class LicenseService {
             key = LicenseKeyGenerator.generateKey(order.getProduct().getProductID());
         } while (licenseRepository.existsByLicenseKey(key));
 
-        // license.setLicenseKey(key);
+        license.setLicenseKey(key);
         license.setOrder(order);
         license.setUser(order.getUser());
         license.setProduct(order.getProduct());
-
+        license.setTier(order.getTier());
         license.setCreatedAt(LocalDateTime.now());
         license.setIsActive(true);
         license.setIsDeleted(false);
         license.setIsTrial(false);
-        Integer duration = order.getTier().getDurationDays();
+        // ExpireAt sẽ được thiết lập tự động trong licenseValidationController khi user đăng nhập lần đầu
 
-    license.setExpireAt(
-        LocalDateTime.now().plusDays(duration)
-    );
         
         return licenseRepository.save(license);
     }
