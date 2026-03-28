@@ -29,7 +29,7 @@ const colors = {
  * nhưng sau khi backend đã fix, scanStatus luôn phản ánh version mới nhất.
  * Logic đơn giản hơn: cần scan khi scanStatus của version mới nhất là PENDING.
  */
-const needsScan = (p) => p.scanStatus === "PENDING";
+const needsScan = (p) => p.scanStatus === "PENDING"&& p.status !== "REJECTED";
 
 const getScanBadgeStatus = (scanStatus) => {
   if (scanStatus === "CLEAN") return "APPROVED";
