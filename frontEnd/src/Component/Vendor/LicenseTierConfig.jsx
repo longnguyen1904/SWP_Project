@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { vendorAPI } from "../../services/api";
 import useVendorProducts from "../../services/useVendorProducts";
 import "../../Style/Vendor.css";
@@ -11,8 +12,14 @@ const TIER_PRESETS = [
 ];
 
 const LicenseTierConfig = () => {
+  const [searchParams] = useSearchParams();
   const { products, loading: productsLoading } = useVendorProducts();
   const [selectedProductId, setSelectedProductId] = useState("");
+
+  useEffect(() => {
+    const pid = searchParams.get("productId");
+    if (pid && !selectedProductId) setSelectedProductId(pid);
+  }, [searchParams]);
   const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [tierLoading, setTierLoading] = useState(false);

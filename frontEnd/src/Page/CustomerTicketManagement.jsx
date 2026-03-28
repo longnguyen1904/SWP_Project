@@ -111,6 +111,17 @@ export default function CustomerTicketManagement() {
     } catch (err) { console.error("Lỗi đóng ticket:", err); }
   };
 
+  const handleReopenTicket = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn MỞ LẠI Ticket này để tiếp tục trao đổi với Vendor không?")) {
+      return;
+    }
+    try {
+      await axios.put(`http://localhost:8081/api/tickets/${selectedTicket.ticketId}/status`, { status: "Open" }, { headers: { Authorization: `Bearer ${token}` } });
+      setSelectedTicket({ ...selectedTicket, status: "Open" });
+      setTickets(tickets.map(t => t.ticketId === selectedTicket.ticketId ? { ...t, status: "Open" } : t));
+    } catch (err) { console.error("Lỗi mở lại ticket:", err); }
+  };
+
   const handleDragStart = (e, ticketId) => { e.dataTransfer.setData("ticketId", ticketId); };
   const handleDragOver = (e) => { e.preventDefault(); };
 
@@ -127,17 +138,21 @@ export default function CustomerTicketManagement() {
       return;
     }
 
-    // 2. KHÁCH HÀNG: Chỉ cho kéo sang Closed
-    if (newStatus !== "Closed") {
-      alert("Lỗi vi phạm: Bạn chỉ có quyền chuyển Ticket sang trạng thái Đã đóng (Closed)!");
+    // 2. Định tuyến logic kéo thả của Khách Hàng
+    const isClosing = newStatus === "Closed";
+    const isReopening = ticket.status === "Closed" && newStatus === "Open";
+    const isReplying = ticket.status === "Resolved" && newStatus === "Open";
+
+    if (!isClosing && !isReopening && !isReplying) {
+      alert("Lỗi vi phạm: Bạn chỉ có thể đóng Ticket, hoặc kéo từ cục Đã đóng/Đã trả lời về Đang xử lý để mở lại!");
       return;
     }
 
     // 3. Hợp lệ -> Lưu tạm vào state Kanban
-    setTickets(prev => prev.map(t => String(t.ticketId) === ticketId ? { ...t, status: "Closed" } : t));
-    setPendingUpdates(prev => ({ ...prev, [ticketId]: "Closed" }));
+    setTickets(prev => prev.map(t => String(t.ticketId) === ticketId ? { ...t, status: newStatus } : t));
+    setPendingUpdates(prev => ({ ...prev, [ticketId]: newStatus }));
     if (selectedTicket?.ticketId === Number(ticketId)) {
-      setSelectedTicket(prev => ({ ...prev, status: "Closed" }));
+      setSelectedTicket(prev => ({ ...prev, status: newStatus }));
     }
   };
 
@@ -195,15 +210,15 @@ export default function CustomerTicketManagement() {
 
   const renderTicketCard = (t, isKanban) => (
     <div key={t.ticketId}
-      draggable={isKanban && t.status !== "Closed"}
-      onDragStart={(e) => isKanban && t.status !== "Closed" && handleDragStart(e, t.ticketId)}
+      draggable={isKanban}
+      onDragStart={(e) => isKanban && handleDragStart(e, t.ticketId)}
       onClick={() => handleSelectTicket(t)}
       style={{
         ...s.kanbanCard, margin: isKanban ? "10px 10px 0 10px" : "0 0 8px 0",
         backgroundColor: selectedTicket?.ticketId === t.ticketId ? "rgba(249, 115, 22, 0.15)" : "rgba(39, 39, 42, 0.6)",
         borderColor: selectedTicket?.ticketId === t.ticketId ? "#f97316" : "rgba(82, 82, 91, 0.4)",
         opacity: t.status === "Closed" && isKanban ? 0.7 : 1,
-        cursor: t.status === "Closed" && isKanban ? "pointer" : (isKanban ? "grab" : "pointer")
+        cursor: isKanban ? "grab" : "pointer"
       }}
       onMouseOver={(e) => { if (selectedTicket?.ticketId !== t.ticketId) e.currentTarget.style.backgroundColor = "rgba(63, 63, 70, 0.6)" }}
       onMouseOut={(e) => { if (selectedTicket?.ticketId !== t.ticketId) e.currentTarget.style.backgroundColor = "rgba(39, 39, 42, 0.6)" }}
@@ -365,7 +380,12 @@ export default function CustomerTicketManagement() {
 
             <div style={{ padding: "20px", borderTop: "1px solid rgba(63, 63, 70, 0.4)", backgroundColor: "transparent" }}>
               {selectedTicket.status === "Closed" ? (
-                <div style={{ textAlign: "center", color: "#10b981", padding: "10px" }}>Ticket này đã đóng. Cảm ơn bạn!</div>
+                <div style={{ textAlign: "center", padding: "10px", display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
+                  <div style={{ color: "#10b981", fontWeight: "500" }}>Ticket này đã đóng. Cảm ơn bạn!</div>
+                  <button onClick={handleReopenTicket} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #f97316", backgroundColor: "rgba(249, 115, 22, 0.1)", color: "#f97316", fontWeight: "600", cursor: "pointer", transition: "0.2s" }}>
+                    <i className="bi bi-arrow-counterclockwise me-1"></i> Mở lại Ticket
+                  </button>
+                </div>
               ) : (
                 <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
                   <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "8px" }}>

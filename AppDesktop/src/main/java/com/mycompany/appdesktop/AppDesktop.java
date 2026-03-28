@@ -9,8 +9,8 @@ package com.mycompany.appdesktop;
  */
 public class AppDesktop {
     public static void main(String[] args) {
-        // Khởi tạo SDK bảo vệ với ID sản phẩm là 05
-        TalltLicenseGuard guard = new TalltLicenseGuard("81");
+        // Khởi tạo SDK bảo vệ với ID sản phẩm là 01
+        TalltLicenseGuard guard = new TalltLicenseGuard("1");
 
         // Bắt buộc nhập License thành công thì mới chạy hàm bên trong
         guard.requireLicenseToLaunch(() -> {

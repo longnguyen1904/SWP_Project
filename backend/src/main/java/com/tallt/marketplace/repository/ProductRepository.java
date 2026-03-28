@@ -141,4 +141,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                         @Param("maxPrice") java.math.BigDecimal maxPrice,
                         @Param("tag") String tag,
                         Pageable pageable);
+
+        Page<Product> findByStatusIn(List<ProductStatus> statuses, Pageable pageable);
+
+        Page<Product> findByStatusInAndProductNameContainingIgnoreCase(
+                        List<ProductStatus> statuses,
+                        String productName,
+                        Pageable pageable);
 }

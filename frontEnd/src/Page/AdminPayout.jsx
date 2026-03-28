@@ -80,39 +80,32 @@ const AdminPayout = () => {
     }
   };
 
-  // ✅ FIX CHÍNH: VNPay flow
-  const handleApproveVNPay = async (id) => {
-    setProcessingId(id);
-    try {
-      const res = await fetch(`${API_BASE}/${id}/approve-vnpay`, {
-        method: "POST",
-      });
+  const handleApprove = async (id) => {
+  setProcessingId(id);
+  try {
+    const res = await fetch(`${API_BASE}/${id}/approve`, {
+      method: "POST",
+    });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        setMessage({ text: errorText, type: "error" });
-        return;
-      }
-
-      const data = await res.json();
-
-      if (!data.paymentUrl) {
-        setMessage({ text: "VNPay URL not found", type: "error" });
-        return;
-      }
-
-      // 🔥 redirect sang VNPay sandbox
-      window.location.href = data.paymentUrl;
-
-    } catch (err) {
-      setMessage({
-        text: "Cannot connect to VNPay",
-        type: "error",
-      });
-    } finally {
-      setProcessingId(null);
+    if (!res.ok) {
+      const errorText = await res.text();
+      setMessage({ text: errorText, type: "error" });
+      return;
     }
-  };
+
+    setMessage({ text: "Payout approved successfully", type: "success" });
+    await fetchData();
+
+  } catch (err) {
+    setMessage({
+      text: "Admin wallet does not have enough balance for this payout",
+      type: "error",
+    });
+  } finally {
+    setProcessingId(null);
+    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  }
+};
 
   const getStatusStyle = (status) => {
     const styles = {
@@ -220,7 +213,7 @@ const AdminPayout = () => {
                             {/* ✅ CHỈ SỬA DÒNG NÀY */}
                             <button
                               disabled={processingId === p.payoutId}
-                              onClick={() => handleApproveVNPay(p.payoutId)}
+                              onClick={() => handleApprove(p.payoutId)}
                               style={actionBtn(COLORS.success)}
                             >
                               {processingId === p.payoutId ? "..." : "Approve"}

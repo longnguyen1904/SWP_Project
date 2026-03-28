@@ -29,8 +29,14 @@ export default function QualityAnalyticsDashboard() {
   const [ratingDist, setRatingDist] = useState([]);
   const [recentReviews, setRecentReviews] = useState([]);
   const [ticketStatus, setTicketStatus] = useState([]); 
+  const [vendorTickets, setVendorTickets] = useState([]);
   const [summary, setSummary] = useState({ totalQty: 0, avgRating: 0, totalReviews: 0, totalTickets: 0 });
   const [apiErrors, setApiErrors] = useState([]);
+
+  // Filter states cho bảng Chi tiết Lỗi
+  const [filterRating, setFilterRating] = useState("all");
+  const [filterTicketCount, setFilterTicketCount] = useState("all");
+  const [filterErrRate, setFilterErrRate] = useState("all");
 
   const userStr = localStorage.getItem('user');
   const role = userStr ? JSON.parse(userStr)?.roleName : null;
@@ -80,12 +86,13 @@ export default function QualityAnalyticsDashboard() {
       const topConfig = { params: { startDate, endDate }, headers: { 'Authorization': `Bearer ${token}` } };
 
       try {
-        const [topRes, sumRes, distRes, reviewsRes, ticketRes] = await Promise.allSettled([
+        const [topRes, sumRes, distRes, reviewsRes, ticketRes, ticketsListRes] = await Promise.allSettled([
           axios.get("http://localhost:8081/api/vendor/revenue/top-products", topConfig),
           axios.get("http://localhost:8081/api/vendor/revenue/summary", config),
           axios.get("http://localhost:8081/api/vendor/revenue/rating-distribution", { params: baseParams, headers: config.headers }),
           axios.get("http://localhost:8081/api/vendor/revenue/recent-reviews", { params: baseParams, headers: config.headers }),
-          axios.get("http://localhost:8081/api/vendor/revenue/ticket-status", { params: baseParams, headers: config.headers })
+          axios.get("http://localhost:8081/api/vendor/revenue/ticket-status", { params: baseParams, headers: config.headers }),
+          axios.get("http://localhost:8081/api/tickets/vendor", { params: baseParams, headers: config.headers })
         ]);
 
         if (sumRes.status === "fulfilled") {
@@ -93,12 +100,17 @@ export default function QualityAnalyticsDashboard() {
           setSummary({ totalQty: sData.totalOrders || 0, avgRating: sData.vendorAvgRating || 0, totalReviews: sData.totalReviews || 0, totalTickets: sData.totalTickets || 0 });
         }
         if (topRes.status === "fulfilled") {
-          const pData = topRes.value.data.map(p => ({ id: p.productId, name: p.productName, category: p.categoryName, sales: p.quantity, rating: p.avgRating, ticketCount: p.ticketCount || 0 }));
+          const pData = topRes.value.data.map(p => ({ 
+            id: p.productId, name: p.productName, category: p.categoryName, 
+            sales: p.quantity, rating: p.avgRating, ticketCount: p.ticketCount || 0,
+            resolvedTicketCount: p.resolvedTicketCount || 0 
+          }));
           setProductsData(pData.sort((a,b) => b.sales - a.sales));
         }
         if (distRes.status === "fulfilled") setRatingDist(distRes.value.data || []);
         if (reviewsRes.status === "fulfilled") setRecentReviews(reviewsRes.value.data || []);
         if (ticketRes.status === "fulfilled") setTicketStatus(ticketRes.value.data || []);
+        if (ticketsListRes.status === "fulfilled") setVendorTickets(ticketsListRes.value.data || []);
 
       } catch (error) { console.error("Lỗi Fetch Data:", error); }
       finally { setLoading(false); }
@@ -106,7 +118,7 @@ export default function QualityAnalyticsDashboard() {
     fetchAllData();
   }, [startDate, endDate, selectedProductId, role, token]);
 
-  if (role !== "VENDOR" && role !== "ADMIN") return <div style={{ color: "white", textAlign: "center", padding: "100px" }}><h2><i className="bi bi-shield-lock-fill me-2"></i>Không có quyền truy cập</h2></div>;
+  if (role !== "VENDOR" && role !== "ADMIN") return <div style={{ color: "white", textAlign: "center", padding: "100px" }}><h2>Không có quyền truy cập</h2></div>;
 
   const displayedProducts = selectedProductId ? productsData.filter(p => String(p.id) === String(selectedProductId)) : productsData;
 
@@ -115,7 +127,7 @@ export default function QualityAnalyticsDashboard() {
   const topBugProduct = [...displayedProducts].sort((a,b) => b.ticketCount - a.ticketCount)[0];
 
   // ==========================================
-  // 1. MA TRẬN ĐỊNH HƯỚNG (SCATTER - CẢI TIẾN)
+  // 1. MA TRẬN ĐỊNH HƯỚNG (SCATTER)
   // ==========================================
   const maxSales = Math.max(...displayedProducts.map(p => p.sales), 1);
   const scatterData = {
@@ -160,10 +172,10 @@ export default function QualityAnalyticsDashboard() {
           label: (ctx) => {
             const d = ctx.raw;
             return [
-              `📊 Lượt bán: ${d.x}`,
-              `⭐ Đánh giá: ${d.y.toFixed(1)} / 5.0`,
-              `🐛 Ticket lỗi: ${d.tickets}`,
-              d.y >= 4.0 && d.tickets <= 2 ? '✅ Sản phẩm tốt' : d.y < 3.0 || d.tickets > 5 ? '🔴 Cần cải thiện' : '🟡 Theo dõi'
+              `Lượt bán: ${d.x}`,
+              `Đánh giá: ${d.y.toFixed(1)} / 5.0`,
+              `Ticket lỗi: ${d.tickets}`,
+              d.y >= 4.0 && d.tickets <= 2 ? 'Sản phẩm tốt' : d.y < 3.0 || d.tickets > 5 ? 'Cần cải thiện' : 'Theo dõi'
             ];
           }
         }
@@ -185,7 +197,7 @@ export default function QualityAnalyticsDashboard() {
   };
 
   // ==========================================
-  // 2. BIỂU ĐỒ SỐ LỖI THEO SẢN PHẨM (BAR CHART MỚI)
+  // 2. BIỂU ĐỒ SỐ LỖI THEO SẢN PHẨM
   // ==========================================
   const bugProducts = [...displayedProducts].sort((a,b) => b.ticketCount - a.ticketCount).slice(0, 8);
   const bugBarData = {
@@ -268,11 +280,9 @@ export default function QualityAnalyticsDashboard() {
   const s = {
     bg: { minHeight: "100vh", backgroundColor: "transparent", color: "#f4f4f5", padding: "30px 20px", fontFamily: 'Inter, system-ui, sans-serif' },
     card: { background: "rgba(9, 9, 11, 0.7)", backdropFilter: "blur(14px)", border: "1px solid rgba(39, 39, 42, 0.6)", borderRadius: "16px", padding: "22px", boxShadow: "0 8px 24px -8px rgba(0,0,0,0.5)" },
-    cardHover: { transition: "border-color 0.25s, box-shadow 0.25s" },
     btnQuick: (isActive) => ({ background: isActive ? "#3b82f6" : "transparent", color: isActive ? "white" : "#71717a", border: `1px solid ${isActive ? "#3b82f6" : "rgba(63, 63, 70, 0.5)"}`, padding: "7px 14px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: isActive ? "700" : "500", transition: "all 0.2s" }),
     input: { background: "#09090b", border: "1px solid rgba(63, 63, 70, 0.5)", color: "white", padding: "9px 14px", borderRadius: "8px", fontSize: "13px", outline: "none", minWidth: "150px", fontWeight: "500", cursor: "pointer" },
-    dateInput: { background: "transparent", border: "none", color: "white", outline: "none", fontSize: "12px", cursor: "pointer" },
-    kpiIcon: { width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }
+    dateInput: { background: "transparent", border: "none", color: "white", outline: "none", fontSize: "12px", cursor: "pointer" }
   };
 
   return (
@@ -283,7 +293,6 @@ export default function QualityAnalyticsDashboard() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, flexWrap: "wrap", gap: 14 }}>
           <div>
             <h1 style={{ fontSize: "28px", fontWeight: "800", margin: 0, color: "#f9fafb", letterSpacing: "-0.5px", display: "flex", alignItems: "center", gap: 10 }}>
-              <i className="bi bi-graph-up-arrow" style={{ color: "#3b82f6" }}></i>
               Định hướng Chất lượng
             </h1>
             <p style={{ color: "#71717a", marginTop: 5, fontSize: "13px" }}>Phân tích lỗi sản phẩm, mức độ hài lòng và định hướng cải tiến</p>
@@ -293,7 +302,7 @@ export default function QualityAnalyticsDashboard() {
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-end" }}>
             <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
               <select style={s.input} value={selectedProductId} onChange={(e) => setSelectedProductId(e.target.value)}>
-                <option value="">🔍 Tất cả Sản phẩm</option>
+                <option value="">Tất cả Sản phẩm</option>
                 {allVendorProducts.map(p => (
                   <option key={p.productId || p.id} value={p.productId || p.id}>{p.productName || p.name}</option>
                 ))}
@@ -314,7 +323,7 @@ export default function QualityAnalyticsDashboard() {
           </div>
         </div>
 
-        {apiErrors.length > 0 && <div style={{ background: "rgba(239, 68, 68, 0.08)", borderLeft: "4px solid #ef4444", color: "#fca5a5", padding: "14px 18px", borderRadius: "8px", marginBottom: "20px", fontSize: "13px" }}><i className="bi bi-exclamation-triangle-fill me-2"></i>{apiErrors.join(" | ")}</div>}
+        {apiErrors.length > 0 && <div style={{ background: "rgba(239, 68, 68, 0.08)", borderLeft: "4px solid #ef4444", color: "#fca5a5", padding: "14px 18px", borderRadius: "8px", marginBottom: "20px", fontSize: "13px" }}>{apiErrors.join(" | ")}</div>}
 
         {loading ? (
           <div style={{ textAlign: "center", padding: "100px 0", color: "#3b82f6" }}>
@@ -323,7 +332,7 @@ export default function QualityAnalyticsDashboard() {
           </div>
         ) : (
           <>
-            {/* KPI CARDS - REDESIGNED */}
+            {/* KPI CARDS */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
               <div style={{ ...s.card }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -331,7 +340,6 @@ export default function QualityAnalyticsDashboard() {
                     <p style={{ color: "#52525b", fontSize: "12px", margin: 0, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>Điểm đánh giá</p>
                     <h2 style={{ fontSize: "28px", margin: "8px 0 0", color: "#eab308", fontWeight: "800" }}>{summary.avgRating} <span style={{fontSize: "18px"}}>★</span></h2>
                   </div>
-                  <div style={{ ...s.kpiIcon, background: "rgba(234, 179, 8, 0.1)", color: "#eab308" }}><i className="bi bi-star-fill"></i></div>
                 </div>
               </div>
               <div style={{ ...s.card }}>
@@ -340,90 +348,157 @@ export default function QualityAnalyticsDashboard() {
                     <p style={{ color: "#52525b", fontSize: "12px", margin: 0, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tổng đánh giá</p>
                     <h2 style={{ fontSize: "28px", margin: "8px 0 0", color: "#8b5cf6", fontWeight: "800" }}>{summary.totalReviews}</h2>
                   </div>
-                  <div style={{ ...s.kpiIcon, background: "rgba(139, 92, 246, 0.1)", color: "#8b5cf6" }}><i className="bi bi-chat-square-heart-fill"></i></div>
                 </div>
               </div>
               <div style={{ ...s.card }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
-                    <p style={{ color: "#52525b", fontSize: "12px", margin: 0, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tổng ticket lỗi</p>
+                    <p style={{ color: "#52525b", fontSize: "12px", margin: 0, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tổng ticket</p>
                     <h2 style={{ fontSize: "28px", margin: "8px 0 0", color: summary.totalTickets > 10 ? "#ef4444" : "#3b82f6", fontWeight: "800" }}>{summary.totalTickets}</h2>
                   </div>
-                  <div style={{ ...s.kpiIcon, background: summary.totalTickets > 10 ? "rgba(239, 68, 68, 0.1)" : "rgba(59, 130, 246, 0.1)", color: summary.totalTickets > 10 ? "#ef4444" : "#3b82f6" }}><i className="bi bi-bug-fill"></i></div>
                 </div>
               </div>
-              <div style={{ ...s.card }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div>
-                    <p style={{ color: "#52525b", fontSize: "12px", margin: 0, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>SP nhiều lỗi nhất</p>
-                    <h2 style={{ fontSize: "16px", margin: "8px 0 0", color: "#f97316", fontWeight: "700", lineHeight: 1.3 }}>{topBugProduct?.name || "—"}</h2>
-                    {topBugProduct && <div style={{ fontSize: "11px", color: "#71717a", marginTop: 3 }}>{topBugProduct.ticketCount} ticket lỗi</div>}
-                  </div>
-                  <div style={{ ...s.kpiIcon, background: "rgba(249, 115, 22, 0.1)", color: "#f97316" }}><i className="bi bi-exclamation-triangle-fill"></i></div>
-                </div>
-              </div>
-            </div>
-
-            {/* ROW 1: SCATTER MATRIX (wider) + BUG BAR CHART */}
-            <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: "16px", marginBottom: "16px" }}>
-              <div style={{ ...s.card }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
-                      <i className="bi bi-bullseye" style={{ color: "#3b82f6" }}></i>Ma trận Định hướng Sản phẩm
-                    </h3>
-                    <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#52525b" }}>Trục X: Lượt bán • Trục Y: Đánh giá • Kích thước: Độ phổ biến</p>
-                  </div>
-                  <div style={{ display: "flex", gap: 8, fontSize: "11px" }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block" }}></span><span style={{color: "#71717a"}}>Tốt</span></span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }}></span><span style={{color: "#71717a"}}>TB</span></span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", display: "inline-block" }}></span><span style={{color: "#71717a"}}>Yếu</span></span>
-                  </div>
-                </div>
-                <div style={{ height: 340 }}><Scatter data={scatterData} options={scatterOptions} /></div>
-              </div>
-
-              <div style={{ ...s.card }}>
-                <h3 style={{ margin: "0 0 4px", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
-                  <i className="bi bi-bug-fill" style={{ color: "#ef4444" }}></i>Số lỗi theo Sản phẩm
-                </h3>
-                <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#52525b" }}>Top sản phẩm có nhiều ticket lỗi nhất</p>
-                <div style={{ height: 340 }}>
-                  {bugProducts.length > 0 && bugProducts.some(p => p.ticketCount > 0) ? (
-                    <Bar data={bugBarData} options={bugBarOptions} />
-                  ) : (
-                    <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#27272a" }}>
-                      <i className="bi bi-check-circle" style={{ fontSize: "2.5rem", marginBottom: 10, color: "#10b981", opacity: 0.3 }}></i>
-                      <span style={{ color: "#52525b" }}>Không có lỗi nào!</span>
+              {!selectedProductId ? (
+                <div style={{ ...s.card }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div>
+                      <p style={{ color: "#52525b", fontSize: "12px", margin: 0, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>SP nhiều lỗi nhất</p>
+                      <h2 style={{ fontSize: "16px", margin: "8px 0 0", color: "#f97316", fontWeight: "700", lineHeight: 1.3 }}>{topBugProduct?.name || "—"}</h2>
+                      {topBugProduct && <div style={{ fontSize: "11px", color: "#71717a", marginTop: 3 }}>{topBugProduct.ticketCount} ticket lỗi</div>}
                     </div>
-                  )}
+                  </div>
+                </div>
+              ) : (() => {
+                const sp = displayedProducts[0];
+                const fixPct = sp && sp.ticketCount > 0 ? Math.round((sp.resolvedTicketCount / sp.ticketCount) * 100) : (sp && sp.ticketCount === 0 ? 100 : 0);
+                return (
+                  <div style={{ ...s.card }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <p style={{ color: "#52525b", fontSize: "12px", margin: 0, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>Tỷ lệ sửa lỗi</p>
+                        <h2 style={{ fontSize: "28px", margin: "8px 0 0", color: fixPct >= 80 ? "#10b981" : "#ef4444", fontWeight: "800" }}>{fixPct}%</h2>
+                        <div style={{ fontSize: "11px", color: "#71717a", marginTop: 3 }}>{sp?.resolvedTicketCount || 0}/{sp?.ticketCount || 0} ticket đã xử lý</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {!selectedProductId ? (
+              /* ====== CHẾ ĐỘ TẤT CẢ: SCATTER + BUG BAR ====== */
+              <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: "16px", marginBottom: "16px" }}>
+                <div style={{ ...s.card }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
+                        Ma trận Định hướng Sản phẩm
+                      </h3>
+                      <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#52525b" }}>Trục X: Lượt bán • Trục Y: Đánh giá • Kích thước: Độ phổ biến</p>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, fontSize: "11px" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block" }}></span><span style={{color: "#71717a"}}>Tốt</span></span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }}></span><span style={{color: "#71717a"}}>TB</span></span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", display: "inline-block" }}></span><span style={{color: "#71717a"}}>Yếu</span></span>
+                    </div>
+                  </div>
+                  <div style={{ height: 340 }}><Scatter data={scatterData} options={scatterOptions} /></div>
+                </div>
+
+                <div style={{ ...s.card }}>
+                  <h3 style={{ margin: "0 0 4px", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
+                    Số lỗi theo Sản phẩm
+                  </h3>
+                  <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#52525b" }}>Top sản phẩm có nhiều ticket lỗi nhất</p>
+                  <div style={{ height: 340 }}>
+                    {bugProducts.length > 0 && bugProducts.some(p => p.ticketCount > 0) ? (
+                      <Bar data={bugBarData} options={bugBarOptions} />
+                    ) : (
+                      <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#27272a" }}>
+                        <span style={{ color: "#52525b" }}>Không có lỗi nào!</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (() => {
+              const productTickets = vendorTickets;
+              const sp = displayedProducts[0];
+              const totalPT = productTickets.length;
+              const openCount = productTickets.filter(t => t.status === "Open").length;
+              const spSales = sp ? sp.sales : 0;
+              const spTickets = sp ? sp.ticketCount : 0;
+              const errRateGauge = spSales > 0 ? Math.round((spTickets / spSales) * 100) : (spTickets > 0 ? 100 : 0);
+              const errColor = errRateGauge <= 5 ? "#10b981" : errRateGauge <= 15 ? "#f59e0b" : "#ef4444";
+
+              return (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "16px", marginBottom: "16px" }}>
+                  {/* CỘT 1: Trạng thái Ticket */}
+                  <div style={{ ...s.card }}>
+                    <h3 style={{ margin: "0 0 12px", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
+                      Trạng thái Ticket
+                    </h3>
+                    <div style={{ height: 220, display: "flex", alignItems: "center" }}>
+                      {ticketStatus.length > 0 ? <Doughnut data={ticketDoughnutData} options={pieOptions} /> :
+                        <div style={{ textAlign: "center", width: "100%", color: "#52525b" }}>Chưa có dữ liệu</div>}
+                    </div>
+                  </div>
+
+                  {/* CỘT 2 (Cũ CỘT 3): Danh sách ticket chi tiết */}
+                  <div style={{ ...s.card }}>
+                    <h3 style={{ margin: "0 0 12px", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
+                      Danh sách Ticket
+                    </h3>
+                    <div style={{ height: 280, overflowY: "auto", paddingRight: "4px" }}>
+                      {productTickets.length === 0 ? (
+                        <div style={{ textAlign: "center", padding: "40px 0", color: "#52525b" }}>Không có ticket nào.</div>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                          {productTickets.map(t => (
+                            <div key={t.ticketId} style={{ background: "rgba(24, 24, 27, 0.6)", padding: "10px 14px", borderRadius: "8px", border: "1px solid rgba(82, 82, 91, 0.3)", borderLeft: `3px solid ${t.status === "Closed" ? "#10b981" : t.status === "Resolved" ? "#3b82f6" : "#ef4444"}` }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", alignItems: "center" }}>
+                                <div style={{ fontSize: "12px", fontWeight: "700", color: "#e4e4e7", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 8 }}>{t.subject}</div>
+                                <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 6px", borderRadius: "10px", flexShrink: 0, background: t.status === "Closed" || t.status === "Resolved" ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)", color: t.status === "Closed" || t.status === "Resolved" ? "#10b981" : "#ef4444" }}>{t.status}</span>
+                              </div>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#71717a" }}>
+                                <span>{t.customerName}</span>
+                                <span>{new Date(t.createdAt).toLocaleDateString("vi-VN")}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ROW 2: CATEGORY + TICKET STATUS + STAR DISTRIBUTION */}
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: selectedProductId ? "1fr 1fr" : "2fr 1fr 1fr", gap: "16px", marginBottom: "16px" }}>
               <div style={{ ...s.card }}>
                 <h3 style={{ margin: "0 0 4px", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
-                  <i className="bi bi-bar-chart-fill" style={{ color: "#3b82f6" }}></i>Phân tích theo Danh mục
+                  Phân tích theo Danh mục
                 </h3>
                 <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#52525b" }}>Đánh giá trung bình & số lỗi theo danh mục</p>
                 <div style={{ height: 260 }}><Bar data={catBarData} options={catBarOptions} /></div>
               </div>
 
-              <div style={{ ...s.card }}>
-                <h3 style={{ margin: "0 0 12px", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
-                  <i className="bi bi-pie-chart-fill" style={{ color: "#8b5cf6" }}></i>Trạng thái Ticket
-                </h3>
-                <div style={{ height: 260, display: "flex", alignItems: "center" }}>
-                  {ticketStatus.length > 0 ? <Doughnut data={ticketDoughnutData} options={pieOptions} /> :
-                    <div style={{ textAlign: "center", width: "100%", color: "#52525b" }}>Chưa có dữ liệu</div>}
+              {!selectedProductId && (
+                <div style={{ ...s.card }}>
+                  <h3 style={{ margin: "0 0 12px", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
+                    Trạng thái Ticket
+                  </h3>
+                  <div style={{ height: 260, display: "flex", alignItems: "center" }}>
+                    {ticketStatus.length > 0 ? <Doughnut data={ticketDoughnutData} options={pieOptions} /> :
+                      <div style={{ textAlign: "center", width: "100%", color: "#52525b" }}>Chưa có dữ liệu</div>}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div style={{ ...s.card }}>
                 <h3 style={{ margin: "0 0 12px", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
-                  <i className="bi bi-stars" style={{ color: "#eab308" }}></i>Phân bổ Sao
+                  Phân bổ Sao
                 </h3>
                 <div style={{ height: 260, display: "flex", alignItems: "center" }}><Doughnut data={starDoughnutData} options={pieOptions} /></div>
               </div>
@@ -433,7 +508,7 @@ export default function QualityAnalyticsDashboard() {
             <div style={{ ...s.card, marginBottom: "16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <h3 style={{ margin: 0, fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
-                  <i className="bi bi-chat-left-quote-fill" style={{ color: "#8b5cf6" }}></i>Nhận xét gần đây
+                  Nhận xét gần đây
                 </h3>
                 {selectedProductId && <span style={{ fontSize: "12px", color: "#3b82f6", background: "rgba(59, 130, 246, 0.08)", padding: "3px 10px", borderRadius: "20px" }}>Lọc 1 SP</span>}
               </div>
@@ -460,9 +535,28 @@ export default function QualityAnalyticsDashboard() {
 
             {/* TABLE: CHI TIẾT LỖI THEO SẢN PHẨM */}
             <div style={{ ...s.card }}>
-              <h3 style={{ margin: "0 0 18px", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
-                <i className="bi bi-table" style={{ color: "#3b82f6" }}></i>Chi tiết Lỗi & Chất lượng theo Sản phẩm
-              </h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
+                <h3 style={{ margin: "0", fontSize: "16px", color: "#f4f4f5", fontWeight: "700", display: "flex", alignItems: "center", gap: 8 }}>
+                  Chi tiết Lỗi & Chất lượng theo Sản phẩm
+                </h3>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <select style={{...s.input, minWidth: "120px", fontSize: "12px"}} value={filterRating} onChange={e => setFilterRating(e.target.value)}>
+                    <option value="all">Đánh giá (Tất cả)</option>
+                    <option value="good">Tốt (&gt;= 4★)</option>
+                    <option value="bad">Kém (&lt; 4★)</option>
+                  </select>
+                  <select style={{...s.input, minWidth: "120px", fontSize: "12px"}} value={filterTicketCount} onChange={e => setFilterTicketCount(e.target.value)}>
+                    <option value="all">Ticket lỗi (Tất cả)</option>
+                    <option value="has_bug">Có lỗi (&gt; 0)</option>
+                    <option value="no_bug">Không lỗi (0)</option>
+                  </select>
+                  <select style={{...s.input, minWidth: "120px", fontSize: "12px"}} value={filterErrRate} onChange={e => setFilterErrRate(e.target.value)}>
+                    <option value="all">Tỷ lệ lỗi (Tất cả)</option>
+                    <option value="low">Tốt (&lt;= 5%)</option>
+                    <option value="high">Kém (&gt; 5%)</option>
+                  </select>
+                </div>
+              </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
@@ -477,13 +571,27 @@ export default function QualityAnalyticsDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {displayedProducts.map((p) => {
-                      const errRate = p.sales > 0 ? ((p.ticketCount / p.sales) * 100).toFixed(1) : 0;
-                      let badge = { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981", text: "Ổn định", icon: "bi-check-circle-fill" };
-                      if ((p.rating > 0 && p.rating < 3.5) || p.ticketCount > 5) {
-                        badge = { bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444", text: "Cần cải thiện", icon: "bi-exclamation-circle-fill" };
-                      } else if (p.rating >= 4.5 && p.sales > 10) {
-                        badge = { bg: "rgba(59, 130, 246, 0.1)", color: "#3b82f6", text: "Xuất sắc", icon: "bi-trophy-fill" };
+                    {displayedProducts
+                      .filter(p => {
+                        let ok = true;
+                        if(filterRating === "good") ok = ok && p.rating >= 4;
+                        if(filterRating === "bad") ok = ok && p.rating > 0 && p.rating < 4;
+                        if(filterTicketCount === "has_bug") ok = ok && p.ticketCount > 0;
+                        if(filterTicketCount === "no_bug") ok = ok && p.ticketCount === 0;
+                        
+                        const rate = p.sales > 0 ? (p.ticketCount / p.sales) * 100 : (p.ticketCount > 0 ? 100 : 0);
+                        if(filterErrRate === "low") ok = ok && rate <= 5;
+                        if(filterErrRate === "high") ok = ok && rate > 5;
+                        return ok;
+                      })
+                      .map((p) => {
+                      const errRate = p.sales > 0 ? ((p.ticketCount / p.sales) * 100).toFixed(1) : (p.ticketCount > 0 ? 100 : 0);
+
+                      let badge = { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981", text: "Ổn định" };
+                      if ((p.rating > 0 && p.rating < 3.5) || p.ticketCount > 5 || errRate > 5) {
+                        badge = { bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444", text: "Cần cải thiện" };
+                      } else if (p.rating >= 4.5 && p.sales > 10 && errRate <= 2) {
+                        badge = { bg: "rgba(59, 130, 246, 0.1)", color: "#3b82f6", text: "Xuất sắc" };
                       }
 
                       return (
@@ -495,10 +603,10 @@ export default function QualityAnalyticsDashboard() {
                         <td style={{ padding: "14px 8px", textAlign: "center" }}>
                           <span style={{ fontWeight: "700", color: p.ticketCount > 5 ? "#ef4444" : p.ticketCount > 0 ? "#f97316" : "#3f3f46" }}>{p.ticketCount}</span>
                         </td>
-                        <td style={{ padding: "14px 8px", textAlign: "center", color: errRate > 5 ? "#ef4444" : "#52525b", fontSize: "12px" }}>{errRate}%</td>
+                        <td style={{ padding: "14px 8px", textAlign: "center", color: errRate > 5 ? "#ef4444" : errRate == 0 ? "#52525b" : "#f59e0b", fontSize: "12px", fontWeight: "600" }}>{p.ticketCount === 0 && p.sales === 0 ? "—" : `${errRate}%`}</td>
                         <td style={{ padding: "14px 8px", textAlign: "center" }}>
                           <span style={{background: badge.bg, color: badge.color, padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: 4}}>
-                            <i className={`bi ${badge.icon}`}></i>{badge.text}
+                            {badge.text}
                           </span>
                         </td>
                       </tr>

@@ -12,7 +12,7 @@ const ProductManagement = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState({ productName: "", description: "", basePrice: "", guideDocumentUrl: "", hasTrial: false, trialDurationDays: 7 });
+  const [editFormData, setEditFormData] = useState({ productName: "", description: "", basePrice: "", hasTrial: false, trialDurationDays: 7 });
   const [editImages, setEditImages] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [imagesToAdd, setImagesToAdd] = useState([]);
@@ -29,7 +29,7 @@ const ProductManagement = () => {
   const fetchProducts = async () => {
     setLoading(true); setError("");
     try {
-      const response = await vendorAPI.getVendorProducts({ page, size: 12 });
+      const response = await vendorAPI.getVendorProducts({ page, size: 6 });
       const data = response.data?.data ?? response.data;
       const content = data?.content ?? data?.products ?? (Array.isArray(data) ? data : []);
       setProducts(Array.isArray(content) ? content : []);
@@ -50,7 +50,6 @@ const ProductManagement = () => {
       productName: product.productName ?? product.name,
       description: product.description,
       basePrice: product.basePrice ?? product.price,
-      guideDocumentUrl: product.guideDocumentUrl ?? "",
       hasTrial: product.hasTrial ?? false,
       trialDurationDays: product.trialDurationDays ?? 7,
     });
@@ -120,7 +119,7 @@ const ProductManagement = () => {
       const pid = getProductId(selectedProduct);
       await vendorAPI.updateProduct(pid, {
         productName: editFormData.productName, description: editFormData.description,
-        basePrice: parseFloat(editFormData.basePrice), guideDocumentUrl: editFormData.guideDocumentUrl,
+        basePrice: parseFloat(editFormData.basePrice),
       });
       for (const imageId of imagesToDelete) { await vendorAPI.deleteProductImage(pid, imageId); }
       for (const img of imagesToAdd) { await vendorAPI.uploadProductImage(pid, img); }
@@ -256,9 +255,46 @@ const ProductManagement = () => {
                       <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(product)}>Delete</button>
                     )}
                   </div>
+                  <div className="product-card-actions" style={{ marginTop: 6 }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/Page/Vendor/VersionControl?productId=${pid}`)}>Versions</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/Page/Vendor/LicenseTiers?productId=${pid}`)}>License Tiers</button>
+                  </div>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "16px",
+            marginTop: "24px",
+            paddingTop: "16px",
+            borderTop: "1px solid rgba(255,255,255,0.1)"
+          }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setPage(prev => Math.max(0, prev - 1))}
+              disabled={page === 0}
+            >
+              ← Previous
+            </button>
+
+            <span style={{ color: "#a0aec0", fontSize: "14px" }}>
+              Page <strong style={{ color: "#e2e8f0" }}>{page + 1}</strong> / <strong>{totalPages}</strong>
+            </span>
+
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setPage(prev => prev + 1)}
+              disabled={page >= totalPages - 1}
+            >
+              Next →
+            </button>
           </div>
         )}
       </div>
@@ -284,12 +320,6 @@ const ProductManagement = () => {
                   <label className="form-label">Price (VND)</label>
                   <input className="form-input" type="number" value={editFormData.basePrice} min="0" step="1000"
                     onChange={(e) => setEditFormData({ ...editFormData, basePrice: e.target.value })} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Guide Document URL</label>
-                  <input className="form-input" value={editFormData.guideDocumentUrl} placeholder="https://example.com/guide.pdf"
-                    onChange={(e) => setEditFormData({ ...editFormData, guideDocumentUrl: e.target.value })} />
-                  <span className="form-hint">Link to user guide document (optional)</span>
                 </div>
               </div>
 

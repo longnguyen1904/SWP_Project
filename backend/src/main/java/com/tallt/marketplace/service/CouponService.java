@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class CouponService {
@@ -53,8 +54,33 @@ public class CouponService {
         if (discountPercent < 1 || discountPercent > 100) {
             throw new AppException("Phần trăm giảm giá phải từ 1 đến 100");
         }
-        if (couponRepository.findByCodeIgnoreCase(code).isPresent()) {
-            throw new AppException("Mã coupon đã tồn tại");
+        if (expiresAtStr != null && !expiresAtStr.isEmpty()) {
+            LocalDateTime expiresAt = LocalDateTime.parse(expiresAtStr);
+            if (expiresAt.isBefore(LocalDateTime.now())) {
+                throw new AppException("Expiry date must be in the future");
+            }
+        }
+
+        Integer vendorId = vendor.getVendorID();
+
+        // Duplicate check: same code + same vendor + same product + same tier
+        if (tierId != null) {
+            if (couponRepository.existsByCodeIgnoreCaseAndVendor_VendorIDAndProduct_ProductIDAndTier_TierID(code, vendorId, productId, tierId)) {
+                throw new AppException("Coupon code '" + code + "' already exists for this product and tier.");
+            }
+        } else {
+            if (couponRepository.existsByCodeIgnoreCaseAndVendor_VendorIDAndProduct_ProductIDAndTierIsNull(code, vendorId, productId)) {
+                throw new AppException("Coupon code '" + code + "' already exists for this product.");
+            }
+        }
+
+        // If creating for "All products" (null), block if same code exists for ANY specific product
+        if (productId == null && couponRepository.existsByCodeIgnoreCaseAndVendor_VendorIDAndProductIsNotNull(code, vendorId)) {
+            throw new AppException("Coupon code '" + code + "' already exists for a specific product. Cannot create an 'All products' coupon with the same code.");
+        }
+        // If creating for a specific product, block if same code already exists for "All products"
+        if (productId != null && couponRepository.existsByCodeIgnoreCaseAndVendor_VendorIDAndProductIsNull(code, vendorId)) {
+            throw new AppException("Coupon code '" + code + "' already exists for 'All products'. Cannot reuse the same code for a specific product.");
         }
 
         Coupon coupon = new Coupon();
@@ -65,17 +91,13 @@ public class CouponService {
         coupon.setIsActive(true);
 
         if (expiresAtStr != null && !expiresAtStr.isEmpty()) {
-            LocalDateTime expiresAt = LocalDateTime.parse(expiresAtStr);
-            if (expiresAt.isBefore(LocalDateTime.now())) {
-                throw new AppException("Expiry date must be in the future");
-            }
-            coupon.setExpiresAt(expiresAt);
+            coupon.setExpiresAt(LocalDateTime.parse(expiresAtStr));
         }
 
         if (productId != null) {
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
-            if (!product.getVendor().getVendorID().equals(vendor.getVendorID())) {
+            if (!product.getVendor().getVendorID().equals(vendorId)) {
                 throw new AppException("Sản phẩm không thuộc về bạn");
             }
             coupon.setProduct(product);
@@ -112,34 +134,70 @@ public class CouponService {
     }
 
     public Map<String, Object> validateCoupon(String code, Integer productId, Integer tierId) {
-        Coupon coupon = couponRepository.findByCodeIgnoreCase(code.trim())
-                .orElseThrow(() -> new AppException("Mã coupon không tồn tại"));
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException("Product not found"));
+
+        Integer vendorId = product.getVendor().getVendorID();
+
+        // Cascading coupon lookup: exact tier → all-tier → all-products
+        Coupon coupon = null;
+
+        // 1. Try exact match: code + product + specific tier
+        if (tierId != null) {
+            coupon = couponRepository.findByCodeIgnoreCaseAndProduct_ProductIDAndTier_TierID(
+                    code.trim(), productId, tierId).orElse(null);
+        }
+
+        // 2. Fallback: code + product + tier=null (applies to all tiers of this product)
+        if (coupon == null) {
+            coupon = couponRepository.findByCodeIgnoreCaseAndProduct_ProductIDAndTierIsNull(
+                    code.trim(), productId).orElse(null);
+        }
+
+        // 3. Fallback: code + vendor + product=null (applies to all products of this vendor)
+        if (coupon == null) {
+            coupon = couponRepository.findByCodeIgnoreCaseAndProductIsNullAndVendor_VendorID(
+                    code.trim(), vendorId).orElse(null);
+        }
+
+        if (coupon == null) {
+            // One last try: maybe the code exists but for a different product/tier
+            Optional<Coupon> anyMatch = couponRepository.findByCodeIgnoreCase(code.trim());
+            if (anyMatch.isPresent()) {
+                Coupon c = anyMatch.get();
+                if (c.getProduct() != null && !c.getProduct().getProductID().equals(productId)) {
+                    throw new AppException("This coupon does not apply to this product");
+                }
+                if (c.getTier() != null && tierId != null && !c.getTier().getTierID().equals(tierId)) {
+                    throw new AppException("This coupon does not apply to this tier");
+                }
+                if (c.getProduct() == null && !c.getVendor().getVendorID().equals(vendorId)) {
+                    throw new AppException("This coupon does not apply to this product");
+                }
+            }
+            throw new AppException("Coupon code not found");
+        }
 
         if (!coupon.getIsActive()) {
-            throw new AppException("Mã coupon đã bị vô hiệu hóa");
+            throw new AppException("This coupon has been deactivated");
         }
         if (coupon.getExpiresAt() != null && coupon.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new AppException("Mã coupon đã hết hạn");
+            throw new AppException("This coupon has expired");
         }
         if (coupon.getMaxUses() != null && coupon.getCurrentUses() >= coupon.getMaxUses()) {
-            throw new AppException("Mã coupon đã hết lượt sử dụng");
+            throw new AppException("This coupon has reached its usage limit");
         }
 
-        if (coupon.getProduct() != null && !coupon.getProduct().getProductID().equals(productId)) {
-            throw new AppException("Mã coupon không áp dụng cho sản phẩm này");
+        // Verify vendor ownership for "All products" coupons
+        if (coupon.getProduct() == null
+                && !coupon.getVendor().getVendorID().equals(vendorId)) {
+            throw new AppException("This coupon does not apply to this product");
         }
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new AppException("Sản phẩm không tồn tại"));
-
-        if (coupon.getProduct() == null &&
-                !coupon.getVendor().getVendorID().equals(product.getVendor().getVendorID())) {
-            throw new AppException("Mã coupon không áp dụng cho sản phẩm này");
-        }
-
+        // Verify tier match for tier-specific coupons
         if (coupon.getTier() != null && tierId != null
                 && !coupon.getTier().getTierID().equals(tierId)) {
-            throw new AppException("Mã coupon chỉ áp dụng cho gói " + coupon.getTier().getTierName());
+            throw new AppException("This coupon does not apply to this tier");
         }
 
         return Map.of(
@@ -150,9 +208,30 @@ public class CouponService {
     }
 
     @Transactional
-    public Coupon useCoupon(String code) {
-        Coupon coupon = couponRepository.findByCodeIgnoreCase(code.trim())
-                .orElseThrow(() -> new AppException("Mã coupon không tồn tại"));
+    public Coupon useCoupon(String code, Integer productId, Integer tierId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException("Product not found"));
+        Integer vendorId = product.getVendor().getVendorID();
+
+        // Same cascading lookup as validateCoupon
+        Coupon coupon = null;
+        if (tierId != null) {
+            coupon = couponRepository.findByCodeIgnoreCaseAndProduct_ProductIDAndTier_TierID(
+                    code.trim(), productId, tierId).orElse(null);
+        }
+        if (coupon == null) {
+            coupon = couponRepository.findByCodeIgnoreCaseAndProduct_ProductIDAndTierIsNull(
+                    code.trim(), productId).orElse(null);
+        }
+        if (coupon == null) {
+            coupon = couponRepository.findByCodeIgnoreCaseAndProductIsNullAndVendor_VendorID(
+                    code.trim(), vendorId).orElse(null);
+        }
+        if (coupon == null) {
+            coupon = couponRepository.findByCodeIgnoreCase(code.trim())
+                    .orElseThrow(() -> new AppException("Coupon code not found"));
+        }
+
         coupon.setCurrentUses(coupon.getCurrentUses() + 1);
         return couponRepository.save(coupon);
     }

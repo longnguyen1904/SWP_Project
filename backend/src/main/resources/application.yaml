@@ -56,4 +56,4 @@ vnpay:
   version: "2.1.0"
   command: pay
   frontend-url: http://localhost:5173
-  payout-return-url: http://localhost:8081/api/admin/payouts/vnpay-payout-return
+
