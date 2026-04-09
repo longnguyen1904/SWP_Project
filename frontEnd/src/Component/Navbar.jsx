@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import logo from "../public/logo_no_bg.png";
 import LogIn from "./LogIn";
 import Register from "./Register";
-import "../Style/Navbar.css";
+import "../Style/NavBar.css";
 
 import { isAuthenticated, logOut } from "../services/authService";
 
