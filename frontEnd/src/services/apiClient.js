@@ -3,7 +3,7 @@ import axios from "axios";
 import { getToken } from "./localStorageService"; 
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:8081/api", // Địa chỉ Back-End của ông
+  baseURL: `${import.meta.env.VITE_API_URL}/api`, // Địa chỉ Back-End
   timeout: 10000,
 });
 

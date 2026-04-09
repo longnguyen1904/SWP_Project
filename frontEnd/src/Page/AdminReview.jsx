@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from "react";
 // ─────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────
-const API_BASE = "http://localhost:8081/api/admin/review";
+const API_BASE = "${import.meta.env.VITE_API_URL}/api/admin/review";
 const PAGE_SIZE = 5;
 
 const colors = {

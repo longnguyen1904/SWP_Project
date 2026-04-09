@@ -17,7 +17,7 @@ export default function Authenticate() {
     if (accessToken) {
       console.log("Google Token received, verifying with Backend...");
 
-      fetch("http://localhost:8081/api/auth/google", {
+      fetch("${import.meta.env.VITE_API_URL}/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: accessToken })

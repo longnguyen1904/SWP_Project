@@ -33,7 +33,7 @@ export default function CustomerTicketManagement() {
     setIsLoading(true);
     setPendingUpdates({});
     try {
-      const res = await axios.get("http://localhost:8081/api/tickets/customer", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get("${import.meta.env.VITE_API_URL}/api/tickets/customer", { headers: { Authorization: `Bearer ${token}` } });
       setTickets(res.data);
 
       if (openTicketId) {
@@ -61,7 +61,7 @@ export default function CustomerTicketManagement() {
   const handleSelectTicket = async (ticket) => {
     setSelectedTicket(ticket);
     try {
-      const res = await axios.get(`http://localhost:8081/api/tickets/${ticket.ticketId}/messages`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/tickets/${ticket.ticketId}/messages`, { headers: { Authorization: `Bearer ${token}` } });
       setMessages(res.data);
     } catch (err) { console.error("Lỗi handleSelectTicket:", err); }
   };
@@ -94,7 +94,7 @@ export default function CustomerTicketManagement() {
       formData.append("content", textToSend);
       if (fileToSend) formData.append("file", fileToSend);
 
-      const res = await axios.post(`http://localhost:8081/api/tickets/${selectedTicket.ticketId}/reply`, formData, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/tickets/${selectedTicket.ticketId}/reply`, formData, { headers: { Authorization: `Bearer ${token}` } });
 
       setMessages(prev => prev.map(msg =>
         msg.messageId === tempId
@@ -131,7 +131,7 @@ export default function CustomerTicketManagement() {
       return;
     }
     try {
-      await axios.put(`http://localhost:8081/api/tickets/${selectedTicket.ticketId}/status`, { status: "Closed" }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/tickets/${selectedTicket.ticketId}/status`, { status: "Closed" }, { headers: { Authorization: `Bearer ${token}` } });
       setSelectedTicket({ ...selectedTicket, status: "Closed" });
       setTickets(tickets.map(t => t.ticketId === selectedTicket.ticketId ? { ...t, status: "Closed" } : t));
     } catch (err) { console.error("Lỗi đóng ticket:", err); }
@@ -142,7 +142,7 @@ export default function CustomerTicketManagement() {
       return;
     }
     try {
-      await axios.put(`http://localhost:8081/api/tickets/${selectedTicket.ticketId}/status`, { status: "Open" }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/tickets/${selectedTicket.ticketId}/status`, { status: "Open" }, { headers: { Authorization: `Bearer ${token}` } });
       setSelectedTicket({ ...selectedTicket, status: "Open" });
       setTickets(tickets.map(t => t.ticketId === selectedTicket.ticketId ? { ...t, status: "Open" } : t));
     } catch (err) { console.error("Lỗi mở lại ticket:", err); }
@@ -196,7 +196,7 @@ export default function CustomerTicketManagement() {
 
     try {
       await Promise.all(updates.map(([id, status]) =>
-        axios.put(`http://localhost:8081/api/tickets/${id}/status`, { status }, { headers: { Authorization: `Bearer ${token}` } })
+        axios.put(`${import.meta.env.VITE_API_URL}/api/tickets/${id}/status`, { status }, { headers: { Authorization: `Bearer ${token}` } })
       ));
       alert("Tuyệt vời! Đã lưu các thay đổi trạng thái thành công.");
       setPendingUpdates({});

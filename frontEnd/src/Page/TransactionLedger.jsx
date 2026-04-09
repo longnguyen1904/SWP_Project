@@ -46,7 +46,7 @@ export default function TransactionLedger() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const res = await axios.get("http://localhost:8081/api/vendor/revenue/top-products", {
+        const res = await axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/top-products", {
           params: { startDate: "2000-01-01", endDate: today },
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -67,7 +67,7 @@ export default function TransactionLedger() {
     if (role !== "VENDOR" && role !== "ADMIN") return;
     setIsLoading(true);
     try {
-      const res = await axios.get("http://localhost:8081/api/vendor/revenue/ledger", {
+      const res = await axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/ledger", {
         params: { startDate, endDate, search: debouncedSearchTerm, productId: selectedProductId, sortBy },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -90,7 +90,7 @@ export default function TransactionLedger() {
     try {
       for (let i = 0; i < selectedIds.length; i++) {
         const id = selectedIds[i];
-        const antiIDMUrl = `http://localhost:8081/api/vendor/revenue/export-invoice/${id}?t=${new Date().getTime()}&r=${Math.random()}`;
+        const antiIDMUrl = `${import.meta.env.VITE_API_URL}/api/vendor/revenue/export-invoice/${id}?t=${new Date().getTime()}&r=${Math.random()}`;
         const res = await axios.get(antiIDMUrl, {
           headers: { Authorization: `Bearer ${token}` },
           responseType: "blob"

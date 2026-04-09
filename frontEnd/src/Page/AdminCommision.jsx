@@ -24,7 +24,7 @@ export default function AdminCommission() {
   const loadCommission = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:8081/api/admin/commission");
+      const res = await axios.get("${import.meta.env.VITE_API_URL}/api/admin/commission");
       setCommission(res.data);
     } catch (err) {
       showNotification("Failed to load commission data", "error");
@@ -53,7 +53,7 @@ export default function AdminCommission() {
     try {
       setLoading(true);
       await axios.post(
-        `http://localhost:8081/api/admin/commission/set?percent=${value}`
+        `${import.meta.env.VITE_API_URL}/api/admin/commission/set?percent=${value}`
       );
       await loadCommission();
       setInput("");

@@ -13,7 +13,7 @@ const COLORS = {
   border: "#334155",
 };
 
-const API_BASE = "http://localhost:8081/api/admin/payouts";
+const API_BASE = "${import.meta.env.VITE_API_URL}/api/admin/payouts";
 
 const AdminPayout = () => {
   const [payouts, setPayouts] = useState([]);

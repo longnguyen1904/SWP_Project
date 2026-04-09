@@ -52,7 +52,7 @@ function AdminVendorManagement() {
   const fetchVendors = async (customPage = page) => {
     setLoading(true);
     try {
-      let url = `http://localhost:8081/api/admin/vendors?page=${customPage}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+      let url = `${import.meta.env.VITE_API_URL}/api/admin/vendors?page=${customPage}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
       if (status) url += `&status=${status}`;
       if (type) url += `&type=${type}`;
 
@@ -81,7 +81,7 @@ function AdminVendorManagement() {
     if (!searchId) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8081/api/admin/vendors/${searchId}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/vendors/${searchId}`);
       if (!res.ok) throw new Error("Vendor not found");
       const data = await res.json();
       setVendors([data]);
@@ -126,8 +126,8 @@ function AdminVendorManagement() {
   const executeUpdateStatus = async (vendorID, newStatus, note = "") => {
     try {
       const url = note
-        ? `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}&rejectionNote=${encodeURIComponent(note)}`
-        : `http://localhost:8081/api/admin/vendors/${vendorID}/status?status=${newStatus}`;
+        ? `${import.meta.env.VITE_API_URL}/api/admin/vendors/${vendorID}/status?status=${newStatus}&rejectionNote=${encodeURIComponent(note)}`
+        : `${import.meta.env.VITE_API_URL}/api/admin/vendors/${vendorID}/status?status=${newStatus}`;
 
       const res = await fetch(url, { method: "PUT" });
       if (!res.ok) throw new Error("Update failed");

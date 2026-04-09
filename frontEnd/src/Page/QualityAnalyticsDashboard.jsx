@@ -65,7 +65,7 @@ export default function QualityAnalyticsDashboard() {
     const fetchDropdownList = async () => {
       try {
         const config = { params: { startDate: "2000-01-01", endDate: today }, headers: { 'Authorization': `Bearer ${token}` } };
-        const res = await axios.get("http://localhost:8081/api/vendor/revenue/top-products", config);
+        const res = await axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/top-products", config);
         setAllVendorProducts(res.data || []);
       } catch (error) { console.error("Lỗi tải dropdown:", error); }
     };
@@ -87,12 +87,12 @@ export default function QualityAnalyticsDashboard() {
 
       try {
         const [topRes, sumRes, distRes, reviewsRes, ticketRes, ticketsListRes] = await Promise.allSettled([
-          axios.get("http://localhost:8081/api/vendor/revenue/top-products", topConfig),
-          axios.get("http://localhost:8081/api/vendor/revenue/summary", config),
-          axios.get("http://localhost:8081/api/vendor/revenue/rating-distribution", { params: baseParams, headers: config.headers }),
-          axios.get("http://localhost:8081/api/vendor/revenue/recent-reviews", { params: baseParams, headers: config.headers }),
-          axios.get("http://localhost:8081/api/vendor/revenue/ticket-status", { params: baseParams, headers: config.headers }),
-          axios.get("http://localhost:8081/api/tickets/vendor", { params: baseParams, headers: config.headers })
+          axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/top-products", topConfig),
+          axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/summary", config),
+          axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/rating-distribution", { params: baseParams, headers: config.headers }),
+          axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/recent-reviews", { params: baseParams, headers: config.headers }),
+          axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/ticket-status", { params: baseParams, headers: config.headers }),
+          axios.get("${import.meta.env.VITE_API_URL}/api/tickets/vendor", { params: baseParams, headers: config.headers })
         ]);
 
         if (sumRes.status === "fulfilled") {

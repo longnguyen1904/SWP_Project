@@ -72,7 +72,7 @@ export default function RevenueDashboard() {
         params: { startDate: "2000-01-01", endDate: today },
         headers: { 'Authorization': `Bearer ${token}` }
       };
-      const res = await axios.get("http://localhost:8081/api/vendor/revenue/top-products", config);
+      const res = await axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/top-products", config);
       setVendorProducts(res.data || []);
     } catch (err) {
       console.error("Lỗi tải danh sách sản phẩm:", err);
@@ -93,9 +93,9 @@ export default function RevenueDashboard() {
       }
 
       const [dailyRes, topProductsRes, summaryRes] = await Promise.all([
-        axios.get("http://localhost:8081/api/vendor/revenue/daily", config),
-        axios.get("http://localhost:8081/api/vendor/revenue/top-products", config),
-        axios.get("http://localhost:8081/api/vendor/revenue/summary", config)
+        axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/daily", config),
+        axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/top-products", config),
+        axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/summary", config)
       ]);
 
       setData(dailyRes.data || []);
@@ -117,7 +117,7 @@ export default function RevenueDashboard() {
     const params = { startDate, endDate };
     if (selectedProductId) params.productId = selectedProductId;
 
-    axios.get("http://localhost:8081/api/vendor/revenue/export", {
+    axios.get("${import.meta.env.VITE_API_URL}/api/vendor/revenue/export", {
       params,
       headers: { 'Authorization': `Bearer ${token}` },
       responseType: "blob"

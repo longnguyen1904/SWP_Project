@@ -19,7 +19,7 @@ export default function FilterList() {
   const [products, setProducts] = useState([]);
   const FILTERS = ["All", ...new Set(products.map(p => p.categoryName).filter(Boolean))];
   useEffect(() => {
-    fetch("http://localhost:8081/api/products")
+    fetch("${import.meta.env.VITE_API_URL}/api/products")
       .then(res => res.json())
       .then(data => setProducts(data.data.content));
   }, []);
