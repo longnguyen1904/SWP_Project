@@ -14,9 +14,9 @@ spring:
       max-file-size: 500MB
       max-request-size: 500MB
   datasource:
-    url: jdbc:mysql://localhost:3306/TALLT_SoftwareMarket?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: 123
+    url: jdbc:mysql://gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/TALLT_SoftwareMarket?sslMode=VERIFY_IDENTITY
+    username: 3rEho3Zh2f6hLRf.root
+    password: Lgm77MSsgTfnEQc9
   jpa:
     hibernate:
       ddl-auto: update
@@ -38,7 +38,7 @@ spring:
               - profile
 
 server:
-  port: 8081
+  port: ${PORT:8081}
 virustotal:
   api-key: fbeee19f2a7b45408e220ff4a07384ff9041af712a50f4fe6eb38b32b3c250b7
 
