@@ -38,7 +38,7 @@ spring:
               - profile
 
 server:
-  port: ${PORT:8081}
+  port: 8081
 virustotal:
   api-key: fbeee19f2a7b45408e220ff4a07384ff9041af712a50f4fe6eb38b32b3c250b7
 
