@@ -1,4 +1,4 @@
-CREATE DATABASE  IF NOT EXISTS `TALLT_SoftwareMarket` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+CREATE DATABASE  IF NOT EXISTS `TALLT_SoftwareMarket` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `TALLT_SoftwareMarket`;
 -- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
@@ -29,7 +29,7 @@ CREATE TABLE `Categories` (
   `CategoryName` varchar(255) NOT NULL,
   PRIMARY KEY (`CategoryID`),
   UNIQUE KEY `UKmnsxp4e5i2f5gfq1eqaw8cwm` (`CategoryName`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -61,7 +61,7 @@ CREATE TABLE `LicenseTiers` (
   PRIMARY KEY (`TierID`),
   KEY `FK1ryb122myny4tuxxd3dvnlql5` (`ProductID`),
   CONSTRAINT `FK1ryb122myny4tuxxd3dvnlql5` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -103,7 +103,7 @@ CREATE TABLE `Licenses` (
   CONSTRAINT `FKginf68hw6mw0gptf52eowgjxo` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`),
   CONSTRAINT `FKpmiu3pymu8mk28mr4rtktbgb4` FOREIGN KEY (`TierID`) REFERENCES `LicenseTiers` (`TierID`),
   CONSTRAINT `FKqwgumrvqmqsn0tgvar20gll8a` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -143,7 +143,7 @@ CREATE TABLE `Orders` (
   CONSTRAINT `FK36mhhcrdfqdveq1l0ttciylnr` FOREIGN KEY (`TierID`) REFERENCES `LicenseTiers` (`TierID`),
   CONSTRAINT `FKnjx4oqsxdlxposkcpl28mk5n2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`),
   CONSTRAINT `FKph55bub15tpuk7emg6atv2yus` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -174,7 +174,7 @@ CREATE TABLE `ProductImages` (
   PRIMARY KEY (`ImageID`),
   KEY `FKeugt720s2mm51cmqy9jld1d99` (`ProductID`),
   CONSTRAINT `FKeugt720s2mm51cmqy9jld1d99` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -201,7 +201,7 @@ CREATE TABLE `ProductTags` (
   KEY `FKryyinbhwibdkou4shvavu2axh` (`TagID`),
   CONSTRAINT `FKdbpqs76c0tatq6p6jxdbm930u` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`),
   CONSTRAINT `FKryyinbhwibdkou4shvavu2axh` FOREIGN KEY (`TagID`) REFERENCES `Tags` (`TagID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -232,7 +232,7 @@ CREATE TABLE `ProductVersions` (
   PRIMARY KEY (`VersionID`),
   KEY `FKj9c3j5k0juo745hto7qweo08s` (`ProductID`),
   CONSTRAINT `FKj9c3j5k0juo745hto7qweo08s` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -270,7 +270,7 @@ CREATE TABLE `Products` (
   KEY `FKg7lvd7fwibfc5e3e91a7bs8ml` (`VendorID`),
   CONSTRAINT `FKg7lvd7fwibfc5e3e91a7bs8ml` FOREIGN KEY (`VendorID`) REFERENCES `Vendors` (`VendorID`),
   CONSTRAINT `FKpuwdc4db4doatnavrifkfxgys` FOREIGN KEY (`CategoryID`) REFERENCES `Categories` (`CategoryID`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -302,7 +302,7 @@ CREATE TABLE `Reviews` (
   KEY `FKihxyd8pdcc5upb417pv6ptl8b` (`UserID`),
   CONSTRAINT `FKihxyd8pdcc5upb417pv6ptl8b` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`),
   CONSTRAINT `FKp7h7unylnv24raqy7kpyc1o8o` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -326,7 +326,7 @@ CREATE TABLE `Roles` (
   `RoleID` int NOT NULL,
   `RoleName` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`RoleID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -351,7 +351,7 @@ CREATE TABLE `Tags` (
   `TagName` varchar(255) NOT NULL,
   PRIMARY KEY (`TagID`),
   UNIQUE KEY `UK1xuta1p3llexcasetafj9f0te` (`TagName`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -385,7 +385,7 @@ CREATE TABLE `Users` (
   UNIQUE KEY `UK9cw87ffd4i55ki0qpkwu63er` (`Username`),
   KEY `FKjsyq92q5tj4da19fijtpse9ud` (`RoleID`),
   CONSTRAINT `FKjsyq92q5tj4da19fijtpse9ud` FOREIGN KEY (`RoleID`) REFERENCES `Roles` (`RoleID`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -414,7 +414,7 @@ CREATE TABLE `VendorPayouts` (
   PRIMARY KEY (`PayoutID`),
   KEY `FK1ewj7grx5aew04fj0wsammo4o` (`VendorID`),
   CONSTRAINT `FK1ewj7grx5aew04fj0wsammo4o` FOREIGN KEY (`VendorID`) REFERENCES `Vendors` (`VendorID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -449,7 +449,7 @@ CREATE TABLE `Vendors` (
   PRIMARY KEY (`VendorID`),
   UNIQUE KEY `UK7pejn9ijv4f90ph22h519ljj5` (`UserID`),
   CONSTRAINT `FKlo8pn5btumo6elht61r8mfnd5` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -469,7 +469,7 @@ UNLOCK TABLES;
 DROP TABLE IF EXISTS `WalletTransactions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `WalletTransactions` (,,.
+CREATE TABLE `WalletTransactions` (
   `TransactionID` int NOT NULL AUTO_INCREMENT,
   `Amount` decimal(38,2) NOT NULL,
   `CreatedAt` datetime(6) DEFAULT NULL,
@@ -480,7 +480,7 @@ CREATE TABLE `WalletTransactions` (,,.
   PRIMARY KEY (`TransactionID`),
   KEY `FKqmskjtw99y7xb6orhbu627j0m` (`WalletID`),
   CONSTRAINT `FKqmskjtw99y7xb6orhbu627j0m` FOREIGN KEY (`WalletID`) REFERENCES `Wallets` (`WalletID`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -508,7 +508,7 @@ CREATE TABLE `Wallets` (
   PRIMARY KEY (`WalletID`),
   UNIQUE KEY `UKlrforewk3641g4x54xkwyii0s` (`UserID`),
   CONSTRAINT `FK2jelxeglgevmxu9iywb3t8rp5` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -658,7 +658,7 @@ CREATE TABLE LicenseSessions (
     INDEX IDX_LicenseSessions_LastActive (LastActive)
 ) ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_0900_ai_ci;
+COLLATE=utf8mb4_general_ci;
 
 
 INSERT INTO LicenseSessions
