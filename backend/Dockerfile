@@ -17,8 +17,9 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup --system appgroup && adduser --system --group appuser
+# Create non-root user for security and install curl for healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/* \
+    && addgroup --system appgroup && adduser --system --group appuser
 
 # Copy the built JAR file
 COPY --from=build /app/target/*.jar app.jar

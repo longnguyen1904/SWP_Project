@@ -14,7 +14,7 @@ spring:
       max-file-size: 500MB
       max-request-size: 500MB
   datasource:
-    url: jdbc:mysql://gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/TALLT_SoftwareMarket?sslMode=VERIFY_IDENTITY&createDatabaseIfNotExist=true
+    url: jdbc:mysql://gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/TALLT_SoftwareMarket?useSSL=true&verifyServerCertificate=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true
     username: 3ZHRYGLvm9uHT52.root
     password: isfipZIXaZF6Cm8i
   jpa:
